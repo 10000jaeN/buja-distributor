@@ -1,0 +1,7 @@
+# spellCheck
+.vscode
+
+# Dependency directories
+node_modules/
+
+.env
