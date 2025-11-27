@@ -2,12 +2,15 @@ import "dotenv/config";
 
 import mongoose from "mongoose";
 import express from "express";
+import productRoutes from "./src/api/products/product.router.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const DB_URI = process.env.DATABASE;
 
 app.use(express.json());
+
+app.use("/products", productRoutes);
 
 app.listen(PORT, () => console.log("Server Started"));
 mongoose
@@ -26,6 +29,6 @@ mongoose
     process.exit(1);
   });
 
-app.get("/products", (req, res) => {
-  return req;
+app.get("/", (req, res) => {
+  res.send();
 });

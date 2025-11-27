@@ -16,11 +16,11 @@ const ProductSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
-    stockQuantity: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
+    // stockQuantity: { 재고 - 보류
+    //   type: Number,
+    //   required: true,
+    //   min: 0,
+    // },
     category: {
       type: String,
       required: true,
@@ -31,12 +31,16 @@ const ProductSchema = new mongoose.Schema(
       },
     ],
     isAvailable: {
+      // 구매가능 여부?
       type: Boolean,
       default: true,
     },
   },
   {
     timestamps: true,
+  },
+  {
+    collection: "products",
   }
 );
 
