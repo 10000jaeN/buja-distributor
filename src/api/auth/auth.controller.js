@@ -4,16 +4,7 @@ import {
   generateRefreshToken,
   verifyToken,
 } from "../../utils/jwt.js";
-
-// ** Helper 함수: HttpOnly 쿠키 설정 **
-const setRefreshTokenCookie = (res, token) => {
-  res.cookie("refreshToken", token, {
-    httpOnly: true, // JS 접근 금지 (XSS 방어)
-    secure: process.env.NODE_ENV === "production", // HTTPS에서만 전송
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7일 만료
-    sameSite: "strict", // CSRF 방어
-  });
-};
+import setRefreshTokenCookie from "../../utils/auth.utils.js";
 
 // ----------------------------------------------------
 // 1. OAuth 로그인/회원가입 처리 및 토큰 발급
@@ -132,4 +123,73 @@ export const refreshTokens = async (req, res) => {
     message: "토큰이 성공적으로 갱신되었습니다. (Rotation OK)",
     accessToken: newAccessToken,
   });
+};
+
+// 로그아웃 함수
+export const logoutUser = async (req, res) => {
+  const incomingRefreshToken = req.cookies.refreshToken;
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/",
+  };
+
+  // 클라이언트 쿠키 삭제 (무조건 실행)
+  res.clearCookie("refreshToken", cookieOptions);
+
+  if (!incomingRefreshToken) {
+    return res.status(204).send(); // 토큰이 없었으면 DB 처리 없이 종료
+  }
+
+  try {
+    const decoded = verifyToken(incomingRefreshToken);
+    if (decoded?.id) {
+      const user = await User.findById(decoded.id).select("+refreshToken");
+      if (user) {
+        user.refreshToken = null;
+        await user.save(); // DB의 토큰 무효화
+      }
+    }
+  } catch (error) {
+    console.error("Logout DB Processing Error:", error.message);
+  } finally {
+    return res.status(204).send(); // 성공 응답
+  }
+};
+
+// 💡 계정 삭제 함수 (미들웨어 보호 하에 실행)
+export const deleteUser = async (req, res) => {
+  // authMiddleware를 통과했으므로 req.user.id는 인증된 사용자의 ID입니다.
+  const userIdToDelete = req.user.id;
+
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/",
+  };
+
+  try {
+    // 1. DB에서 사용자 삭제
+    const result = await User.findByIdAndDelete(userIdToDelete);
+
+    if (!result) {
+      return res
+        .status(404)
+        .json({ message: "삭제할 사용자 계정을 찾을 수 없습니다." });
+    }
+
+    // 2. 클라이언트 쿠키 삭제 (세션 종료)
+    res.clearCookie("refreshToken", cookieOptions);
+
+    return res.status(200).json({
+      message: "계정이 성공적으로 삭제되었습니다.",
+    });
+  } catch (error) {
+    console.error("User Deletion Error:", error.message);
+    return res
+      .status(500)
+      .json({ message: "계정 삭제 중 서버 오류가 발생했습니다." });
+  }
 };
