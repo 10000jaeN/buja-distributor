@@ -9,4 +9,7 @@ router.post("/login", authController.loginOrCreateUser);
 // 2. 토큰 갱신 및 회전
 router.post("/token/refresh", authController.refreshTokens);
 
+// 3. 로그아웃
+router.post("/logout", authController.logoutUser);
+
 export default router;
