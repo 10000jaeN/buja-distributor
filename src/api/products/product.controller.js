@@ -1,0 +1,66 @@
+import Product from "./product.model.js"; // Product 모델 임포트 (경로는 프로젝트 구조에 맞게 조정 필요)
+
+/**
+ * GET /products - 상품 목록 전체 조회
+ */
+export const getProducts = async (req, res) => {
+  const products = await Product.find();
+  return res.send(products);
+};
+
+/**
+ * GET /products/:id - 특정 상품 상세 조회
+ * (req.productId는 checkProductId 미들웨어에서 세팅됨)
+ */
+export const getProductById = async (req, res) => {
+  const product = await Product.findById(req.productId);
+
+  if (!product) {
+    const error = new Error(`ID: ${req.productId} 상품을 찾을 수 없습니다.`);
+    error.status = 404;
+    throw error;
+  }
+  return res.status(200).json({ data: product });
+};
+
+/**
+ * PATCH /products/:id - 특정 상품 정보 수정
+ * (req.productId는 checkProductId 미들웨어에서 세팅됨)
+ */
+export const patchProduct = async (req, res) => {
+  // Mongoose의 findByIdAndUpdate를 사용하여 업데이트
+  const updatedProduct = await Product.findByIdAndUpdate(
+    req.productId,
+    req.body, // 클라이언트가 보낸 전체/부분 데이터
+    {
+      new: true, // 업데이트된 문서를 반환하도록 설정
+      runValidators: true, // 업데이트 시 스키마 유효성 검사 실행
+    }
+  );
+
+  if (!updatedProduct) {
+    const error = new Error(`ID: ${req.productId} 상품을 찾을 수 없습니다.`);
+    error.status = 404;
+    throw error;
+  }
+
+  return res.status(200).json({
+    message: "상품이 성공적으로 수정되었습니다. (PATCH)",
+    data: updatedProduct,
+  });
+};
+
+/**
+ * DELETE /products/:id - 특정 상품 삭제
+ * (req.productId는 checkProductId 미들웨어에서 세팅됨)
+ */
+export const deleteProduct = async (req, res) => {
+  const deletedProduct = await Product.findByIdAndDelete(req.productId);
+
+  if (!deletedProduct) {
+    const error = new Error(`ID: ${req.productId} 상품을 찾을 수 없습니다.`);
+    error.status = 404;
+    throw error;
+  }
+  return res.sendStatus(204);
+};
