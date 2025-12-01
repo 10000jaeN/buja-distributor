@@ -11,7 +11,7 @@ const router = express.Router();
  * @param {express.NextFunction} next
  */
 const checkProductId = (req, res, next) => {
-  const { id } = req.params;
+  const id = req.params.id;
 
   // 1. 유효성 검사 (예: ID가 존재하지 않는 경우)
   if (!id) {

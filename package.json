@@ -21,8 +21,10 @@
   },
   "homepage": "https://github.com/10000jaeN/buja-api#readme",
   "dependencies": {
+    "cookie-parser": "^1.4.7",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
     "mongodb": "^7.0.0",
     "mongoose": "^9.0.0"
   },
