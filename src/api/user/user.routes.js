@@ -1,8 +1,10 @@
 import express from "express";
-import { deleteUser, patchUser } from "./user.controller.js";
+import { deleteUser, getUserProfile, patchUser } from "./user.controller.js";
 import { authMiddleware } from "../../middleware/auth.middleware.js";
 
 const router = express.Router();
+
+router.get("/", authMiddleware, getUserProfile);
 
 // PATCH /api/user - 인증된 사용자의 프로필 정보 수정
 // URL: /api/user

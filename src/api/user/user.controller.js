@@ -1,4 +1,4 @@
-import User from "../../api/user/user.model.js"; // user.model.js 경로 수정
+import User from "../../api/user/user.model.js";
 
 // 쿠키 삭제 옵션
 const cookieOptions = {
@@ -7,6 +7,40 @@ const cookieOptions = {
   sameSite: "strict",
   path: "/",
 };
+
+/**
+ * 💡 사용자 정보 조회 (GET /api/user/)
+ * authMiddleware의 보호 하에 실행되며, req.user.id를 사용하여 해당 사용자의 정보를 조회합니다.
+ */
+export const getUserProfile = async (req, res) => {
+  // 1. 인증된 사용자 ID
+  const userId = req.user.id;
+
+  try {
+    // 2. DB에서 사용자 문서 조회
+    // select('-refreshToken')는 스키마 레벨에서 이미 설정되어 있지만,
+    // 명시적으로 안전한 필드만 선택하거나 제외 필드를 다시 확인하는 것이 좋습니다.
+    const user = await User.findById(userId).select("-refreshToken -__v");
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ message: "사용자 정보를 찾을 수 없습니다." });
+    }
+
+    // 3. 조회 성공 시 응답
+    return res.status(200).json({
+      message: "사용자 프로필 정보가 성공적으로 조회되었습니다.",
+      data: user,
+    });
+  } catch (error) {
+    console.error("User Profile Fetch Error:", error.message);
+    return res
+      .status(500)
+      .json({ message: "사용자 정보 조회 중 서버 오류가 발생했습니다." });
+  }
+};
+
 /**
  * 💡 사용자 정보 수정 (PATCH /api/user/)
  * authMiddleware의 보호 하에 실행되며, req.user.id를 사용하여 해당 사용자의 정보를 수정합니다.
