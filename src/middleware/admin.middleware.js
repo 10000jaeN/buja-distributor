@@ -1,20 +1,27 @@
-/**
- * 💡 관리자 미들웨어: req.user.roles에 'admin' 역할이 있는지 확인
- * 이 미들웨어는 반드시 authMiddleware 뒤에 위치해야 합니다.
- */
-export const adminMiddleware = (req, res, next) => {
-  // authMiddleware를 통해 req.user 객체가 존재함을 전제합니다.
-  const userRoles = req.user.roles;
+import User from "../api/user/user.model";
+import asyncHandler from "../utils/asyncHandler";
 
-  // 1. roles 배열에 'admin'이 포함되어 있는지 확인
-  if (!userRoles || !userRoles.includes("admin")) {
+/**
+ * 💡 관리자 권한 확인 미들웨어 (adminAuthMiddleware)
+ * 모든 요청은 authMiddleware를 통과하여 req.user 객체를 가지고 있어야 합니다.
+ */
+export const adminAuthMiddleware = asyncHandler(async (req, res, next) => {
+  // authMiddleware를 통과한 후 req.user에 사용자 ID만 있는 경우, roles를 다시 DB에서 가져와야 함.
+  // authMiddleware에서 roles를 req.user에 추가했다면 바로 사용할 수 있습니다.
+
+  const userId = req.user.id;
+
+  // DB에서 최신 역할 정보를 조회
+  const user = await User.findById(userId).select("roles");
+
+  if (!user || !user.roles.includes("admin")) {
     const error = new Error(
-      "접근 권한이 없습니다. 관리자만 이용할 수 있는 기능입니다."
+      "접근 권한이 없습니다. 관리자만 이용할 수 있는 기능입니다)"
     );
     error.status = 403; // Forbidden
-    return next(error);
+    throw error;
   }
 
-  // 2. 관리자 권한이 확인되면 다음 미들웨어 또는 컨트롤러로 이동
+  // 💡 admin 권한이 확인되면 다음으로 진행
   next();
-};
+});
