@@ -1,45 +1,51 @@
 import express from "express";
 import asyncHandler from "../../utils/asyncHandler.js";
+import { authMiddleware } from "../../middleware/auth.middleware.js"; // 인증 미들웨어
+import { adminMiddleware } from "../../middleware/admin.middleware.js"; // 💡 관리자 미들웨어
 import {
+  createProduct, // 💡 새 상품 등록 함수 임포트
   getProducts,
   getProductById,
   patchProduct,
   deleteProduct,
-} from "./product.controller.js"; // 💡 컨트롤러 함수 임포트
+} from "./product.controller.js";
 
 const router = express.Router();
 
 /**
- * 💡 라우트 미들웨어: URL 파라미터에서 ID를 추출하고 유효성을 검사합니다.
- * 이 미들웨어는 라우팅 로직의 일부로 간주하여 라우터 파일에 유지합니다.
+ * 라우트 미들웨어: URL 파라미터에서 ID를 추출하고 유효성을 검사합니다.
  */
 const checkProductId = (req, res, next) => {
   const id = req.params.id;
-
-  // 1. 유효성 검사
   if (!id) {
     const error = new Error("요청 경로에 ID 파라미터가 누락되었습니다.");
-    error.status = 400; // Bad Request
+    error.status = 400;
     return next(error);
   }
-
-  // 2. req 객체에 저장
   req.productId = id;
-
-  // 3. 다음 핸들러로 넘어갑니다.
   next();
 };
 
-// GET / - 상품 목록 전체 조회 (컨트롤러 함수 연결)
+// ----------------------------------------------------
+// GET / - 상품 목록 전체 조회 (인증/권한 불필요)
 router.get("/", asyncHandler(getProducts));
+
+// POST / - 새 상품 등록 (인증 + 관리자 권한 필요)
+router.post("/", authMiddleware, adminMiddleware, asyncHandler(createProduct));
+// ----------------------------------------------------
 
 // GET, PATCH, DELETE /:id - 특정 상품 관련 라우트
 router
   .route("/:id")
-  .all(checkProductId) // ID 유효성 검사
+  .all(checkProductId) // ID 유효성 검사 (모두 적용)
 
-  .get(asyncHandler(getProductById)) // 상세 조회 컨트롤러 연결
-  .patch(asyncHandler(patchProduct)) // 부분 수정 컨트롤러 연결
-  .delete(asyncHandler(deleteProduct)); // 삭제 컨트롤러 연결
+  // GET /:id - 특정 상품 상세 조회 (인증/권한 불필요)
+  .get(asyncHandler(getProductById))
+
+  // PATCH /:id - 특정 상품 정보 수정 (인증 + 관리자 권한 필요)
+  .patch(authMiddleware, adminMiddleware, asyncHandler(patchProduct))
+
+  // DELETE /:id - 특정 상품 삭제 (인증 + 관리자 권한 필요)
+  .delete(authMiddleware, adminMiddleware, asyncHandler(deleteProduct));
 
 export default router;

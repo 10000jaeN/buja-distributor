@@ -1,4 +1,22 @@
-import Product from "./product.model.js"; // Product 모델 임포트 (경로는 프로젝트 구조에 맞게 조정 필요)
+import Product from "./product.model.js";
+
+/**
+ * POST /products - 새 상품 등록 (관리자 전용)
+ * req.body에서 상품 정보를 받아 DB에 저장합니다.
+ */
+export const createProduct = async (req, res) => {
+  // 클라이언트가 보낸 데이터로 새로운 상품 인스턴스 생성
+  const newProduct = new Product(req.body);
+
+  // DB에 저장
+  const savedProduct = await newProduct.save();
+
+  // 201 Created 응답 반환
+  return res.status(201).json({
+    message: "상품이 성공적으로 등록되었습니다.",
+    data: savedProduct,
+  });
+};
 
 /**
  * GET /products - 상품 목록 전체 조회
@@ -24,11 +42,10 @@ export const getProductById = async (req, res) => {
 };
 
 /**
- * PATCH /products/:id - 특정 상품 정보 수정
+ * PATCH /products/:id - 특정 상품 정보 수정 (관리자 전용)
  * (req.productId는 checkProductId 미들웨어에서 세팅됨)
  */
 export const patchProduct = async (req, res) => {
-  // Mongoose의 findByIdAndUpdate를 사용하여 업데이트
   const updatedProduct = await Product.findByIdAndUpdate(
     req.productId,
     req.body, // 클라이언트가 보낸 전체/부분 데이터
@@ -51,7 +68,7 @@ export const patchProduct = async (req, res) => {
 };
 
 /**
- * DELETE /products/:id - 특정 상품 삭제
+ * DELETE /products/:id - 특정 상품 삭제 (관리자 전용)
  * (req.productId는 checkProductId 미들웨어에서 세팅됨)
  */
 export const deleteProduct = async (req, res) => {
