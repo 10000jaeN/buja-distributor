@@ -196,3 +196,62 @@ export const getAllOrders = async (req, res) => {
       .json({ message: "전체 주문 목록 조회 중 서버 오류가 발생했습니다." });
   }
 };
+
+// =================================================================
+// 5. 주문 결제 완료 처리 (PATCH /api/orders/:id/pay)
+// 💡 결제 대기(pending) 상태를 결제 완료(paid) 상태로 변경합니다.
+// =================================================================
+export const completePayment = async (req, res) => {
+  const orderId = req.params.id;
+  const userId = req.user.id;
+
+  if (!mongoose.Types.ObjectId.isValid(orderId)) {
+    return res.status(400).json({ message: "유효하지 않은 주문 ID입니다." });
+  }
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    // 1. 주문 조회 및 상태 확인 (user와 orderId, 그리고 상태가 'pending'인지 확인)
+    const order = await Order.findOne({
+      _id: orderId,
+      user: userId,
+    }).session(session);
+
+    if (!order) {
+      await session.abortTransaction();
+      return res
+        .status(404)
+        .json({ message: "해당 주문을 찾을 수 없거나 접근 권한이 없습니다." });
+    }
+
+    if (order.status !== "pending") {
+      await session.abortTransaction();
+      return res.status(400).json({
+        message: `이미 처리된 주문입니다. (현재 상태: ${order.status})`,
+      });
+    }
+
+    // 2. 주문 상태를 'paid'로 업데이트
+    order.status = "paid";
+    await order.save({ session });
+
+    // 3. 트랜잭션 커밋
+    await session.commitTransaction();
+
+    // 4. 응답
+    res.status(200).json({
+      message:
+        "결제가 성공적으로 완료되었으며 주문 상태가 'paid'로 변경되었습니다.",
+      orderId: order._id,
+      status: order.status,
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    console.error("Error completing payment:", error);
+    res.status(500).json({ message: "결제 처리 중 서버 오류가 발생했습니다." });
+  } finally {
+    session.endSession();
+  }
+};
