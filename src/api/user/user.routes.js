@@ -1,17 +1,34 @@
 import express from "express";
+import asyncHandler from "../../utils/asyncHandler.js";
 import { deleteUser, getUserProfile, patchUser } from "./user.controller.js";
 import { authMiddleware } from "../../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-router.get("/", authMiddleware, getUserProfile);
+// ----------------------------------------------------
+// 👤 사용자 프로필 조회 및 수정 라우트 (기본 경로: /user)
+// ----------------------------------------------------
 
-// PATCH /api/user - 인증된 사용자의 프로필 정보 수정
-// URL: /api/user
-router.patch("/", authMiddleware, patchUser);
+/**
+ * @route GET /
+ * @decs 1. 인증된 사용자의 프로필 정보 조회
+ * @access Private (User)
+ */
+router.get("/", authMiddleware, asyncHandler(getUserProfile));
 
-// DELETE /api/user/delete - 회원 탈퇴 (반드시 미들웨어 보호 필요)
-// 💡 미들웨어를 적용하여 deleteUser 컨트롤러 실행 전에 인증을 확인합니다.
-router.delete("/delete", authMiddleware, deleteUser);
+/**
+ * @route PATCH /
+ * @decs 2. 인증된 사용자의 프로필 정보 수정
+ * @access Private (User)
+ * @body { nickname?: string, address?: string, ... }
+ */
+router.patch("/", authMiddleware, asyncHandler(patchUser));
+
+/**
+ * @route DELETE /delete
+ * @decs 3. 회원 탈퇴
+ * @access Private (User)
+ */
+router.delete("/delete", authMiddleware, asyncHandler(deleteUser));
 
 export default router;

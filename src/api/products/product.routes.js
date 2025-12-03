@@ -13,7 +13,8 @@ import {
 const router = express.Router();
 
 /**
- * 라우트 미들웨어: URL 파라미터에서 ID를 추출하고 유효성을 검사합니다.
+ * @function checkProductId
+ * @decs 라우트 미들웨어: URL 파라미터에서 'id'를 추출하고 유효성을 검사합니다.
  */
 const checkProductId = (req, res, next) => {
   const id = req.params.id;
@@ -27,10 +28,22 @@ const checkProductId = (req, res, next) => {
 };
 
 // ----------------------------------------------------
-// GET / - 상품 목록 전체 조회 (인증/권한 불필요)
+// 🛍️ 상품 목록 및 생성 라우트 (기본 경로: /products)
+// ----------------------------------------------------
+
+/**
+ * @route GET /products
+ * @decs 전체 상품 목록 조회
+ * @access Public (All)
+ */
 router.get("/", asyncHandler(getProducts));
 
-// POST / - 새 상품 등록 (인증 + 관리자 권한 필요)
+/**
+ * @route POST /products
+ * @decs 새 상품 등록 (관리자 전용)
+ * @access Private (Admin)
+ * @body { name: string, price: number, description: string, category: string, imageUrls: string[], ... }
+ */
 router.post(
   "/",
   authMiddleware,
@@ -39,18 +52,34 @@ router.post(
 );
 // ----------------------------------------------------
 
-// GET, PATCH, DELETE /:id - 특정 상품 관련 라우트
+/**
+ * 🎯 개별 상품 관리 라우트 (경로: /products/:id)
+ * @decs ID 유효성 검사 미들웨어를 먼저 적용합니다.
+ */
 router
   .route("/:id")
-  .all(checkProductId) // ID 유효성 검사 (모두 적용)
+  .all(checkProductId) // ID 유효성 검사 (모든 /:id 라우트에 적용)
 
-  // GET /:id - 특정 상품 상세 조회 (인증/권한 불필요)
+  /**
+   * @route GET /products/:id
+   * @decs 특정 상품 상세 조회
+   * @access Public (All)
+   */
   .get(asyncHandler(getProductById))
 
-  // PATCH /:id - 특정 상품 정보 수정 (인증 + 관리자 권한 필요)
+  /**
+   * @route PATCH /products/:id
+   * @decs 특정 상품 정보 수정 (관리자 전용)
+   * @access Private (Admin)
+   * @body { name?: string, price?: number, description?: string, ... }
+   */
   .patch(authMiddleware, adminAuthMiddleware, asyncHandler(patchProduct))
 
-  // DELETE /:id - 특정 상품 삭제 (인증 + 관리자 권한 필요)
+  /**
+   * @route DELETE /products/:id
+   * @decs 특정 상품 삭제 (관리자 전용)
+   * @access Private (Admin)
+   */
   .delete(authMiddleware, adminAuthMiddleware, asyncHandler(deleteProduct));
 
 export default router;
