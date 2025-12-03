@@ -1,6 +1,5 @@
 import Order from "./order.model.js";
 import Product from "../products/product.model.js";
-import User from "../user/user.model.js";
 import mongoose from "mongoose";
 
 // =================================================================
@@ -22,11 +21,13 @@ const generateOrderNumber = () => {
 };
 
 // =================================================================
-// 1. 새 주문 생성 (POST /api/orders)
+// 1. 새 주문 생성 (POST /api/orders) - [트랜잭션 필수]
+//    상태: pending
 // =================================================================
 export const createOrder = async (req, res) => {
   // 1. 유효성 검사 및 데이터 추출
   const { items, shippingAddress } = req.body;
+  // req.user는 인증 미들웨어를 통해 주입된 사용자 정보 (ID 포함)
   const userId = req.user.id;
 
   if (!items || items.length === 0) {
@@ -50,6 +51,7 @@ export const createOrder = async (req, res) => {
   try {
     // 2. 주문 상품 정보 및 가격 검증 (원자성 보장)
     const productIds = items.map((item) => item.productId);
+    // Product 모델에는 isAvailable 필드가 있다고 가정
     const products = await Product.find({
       _id: { $in: productIds },
       isAvailable: true,
@@ -91,7 +93,7 @@ export const createOrder = async (req, res) => {
 
     // 5. 주문 문서 생성 (pending 상태로 DB에 저장)
     const newOrder = new Order({
-      orderNumber, // 💡 주문번호 추가
+      orderNumber,
       user: userId,
       items: orderItems,
       totalAmount,
@@ -199,7 +201,7 @@ export const getAllOrders = async (req, res) => {
 
 // =================================================================
 // 5. 주문 결제 완료 처리 (PATCH /api/orders/:id/pay)
-// 💡 결제 대기(pending) 상태를 결제 완료(paid) 상태로 변경합니다.
+// 💡 결제 대기(pending) -> 결제 완료(paid) 상태로 변경합니다.
 // =================================================================
 export const completePayment = async (req, res) => {
   const orderId = req.params.id;
@@ -229,12 +231,13 @@ export const completePayment = async (req, res) => {
     if (order.status !== "pending") {
       await session.abortTransaction();
       return res.status(400).json({
-        message: `이미 처리된 주문입니다. (현재 상태: ${order.status})`,
+        message: `이미 처리되었거나 결제 대기 상태가 아닙니다. (현재 상태: ${order.status})`,
       });
     }
 
-    // 2. 주문 상태를 'paid'로 업데이트
+    // 💡 핵심 로직: 상태를 'paid'로 업데이트하고 결제 완료 시간 기록
     order.status = "paid";
+    order.paidAt = new Date();
     await order.save({ session });
 
     // 3. 트랜잭션 커밋
@@ -243,7 +246,7 @@ export const completePayment = async (req, res) => {
     // 4. 응답
     res.status(200).json({
       message:
-        "결제가 성공적으로 완료되었으며 주문 상태가 'paid'로 변경되었습니다.",
+        "결제가 성공적으로 완료되었으며 주문 상태가 'paid'(결제 완료)로 변경되었습니다.",
       orderId: order._id,
       status: order.status,
     });
@@ -253,5 +256,207 @@ export const completePayment = async (req, res) => {
     res.status(500).json({ message: "결제 처리 중 서버 오류가 발생했습니다." });
   } finally {
     session.endSession();
+  }
+};
+
+// =================================================================
+// 6. 주문 취소 처리 (DELETE /api/orders/:id/cancel)
+//    상태: pending, paid, processing -> cancelled
+// =================================================================
+export const cancelOrder = async (req, res) => {
+  const orderId = req.params.id;
+  const userId = req.user.id;
+  // 관리자는 모든 주문 취소 가능하도록, 일반 사용자는 자신의 주문만 취소 가능하도록 구현
+  const isAdmin = req.user.roles && req.user.roles.includes("admin");
+
+  if (!mongoose.Types.ObjectId.isValid(orderId)) {
+    return res.status(400).json({ message: "유효하지 않은 주문 ID입니다." });
+  }
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    // 1. 주문 조회 및 권한 확인
+    const query = isAdmin ? { _id: orderId } : { _id: orderId, user: userId };
+    const order = await Order.findOne(query).session(session);
+
+    if (!order) {
+      await session.abortTransaction();
+      return res
+        .status(404)
+        .json({ message: "해당 주문을 찾을 수 없거나 취소 권한이 없습니다." });
+    }
+
+    // 2. 주문 상태에 따른 취소 가능 여부 확인
+    const allowedStatuses = ["pending", "paid", "processing"];
+    if (!allowedStatuses.includes(order.status)) {
+      await session.abortTransaction();
+      return res.status(400).json({
+        message: `현재 상태(${order.status})에서는 주문을 취소할 수 없습니다. 고객센터에 문의해주세요. (취소 가능 상태: pending, paid, processing)`,
+      });
+    }
+
+    // 3. 핵심 로직: 상태를 'cancelled'로 변경하고 취소 시간 기록
+    order.status = "cancelled";
+    order.cancelledAt = new Date();
+
+    // 4. 재고 복구 로직 (여기에서 구현)
+    // 예시: 주문된 상품 수량만큼 재고를 복구하는 로직이 필요합니다.
+
+    await order.save({ session });
+
+    await session.commitTransaction();
+
+    res.status(200).json({
+      message: `주문 ${order.orderNumber}이 성공적으로 취소되었습니다. (상태: cancelled)`,
+      orderId: order._id,
+      status: order.status,
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    console.error("Error cancelling order:", error);
+    res
+      .status(500)
+      .json({ message: "주문 취소 처리 중 서버 오류가 발생했습니다." });
+  } finally {
+    session.endSession();
+  }
+};
+
+// =================================================================
+// 7. 상품 준비 시작 처리 (PATCH /api/orders/:id/prepare) - 관리자 전용
+//    상태: paid -> processing
+// =================================================================
+export const startPreparation = async (req, res) => {
+  const orderId = req.params.id;
+
+  if (!mongoose.Types.ObjectId.isValid(orderId)) {
+    return res.status(400).json({ message: "유효하지 않은 주문 ID입니다." });
+  }
+
+  try {
+    const order = await Order.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({ message: "해당 주문을 찾을 수 없습니다." });
+    }
+
+    if (order.status !== "paid") {
+      return res.status(400).json({
+        message: `상품 준비는 'paid'(결제 완료) 상태에서만 가능합니다. (현재 상태: ${order.status})`,
+      });
+    }
+
+    // 💡 핵심 로직: 상태를 'processing'(상품 준비 중)으로 변경
+    order.status = "processing";
+    await order.save();
+
+    res.status(200).json({
+      message: `주문 ${order.orderNumber}이 'processing'(상품 준비 중)으로 변경되었습니다.`,
+      orderId: order._id,
+      status: order.status,
+    });
+  } catch (error) {
+    console.error("Error starting preparation:", error);
+    res
+      .status(500)
+      .json({ message: "상품 준비 시작 처리 중 서버 오류가 발생했습니다." });
+  }
+};
+
+// =================================================================
+// 8. 배송 시작 처리 (PATCH /api/orders/:id/shipping) - 관리자 전용
+//    상태: processing -> shipped
+// =================================================================
+export const startShipping = async (req, res) => {
+  // 함수 이름 변경 및 로직 수정
+  const orderId = req.params.id;
+  const { courierName, trackingNumber } = req.body;
+
+  if (!mongoose.Types.ObjectId.isValid(orderId)) {
+    return res.status(400).json({ message: "유효하지 않은 주문 ID입니다." });
+  }
+  if (!courierName || !trackingNumber) {
+    return res.status(400).json({
+      message: "배송 시작을 위해 택배사 이름과 운송장 번호가 모두 필요합니다.",
+    });
+  }
+
+  try {
+    const order = await Order.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({ message: "해당 주문을 찾을 수 없습니다." });
+    }
+
+    // 💡 핵심 수정: 배송 시작은 'processing' 상태에서만 가능합니다.
+    if (order.status !== "processing") {
+      return res.status(400).json({
+        message: `배송 시작은 'processing'(상품 준비 중) 상태에서만 가능합니다. (현재 상태: ${order.status})`,
+      });
+    }
+
+    // 💡 핵심 로직: 택배사 정보 입력과 동시에 상태를 'shipped'(배송 중)으로 변경
+    order.status = "shipped";
+    order.trackingNumber = trackingNumber;
+    order.courierName = courierName;
+    order.shippedAt = new Date(); // 배송 시작 시점 기록
+    await order.save();
+
+    res.status(200).json({
+      message: `주문 ${order.orderNumber}의 배송 정보가 등록되고 상태가 'shipped'(배송 중)로 변경되었습니다.`,
+      orderId: order._id,
+      status: order.status,
+      trackingNumber: order.trackingNumber,
+      courierName: order.courierName,
+    });
+  } catch (error) {
+    console.error("Error starting shipping:", error);
+    res
+      .status(500)
+      .json({ message: "배송 시작 처리 중 서버 오류가 발생했습니다." });
+  }
+};
+
+// =================================================================
+// 9. 배송 완료 처리 (PATCH /api/orders/:id/complete) - 관리자 전용
+//    상태: shipped -> delivered
+// =================================================================
+export const completeDelivery = async (req, res) => {
+  const orderId = req.params.id;
+
+  if (!mongoose.Types.ObjectId.isValid(orderId)) {
+    return res.status(400).json({ message: "유효하지 않은 주문 ID입니다." });
+  }
+
+  try {
+    const order = await Order.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({ message: "해당 주문을 찾을 수 없습니다." });
+    }
+
+    if (order.status !== "shipped") {
+      return res.status(400).json({
+        message: `배송 완료는 'shipped'(배송 중) 상태에서만 처리할 수 있습니다. (현재 상태: ${order.status})`,
+      });
+    }
+
+    // 💡 핵심 로직: 상태를 'delivered'(배송 완료)로 변경
+    order.status = "delivered";
+    order.deliveredAt = new Date(); // 배송 완료 시점 기록
+    await order.save();
+
+    res.status(200).json({
+      message: `주문 ${order.orderNumber}이 'delivered'(배송 완료) 처리되었습니다.`,
+      orderId: order._id,
+      status: order.status,
+    });
+  } catch (error) {
+    console.error("Error completing delivery:", error);
+    res
+      .status(500)
+      .json({ message: "배송 완료 처리 중 서버 오류가 발생했습니다." });
   }
 };

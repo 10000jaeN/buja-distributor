@@ -5,7 +5,12 @@ import {
   getMyOrders,
   getOrderById,
   getAllOrders,
-} from "../../api/orders/order.controller.js";
+  completePayment,
+  cancelOrder,
+  startPreparation,
+  startShipping,
+  completeDelivery,
+} from "./order.controller.js";
 import { authMiddleware } from "../../middleware/auth.middleware.js";
 import { adminAuthMiddleware } from "../../middleware/admin.middleware.js";
 
@@ -17,24 +22,51 @@ const router = express.Router();
  */
 router.use(authMiddleware);
 
-// --- 관리자 전용 주문 관련 라우트 ---
+// =================================================================
+// ⚙️ 관리자 주문 처리 및 배송 자동화 관련 라우트 (관리자 권한 필요)
+// =================================================================
 
-// 1. GET /api/orders/all (전체 주문 목록 조회 - 관리자 전용)
-// 🚨 adminAuthMiddleware가 먼저 실행되어 관리자 권한이 있는지 확인합니다.
+// GET /api/orders/all - 전체 주문 목록 조회 (관리자 전용)
 router.get("/all", adminAuthMiddleware, asyncHandler(getAllOrders));
 
-// --- 사용자 주문 관련 라우트 ---
+// PATCH /api/orders/:id/prepare - 상품 준비 시작 (상태: paid -> processing)
+router.patch(
+  "/:id/prepare",
+  adminAuthMiddleware, // authMiddleware는 router.use로 이미 적용됨
+  asyncHandler(startPreparation)
+);
 
-// 1. POST /api/orders (새 주문 생성)
-// /api/orders 경로에 요청 본문(items, shippingAddress)을 보내면 주문이 생성됩니다.
+// PATCH /api/orders/:id/shipping - [배송 중] 처리: 송장번호 등록 (상태: processing -> shipped)
+router.patch(
+  "/:id/shipping",
+  adminAuthMiddleware,
+  asyncHandler(startShipping) // 💡 함수 이름 변경 반영
+);
+
+// PATCH /api/orders/:id/complete - [배송 완료] 처리 (상태: shipped -> delivered)
+router.patch(
+  "/:id/complete",
+  adminAuthMiddleware,
+  asyncHandler(completeDelivery)
+);
+
+// =================================================================
+// 🛍️ 일반 사용자 주문 관련 라우트 (로그인 필요 - router.use로 처리)
+// =================================================================
+
+// POST /api/orders - 1. 새 주문 생성 (결제 대기 상태: pending)
 router.post("/", asyncHandler(createOrder));
 
-// 2. GET /api/orders (본인 주문 목록 조회)
-// 인증된 사용자(user)의 모든 주문 목록을 조회합니다.
+// GET /api/orders - 2. 내 주문 목록 조회
 router.get("/", asyncHandler(getMyOrders));
 
-// 3. GET /api/orders/:id (특정 주문 상세 조회)
-// 인증된 사용자(user)의 특정 주문 1개를 조회합니다.
+// GET /api/orders/:id - 3. 특정 주문 상세 조회
 router.get("/:id", asyncHandler(getOrderById));
+
+// PATCH /api/orders/:id/pay - 4. 주문 결제 완료 처리 (상태: pending -> paid)
+router.patch("/:id/pay", asyncHandler(completePayment));
+
+// PATCH /api/orders/:id/cancel - 5. 주문 취소 처리 (상태: pending/paid/processing -> cancelled)
+router.patch("/:id/cancel", asyncHandler(cancelOrder)); // 💡 주문 취소 라우트 추가
 
 export default router;
