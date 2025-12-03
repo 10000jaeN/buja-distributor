@@ -1,5 +1,5 @@
-import User from "../api/user/user.model";
-import asyncHandler from "../utils/asyncHandler";
+import User from "../api/user/user.model.js";
+import asyncHandler from "../utils/asyncHandler.js";
 
 /**
  * 💡 관리자 권한 확인 미들웨어 (adminAuthMiddleware)

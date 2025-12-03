@@ -1,7 +1,7 @@
 import express from "express";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { authMiddleware } from "../../middleware/auth.middleware.js"; // 인증 미들웨어
-import { adminMiddleware } from "../../middleware/admin.middleware.js"; // 💡 관리자 미들웨어
+import { adminAuthMiddleware } from "../../middleware/admin.middleware.js"; // 💡 관리자 미들웨어
 import {
   createProduct, // 💡 새 상품 등록 함수 임포트
   getProducts,
@@ -31,7 +31,12 @@ const checkProductId = (req, res, next) => {
 router.get("/", asyncHandler(getProducts));
 
 // POST / - 새 상품 등록 (인증 + 관리자 권한 필요)
-router.post("/", authMiddleware, adminMiddleware, asyncHandler(createProduct));
+router.post(
+  "/",
+  authMiddleware,
+  adminAuthMiddleware,
+  asyncHandler(createProduct)
+);
 // ----------------------------------------------------
 
 // GET, PATCH, DELETE /:id - 특정 상품 관련 라우트
@@ -43,9 +48,9 @@ router
   .get(asyncHandler(getProductById))
 
   // PATCH /:id - 특정 상품 정보 수정 (인증 + 관리자 권한 필요)
-  .patch(authMiddleware, adminMiddleware, asyncHandler(patchProduct))
+  .patch(authMiddleware, adminAuthMiddleware, asyncHandler(patchProduct))
 
   // DELETE /:id - 특정 상품 삭제 (인증 + 관리자 권한 필요)
-  .delete(authMiddleware, adminMiddleware, asyncHandler(deleteProduct));
+  .delete(authMiddleware, adminAuthMiddleware, asyncHandler(deleteProduct));
 
 export default router;
