@@ -1,11 +1,16 @@
 import "dotenv/config"; // dotenv/config로 환경 변수 로드
+
 import mongoose from "mongoose";
 import express from "express";
+import cookieParser from "cookie-parser"; // 💡 토큰 테스트를 위한 쿠키 파서 추가
 import productRouter from "./src/api/products/product.routes.js";
 import authRouter from "./src/api/auth/auth.routes.js";
 import userRouter from "./src/api/user/user.routes.js";
-import cookieParser from "cookie-parser"; // 💡 토큰 테스트를 위한 쿠키 파서 추가
-import "./src/api/user/user.model.js"; // 💡 User 모델을 Mongoose에 등록하여 스키마 사용 가능하도록 함
+import orderRouter from "./src/api/orders/order.routes.js";
+
+import "./src/api/user/user.model.js"; // 모델을 Mongoose에 등록하여 스키마 사용 가능하도록 함
+import "./src/api/products/product.model.js";
+import "./src/api/orders/order.model.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,15 +19,10 @@ const DB_URI = process.env.MONGO_URI; // DATABASE 대신 MONGO_URI를 권장합�
 app.use(express.json());
 app.use(cookieParser()); // 쿠키 파서 추가
 
-// ----------------------------------------------------
-// 라우트 설정 (404 오류 수정)
-// ----------------------------------------------------
 app.use("/products", productRouter);
-
-// ✅ 수정: 클라이언트 요청 경로의 접두사 '/api/auth'에 맞춰 라우터를 등록합니다.
-app.use("/api/auth", authRouter);
-
-app.use("/api/user", userRouter);
+app.use("/auth", authRouter);
+app.use("/user", userRouter);
+app.use("/orders", orderRouter);
 
 // ----------------------------------------------------
 // 안정적인 서버 시작 로직
