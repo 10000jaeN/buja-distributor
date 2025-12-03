@@ -1,38 +1,24 @@
-// error.middleware.js
+// Express 중앙 에러 핸들러와 함께 사용할 커스텀 에러 클래스입니다.
 
-/**
- * 전역 오류 처리 미들웨어입니다.
- * CustomError 객체를 포함하여 모든 오류를 포착하고 표준화된 JSON 응답을 전송합니다.
- *
- * @param {Error} err - 잡힌 오류 객체 (CustomError 또는 기본 Error)
- * @param {import('express').Request} req - Express 요청 객체
- * @param {import('express').Response} res - Express 응답 객체
- * @param {import('express').NextFunction} next - 다음 미들웨어로 넘어가는 함수 (사용되지 않음)
- */
-const globalErrorHandler = (err, req, res, next) => {
-  // 1. 기본 상태 코드 및 메시지 설정 (대부분의 오류는 500으로 처리)
-  err.statusCode = err.statusCode || 500;
-  err.status = err.status || "error";
+class CustomError extends Error {
+  /**
+   * @param {string} message - 에러 메시지
+   * @param {number} statusCode - HTTP 상태 코드 (예: 400, 404)
+   */
+  constructor(message, statusCode) {
+    super(message);
+    this.statusCode = statusCode;
+    this.status = `${statusCode}`.startsWith("4") ? "fail" : "error";
 
-  // 2. 운영 오류(CustomError)와 프로그래밍 오류(기본 Error) 구분
-  if (err.isOperational) {
-    // 💡 운영 오류: 클라이언트에게 오류 정보를 안전하게 공개
-    // CustomError를 통해 정의된 상태 코드와 메시지 사용
-    return res.status(err.statusCode).json({
-      status: err.status,
-      message: err.message,
-    });
+    // 💡 운영 오류(Operational Error)로 플래그를 지정합니다.
+    // error.middleware.js가 이 속성을 사용하여 클라이언트에게 메시지를 공개합니다.
+    this.isOperational = true;
+
+    // 이 생성자 함수 호출을 스택 트레이스에서 제외합니다.
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, CustomError);
+    }
   }
+}
 
-  // 3. 프로그래밍 또는 알 수 없는 심각한 오류 (500)
-  // 💡 심각한 오류: 오류 정보를 클라이언트에게 노출하지 않고, 서버 로그에 기록
-  console.error("CRITICAL ERROR 💥", err);
-
-  return res.status(500).json({
-    status: "error",
-    message:
-      "예상치 못한 심각한 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
-  });
-};
-
-export default globalErrorHandler;
+export default CustomError;
