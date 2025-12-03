@@ -1,4 +1,5 @@
 import Product from "./product.model.js";
+import CustomError from "../../utils/customError.js"; // 💡 CustomError 임포트
 
 /**
  * POST /products - 새 상품 등록 (관리자 전용)
@@ -34,9 +35,8 @@ export const getProductById = async (req, res) => {
   const product = await Product.findById(req.productId);
 
   if (!product) {
-    const error = new Error(`ID: ${req.productId} 상품을 찾을 수 없습니다.`);
-    error.status = 404;
-    throw error;
+    // 💡 CustomError 사용: 상태 코드와 메시지를 함께 던집니다.
+    throw new CustomError(`ID: ${req.productId} 상품을 찾을 수 없습니다.`, 404);
   }
   return res.status(200).json({ data: product });
 };
@@ -56,9 +56,8 @@ export const patchProduct = async (req, res) => {
   );
 
   if (!updatedProduct) {
-    const error = new Error(`ID: ${req.productId} 상품을 찾을 수 없습니다.`);
-    error.status = 404;
-    throw error;
+    // 💡 CustomError 사용
+    throw new CustomError(`ID: ${req.productId} 상품을 찾을 수 없습니다.`, 404);
   }
 
   return res.status(200).json({
@@ -75,9 +74,8 @@ export const deleteProduct = async (req, res) => {
   const deletedProduct = await Product.findByIdAndDelete(req.productId);
 
   if (!deletedProduct) {
-    const error = new Error(`ID: ${req.productId} 상품을 찾을 수 없습니다.`);
-    error.status = 404;
-    throw error;
+    // 💡 CustomError 사용
+    throw new CustomError(`ID: ${req.productId} 상품을 찾을 수 없습니다.`, 404);
   }
   return res.sendStatus(204);
 };

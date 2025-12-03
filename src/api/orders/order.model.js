@@ -46,7 +46,14 @@ const OrderSchema = new mongoose.Schema(
     // 주문 상태
     status: {
       type: String,
-      enum: ["pending", "processing", "shipped", "delivered", "cancelled"],
+      enum: [
+        "pending",
+        "paid",
+        "processing",
+        "shipped",
+        "delivered",
+        "cancelled",
+      ],
       default: "pending",
     },
     // 배송지 정보 (간단하게 포함, 실제로는 별도 스키마 참조)
