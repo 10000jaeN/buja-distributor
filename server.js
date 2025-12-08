@@ -16,7 +16,8 @@ import "./src/api/products/product.model.js";
 import "./src/api/orders/order.model.js";
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+app.set("trust proxy", 1);
+const PORT = process.env.PORT || 4000;
 const DB_URI = process.env.MONGO_URI; // DATABASE 대신 MONGO_URI를 권장합니다.
 
 setupPassport();
