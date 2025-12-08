@@ -38,11 +38,11 @@ router.post("/item", asyncHandler(addItemToCart));
 router.patch("/:productId", asyncHandler(updateCartItemQuantity));
 
 /**
- * @route DELETE /carts/item/remove-items
+ * @route POST /carts/item/remove-items
  * @desc 장바구니에서 특정 상품을 제거
  * @access Private (인증 필수)
- * @body { productId: string[] }
+ * @body { productIds: string[] }
  */
-router.delete("/item/remove-items", asyncHandler(removeCartItems));
+router.post("/item/remove-items", asyncHandler(removeCartItems));
 
 export default router;
