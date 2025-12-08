@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-// 💡 리소스 기반 구조에 따라 경로 조정: user/model.js -> utils/crypto.js
 import { encryptToken, decryptToken } from "../../utils/crypto.js";
 import AddressSchema from "../../models/schemas/AddressSchema.js"; // 사용자님의 기존 경로 유지
 
@@ -17,14 +16,17 @@ const UserSchema = new mongoose.Schema(
     },
 
     // 2. 기본 정보
-    userName: {
-      type: String,
-      required: true,
-    },
     email: {
       type: String,
       required: false,
-      unique: false,
+      sparse: true,
+    },
+    nickName: {
+      type: String,
+      required: true,
+      sparse: true,
+      unique: [true, "이미 사용중인 닉네임입니다."],
+      minLength: [2, "닉네임은 최소 2글자 이상이여야 합니다."],
     },
 
     // 3. 권한 및 기타 정보

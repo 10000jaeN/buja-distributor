@@ -7,7 +7,6 @@ import User from "../api/user/user.model.js";
  * 🚨 DB 조회 때문에 비동기(async)로 변경되었습니다.
  */
 export const authMiddleware = async (req, res, next) => {
-  // ⭐️ async로 변경
   const incomingRefreshToken = req.cookies.refreshToken;
 
   if (!incomingRefreshToken) {
