@@ -21,10 +21,16 @@
   },
   "homepage": "https://github.com/10000jaeN/buja-api#readme",
   "dependencies": {
+    "cookie-parser": "^1.4.7",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
     "mongodb": "^7.0.0",
-    "mongoose": "^9.0.0"
+    "mongoose": "^9.0.0",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "passport-kakao": "^1.0.1",
+    "passport-naver": "^1.0.6"
   },
   "devDependencies": {
     "nodemon": "^3.1.11"
