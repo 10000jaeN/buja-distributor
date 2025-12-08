@@ -1,7 +1,13 @@
 import express from "express";
 import asyncHandler from "../../utils/asyncHandler.js";
-import { deleteUser, getUserProfile, patchUser } from "./user.controller.js";
+import {
+  deleteUser,
+  getUserProfile,
+  patchUser,
+  getAllUsers,
+} from "./user.controller.js";
 import { authMiddleware } from "../../middleware/auth.middleware.js";
+import { adminAuthMiddleware } from "../../middleware/admin.middleware.js";
 
 const router = express.Router();
 
@@ -30,5 +36,17 @@ router.patch("/", authMiddleware, asyncHandler(patchUser));
  * @access Private (User)
  */
 router.delete("/delete", authMiddleware, asyncHandler(deleteUser));
+
+/**
+ * @route GET /admin/all
+ * @decs 관리자용: 전체 사용자 목록 조회
+ * @access Private (Admin Only)
+ */
+router.get(
+  "/admin/all",
+  authMiddleware,
+  adminAuthMiddleware,
+  asyncHandler(getAllUsers)
+);
 
 export default router;
