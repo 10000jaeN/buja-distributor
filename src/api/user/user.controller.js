@@ -117,3 +117,28 @@ export const deleteUser = async (req, res) => {
     message: "계정이 성공적으로 삭제(탈퇴)되었습니다.",
   });
 };
+
+/**
+ * 💡 전체 사용자 목록 조회 (GET /api/user/admin/all)
+ * adminAuthMiddleware의 보호 하에 실행되며, 관리자만 접근 가능합니다.
+ * @access Private (Admin Only)
+ */
+export const getAllUsers = async (req, res) => {
+  // 1. (미들웨어에서 관리자 권한 확인이 완료되었다고 가정합니다.)
+
+  // 2. DB에서 모든 사용자 문서 조회
+  // 민감 정보(refreshToken, __v)는 응답에서 제외합니다.
+  const users = await User.find().select("-refreshToken -__v");
+
+  if (!users || users.length === 0) {
+    // 사용자가 한 명도 없는 경우 (초기 설정 또는 오류)
+    throw new CustomError("등록된 사용자 계정이 없습니다.", 404);
+  }
+
+  // 3. 조회 성공 시 응답
+  return res.status(200).json({
+    message: "전체 사용자 목록이 성공적으로 조회되었습니다.",
+    count: users.length,
+    data: users,
+  });
+};
