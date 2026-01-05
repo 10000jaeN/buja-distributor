@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowIcon } from "@/assets";
 import { useState } from "react";
 
 const items = [
@@ -42,30 +43,28 @@ const Carousel = () => {
           ))}
         </div>
       </div>
-      <button
-        type="button"
-        className="absolute top-1/2 left-3 -translate-y-1/2 rounded-full bg-black px-1 py-2 text-white hover:cursor-pointer"
-        onClick={onClickPrevious}
-      >
-        &#8249;
-      </button>
-      <button
-        type="button"
-        className="absolute top-1/2 right-3 -translate-y-1/2 rounded-full bg-black px-1 py-2 text-white hover:cursor-pointer"
-        onClick={onClickNext}
-      >
-        &#8250;
-      </button>
 
-      <div className="absolute bottom-2 left-1/2 flex -translate-1/2 gap-2">
+      <div className="absolute bottom-2 left-1/2 flex -translate-1/2 items-center gap-2">
+        <button
+          type="button"
+          className="-scale-x-100"
+          onClick={onClickPrevious}
+        >
+          <ArrowIcon className="fill-white" />
+        </button>
+
         {items &&
           items.map((_, idx) => (
             <button
               type="button"
-              className={`${currentIdx === idx ? "w-7" : "w-3"} h-3 rounded-full bg-white duration-300 hover:cursor-pointer`}
+              className={`${currentIdx === idx ? "w-7" : "w-3"} h-3 rounded-full bg-white duration-300`}
               onClick={() => onClickPagination(idx)}
             ></button>
           ))}
+
+        <button type="button" onClick={onClickNext}>
+          <ArrowIcon className="fill-white" />
+        </button>
       </div>
     </div>
   );
