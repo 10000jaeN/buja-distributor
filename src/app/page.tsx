@@ -4,6 +4,7 @@ import Link from "next/link";
 import axiosInstance from "@/lib/axios";
 import noImage from "@/public/images/no-image.png";
 import { Product } from "@/types/product";
+import Carousel from "@/components/ui/Carousel";
 
 export default async function Home() {
   const getProducts = async (): Promise<Product[]> => {
@@ -14,7 +15,7 @@ export default async function Home() {
   const products = await getProducts();
 
   return (
-    <div className="mx-3 mt-1">
+    <div className="mt-1">
       <Link
         href="/login"
         className="rounded-lg border bg-amber-200 p-1 font-bold"
@@ -22,13 +23,9 @@ export default async function Home() {
         로그인 버튼(임시)
       </Link>
 
-      <div className="relative">
-        <div className="overflow-hidden">
-          <div className="flex">{}</div>
-        </div>
-      </div>
+      <Carousel />
 
-      <div>
+      <div className="mx-3">
         <div className="mb-3 text-[20px] font-bold">
           🎁 지금 가장 인기있는 상품
         </div>
