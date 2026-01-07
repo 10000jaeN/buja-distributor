@@ -1,11 +1,13 @@
 export { default as Logo } from "./Icon-logo.svg";
-import ArrowIcon from "./Icon-arrow.svg";
-export { default as CartIcon } from "./Icon-cart.svg";
 export { default as MenuIcon } from "./Icon-hamberger.svg";
 export { default as SearchIcon } from "./Icon-search.svg";
-export { default as CancelIcon } from "./Icon-x.svg";
 export { default as NIcon } from "./icon-logo-N.svg";
 export { default as KakaoIcon } from "./Icon-kakao.svg";
+
+import ArrowIcon from "./Icon-arrow.svg";
+import CartIcon from "./Icon-cart.svg";
+import CartInIcon from "./Icon-cartIn.svg";
+import CancelIcon from "./Icon-x.svg";
 
 export const GoogleIcon = ({ className }: { className: string }) => {
   return (
@@ -37,4 +39,4 @@ export const GoogleIcon = ({ className }: { className: string }) => {
   );
 };
 
-export { ArrowIcon };
+export { ArrowIcon, CartIcon, CartInIcon, CancelIcon };
