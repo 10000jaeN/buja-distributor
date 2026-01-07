@@ -1,9 +1,10 @@
 "use client";
 
 import { ArrowIcon } from "@/assets";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const items = [
+  { title: "광고 및 이벤트가 들어갈 자리입니다.", bg: "bg-[#7bf1b0]" },
   { title: "소", bg: "bg-[#68aae2]" },
   { title: "보", bg: "bg-[#ab68e2]" },
   { title: "와", bg: "bg-[#e068e2]" },
@@ -13,20 +14,22 @@ const Carousel = () => {
   const [currentIdx, setCurrentIdx] = useState<number>(0);
 
   const onClickPrevious = () => {
-    setCurrentIdx((prevIdx) =>
-      prevIdx === 0 ? items.length - 1 : prevIdx - 1,
-    );
+    setCurrentIdx((prev) => (prev === 0 ? items.length - 1 : prev - 1));
   };
 
   const onClickNext = () => {
-    setCurrentIdx((prevIdx) =>
-      prevIdx === items.length - 1 ? 0 : prevIdx + 1,
-    );
+    setCurrentIdx((prev) => (prev === items.length - 1 ? 0 : prev + 1));
   };
 
   const onClickPagination = (idx: number) => {
     setCurrentIdx(idx);
   };
+
+  useEffect(() => {
+    const timer = setInterval(onClickNext, 7000);
+
+    return () => clearInterval(timer);
+  }, [currentIdx]);
 
   return (
     <div className="relative mb-4">
