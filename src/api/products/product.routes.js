@@ -1,11 +1,11 @@
 import express from "express";
 import asyncHandler from "../../utils/asyncHandler.js";
-import { authMiddleware } from "../../middleware/auth.middleware.js"; // 인증 미들웨어
-import { adminAuthMiddleware } from "../../middleware/admin.middleware.js"; // 💡 관리자 미들웨어
+import { authMiddleware } from "../../middleware/auth.middleware.js";
+import { adminAuthMiddleware } from "../../middleware/admin.middleware.js";
 import {
-  createProduct, // 💡 새 상품 등록 함수 임포트
+  createProduct,
   getProducts,
-  getProductById,
+  getProductBySlug,
   patchProduct,
   deleteProduct,
 } from "./product.controller.js";
@@ -13,17 +13,17 @@ import {
 const router = express.Router();
 
 /**
- * @function checkProductId
- * @decs 라우트 미들웨어: URL 파라미터에서 'id'를 추출하고 유효성을 검사합니다.
+ * @function checkProductSlug
+ * @decs 라우트 미들웨어: URL 파라미터에서 'slug'를 추출하고 유효성을 검사합니다.
  */
-const checkProductId = (req, res, next) => {
-  const id = req.params.id;
-  if (!id) {
-    const error = new Error("요청 경로에 ID 파라미터가 누락되었습니다.");
+const checkProductSlug = (req, res, next) => {
+  const slug = req.params.slug;
+  if (!slug) {
+    const error = new Error("요청 경로에 Slug 파라미터가 누락되었습니다.");
     error.status = 400;
     return next(error);
   }
-  req.productId = id;
+  req.slug = slug;
   next();
 };
 
@@ -57,15 +57,15 @@ router.post(
  * @decs ID 유효성 검사 미들웨어를 먼저 적용합니다.
  */
 router
-  .route("/:id")
-  .all(checkProductId) // ID 유효성 검사 (모든 /:id 라우트에 적용)
+  .route("/:slug")
+  .all(checkProductSlug) // ID 유효성 검사 (모든 /:id 라우트에 적용)
 
   /**
    * @route GET /products/:id
    * @decs 특정 상품 상세 조회
    * @access Public (All)
    */
-  .get(asyncHandler(getProductById))
+  .get(asyncHandler(getProductBySlug))
 
   /**
    * @route PATCH /products/:id
