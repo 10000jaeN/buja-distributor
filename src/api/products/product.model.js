@@ -8,32 +8,43 @@ const ProductSchema = new mongoose.Schema(
       required: [true, "상품 이름은 필수 항목입니다."],
       trim: true,
     },
-    // 상품 설명
-    description: {
+    // URL용 고유 슬러그
+    slug: {
       type: String,
       required: true,
+      unique: true,
+      index: true,
     },
+    // 상품 상세
+    contentBlock: [
+      {
+        type: { type: String, enum: ["text", "image"], required: true },
+        value: { type: String, required: true },
+      },
+    ],
     // 가격
     price: {
       type: Number,
       required: [true, "상품 가격은 필수 항목입니다."],
       min: [0, "가격은 0보다 크거나 같아야 합니다."],
     },
-    // 재고 - 보류
+    // // 재고 - 보류
     // stockQuantity: {
-    //   type: Number,
+    //   type: Boolean,
     //   required: true,
-    //   min: 0,
     // },
     // 분류
     category: {
-      type: String,
-      required: true,
+      parent: { type: String, required: true },
+      child: { type: String, required: true },
+      path: [{ type: String }],
     },
     // 대표 이미지
-    imageUrls: [
+    thumbnail: [
       {
         type: String,
+        required: true,
+        min: 1,
       },
     ],
     // 판매가능 여부
