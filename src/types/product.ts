@@ -1,10 +1,20 @@
 export interface Product {
   _id: string;
   name: string;
-  description: string;
+  slug: string;
+  contentBlock: [
+    {
+      type: "text" | "image";
+      value: string;
+    },
+  ];
   price: number;
-  category: string;
-  imageUrls?: string[];
+  category: {
+    parent: string;
+    child: string;
+    path: string[];
+  };
+  thumbnail: string[];
   isAvailable: boolean;
   createdAt: string;
   updatedAt: string;
