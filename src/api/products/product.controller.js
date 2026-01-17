@@ -62,7 +62,7 @@ export const getProducts = async (req, res) => {
  */
 export const getProductBySlug = async (req, res) => {
   const { slug } = req.params;
-  const product = await Product.findByOne(slug);
+  const product = await Product.findOne({ slug });
 
   if (!product) {
     // 💡 CustomError 사용: 상태 코드와 메시지를 함께 던집니다.
@@ -76,9 +76,18 @@ export const getProductBySlug = async (req, res) => {
  * (req.productId는 checkProductId 미들웨어에서 세팅됨)
  */
 export const patchProduct = async (req, res) => {
-  const updatedProduct = await Product.findByOneAndUpdate(
-    { slug: req.params.slug },
-    req.body, // 클라이언트가 보낸 전체/부분 데이터
+  const { slug } = req.params;
+  const updateData = { ...req.body };
+
+  // 1. 만약 바디에 name이 포함되어 있다면 슬러그를 새로 생성
+  if (updateData.name) {
+    updateData.slug = slugify(updateData.name);
+  }
+
+  // 2. findOneAndUpdate로 업데이트
+  const updatedProduct = await Product.findOneAndUpdate(
+    { slug: slug },
+    updateData,
     {
       new: true, // 업데이트된 문서를 반환하도록 설정
       runValidators: true, // 업데이트 시 스키마 유효성 검사 실행
@@ -86,8 +95,7 @@ export const patchProduct = async (req, res) => {
   );
 
   if (!updatedProduct) {
-    // 💡 CustomError 사용
-    throw new CustomError(`슬러그: ${req.slug} 상품을 찾을 수 없습니다.`, 404);
+    throw new CustomError(`슬러그: ${slug} 상품을 찾을 수 없습니다.`, 404);
   }
 
   return res.status(200).json({

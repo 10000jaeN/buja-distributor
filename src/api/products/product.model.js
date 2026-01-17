@@ -28,11 +28,6 @@ const ProductSchema = new mongoose.Schema(
       required: [true, "상품 가격은 필수 항목입니다."],
       min: [0, "가격은 0보다 크거나 같아야 합니다."],
     },
-    // // 재고 - 보류
-    // stockQuantity: {
-    //   type: Boolean,
-    //   required: true,
-    // },
     // 분류
     category: {
       parent: { type: String, required: true },
@@ -44,9 +39,14 @@ const ProductSchema = new mongoose.Schema(
       {
         type: String,
         required: true,
-        min: 1,
       },
     ],
+    // 정렬 및 수요관리를 위한 카운팅
+    stats: {
+      orderCount: { type: Number, default: 0 },
+      reviewCount: { type: Number, default: 0 },
+      ratingAverage: { type: Number, default: 0 },
+    },
     // 판매가능 여부
     isAvailable: {
       type: Boolean,
