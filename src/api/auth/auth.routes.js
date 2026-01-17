@@ -6,6 +6,7 @@ import {
   logoutUser,
 } from "./auth.controller.js";
 import asyncHandler from "../../utils/asyncHandler.js";
+import { refreshMiddleware } from "../../middleware/refresh.middleware.js";
 
 const router = Router();
 
@@ -88,7 +89,7 @@ router.get(
  * @decs 4. Refresh Token을 사용하여 Access Token 재발급 (토큰 로테이션)
  * @access Public (Cookie-based Refresh)
  */
-router.post("/token/refresh", asyncHandler(refreshTokens));
+router.post("/token/refresh", refreshMiddleware, asyncHandler(refreshTokens));
 
 /**
  * @route POST /logout

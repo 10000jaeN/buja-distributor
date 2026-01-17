@@ -9,6 +9,7 @@ import authRouter from "./src/api/auth/auth.routes.js";
 import userRouter from "./src/api/user/user.routes.js";
 import orderRouter from "./src/api/orders/order.routes.js";
 import cartRouter from "./src/api/carts/cart.route.js";
+import reviewRouter from "./src/api/reviews/review.route.js";
 import { setupPassport } from "./src/config/passport.config.js";
 
 import "./src/api/user/user.model.js"; // 모델을 Mongoose에 등록하여 스키마 사용 가능하도록 함
@@ -31,6 +32,7 @@ app.use("/auth", authRouter);
 app.use("/user", userRouter);
 app.use("/orders", orderRouter);
 app.use("/carts", cartRouter);
+app.use("/reviews", reviewRouter);
 
 // ----------------------------------------------------
 // 안정적인 서버 시작 로직
