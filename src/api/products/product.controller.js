@@ -52,7 +52,24 @@ export const createProduct = async (req, res) => {
  * GET /products - 상품 목록 전체 조회
  */
 export const getProducts = async (req, res) => {
-  const products = await Product.find();
+  const { sort } = req.query;
+  const { limit } = req.query;
+
+  const sortMap = {
+    // 최신 순?
+    recent: { createdAt: -1 },
+
+    // 인기순
+    populate: { "stats.reviewCount": -1, "stats.averageRating": -1 },
+
+    // 가격순
+    price_asc: { price: 1 },
+    price_desc: { price: -1 },
+  };
+
+  const sortOption = sortMap[sort];
+
+  const products = await Product.find().sort(sortOption).limit(limit);
   return res.send(products);
 };
 
