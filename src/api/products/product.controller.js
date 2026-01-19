@@ -53,6 +53,7 @@ export const createProduct = async (req, res) => {
  */
 export const getProducts = async (req, res) => {
   const { sort } = req.query;
+  const { limit } = req.query;
 
   const sortMap = {
     // 최신 순?
@@ -68,7 +69,7 @@ export const getProducts = async (req, res) => {
 
   const sortOption = sortMap[sort];
 
-  const products = await Product.find().sort(sortOption);
+  const products = await Product.find().sort(sortOption).limit(limit);
   return res.send(products);
 };
 
