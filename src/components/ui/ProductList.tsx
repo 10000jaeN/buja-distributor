@@ -12,9 +12,13 @@ const ProductList = ({ products }: { products: Product[] }) => {
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
 
   const handleAddToCart = (e: React.MouseEvent) => {
-    if (!isLoggedIn) return alert("로그인이 필요합니다.");
     e.preventDefault(); // Link의 기본 동작(페이지 이동) 방지
     e.stopPropagation(); // 부모 요소로 이벤트 전파 차단
+
+    if (!isLoggedIn) {
+      alert("로그인이 필요합니다."); // toast UI로 대체 예정
+      return;
+    }
 
     console.log("장바구니 담기 로직 실행");
     // 여기에 스토어 액션이나 API 호출 추가
