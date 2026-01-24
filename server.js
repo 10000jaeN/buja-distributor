@@ -42,7 +42,7 @@ app.use(
 );
 
 const PORT = process.env.PORT || 4000;
-const DB_URI = process.env.MONGO_URI; // DATABASE 대신 MONGO_URI를 권장합니다.
+const DB_URI = process.env.MONGO_URI;
 
 app.use(passport.initialize());
 
