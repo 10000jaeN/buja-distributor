@@ -26,6 +26,10 @@ export const verifyToken = (token) => {
   try {
     return jwt.verify(token, JWT_SECRET);
   } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      // 만료된 경우만 따로 표시해주면 프론트엔드가 '재발급' 로직을 돌리기 수월
+      return { expired: true };
+    }
     return null; // 검증 실패 (만료, 변조 등)
   }
 };
