@@ -56,7 +56,7 @@ export const loginOrCreateUser = asyncHandler(async (req, res) => {
   setTimeout(() => ticketStore.delete(ticketId), 60000);
 
   //프론트엔드 리다이렉트 (토큰 대신 티켓만 노출)
-  const FRONTEND_URL = req.query.state || "http://localhost:3000";
+  const FRONTEND_URL = process.env.FRONTEND_URL;
 
   return res.redirect(`${FRONTEND_URL}/login/success?ticket=${ticketId}`);
 });
