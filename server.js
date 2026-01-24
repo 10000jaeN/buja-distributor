@@ -4,6 +4,8 @@ import mongoose from "mongoose";
 import express from "express";
 import cookieParser from "cookie-parser"; // 💡 토큰 테스트를 위한 쿠키 파서 추가
 import passport from "passport";
+import cors from "cors";
+
 import productRouter from "./src/api/products/product.routes.js";
 import authRouter from "./src/api/auth/auth.routes.js";
 import userRouter from "./src/api/user/user.routes.js";
@@ -18,14 +20,31 @@ import "./src/api/orders/order.model.js";
 
 const app = express();
 app.set("trust proxy", 1);
-const PORT = process.env.PORT || 4000;
-const DB_URI = process.env.MONGO_URI; // DATABASE 대신 MONGO_URI를 권장합니다.
 
 setupPassport();
-app.use(passport.initialize());
 
 app.use(express.json());
 app.use(cookieParser()); // 쿠키 파서 추가
+
+//CORS 상세 설정
+const allowedOrigins = [
+  "http://localhost:3000",
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true, // 쿠키(Refresh Token) 전송을 위해 필수
+    methods: ["GET", "POST", "PATCH", "DELETE", "PUT", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+const PORT = process.env.PORT || 4000;
+const DB_URI = process.env.MONGO_URI; // DATABASE 대신 MONGO_URI를 권장합니다.
+
+app.use(passport.initialize());
 
 app.use("/products", productRouter);
 app.use("/auth", authRouter);
@@ -33,6 +52,15 @@ app.use("/user", userRouter);
 app.use("/orders", orderRouter);
 app.use("/carts", cartRouter);
 app.use("/reviews", reviewRouter);
+
+// 전역 에러 핸들러 (asyncHandler를 쓸 때 필수!)
+app.use((err, req, res, next) => {
+  const statusCode = err.status || 500;
+  res.status(statusCode).json({
+    success: false,
+    message: err.message || "서버 내부 오류",
+  });
+});
 
 // ----------------------------------------------------
 // 안정적인 서버 시작 로직

@@ -31,8 +31,9 @@ export const authMiddleware = async (req, res, next) => {
     // 3. req.user에 유저 정보 저장 (DB 조회 없이 페이로드 데이터 활용)
     // 이제 컨트롤러에서 req.user.id로 접근 가능합니다.
     req.user = {
-      id: decoded.id,
+      _id: decoded.id,
       roles: decoded.roles,
+      email: decoded.email || "",
     };
 
     next();

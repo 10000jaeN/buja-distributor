@@ -1,26 +1,23 @@
 import User from "../user/user.model.js";
-import {
-  generateAccessToken,
-  generateRefreshToken,
-  verifyToken,
-} from "../../utils/jwt.js";
-import setRefreshTokenCookie from "../../utils/auth.utils.js";
 import asyncHandler from "../../utils/asyncHandler.js"; // 에러 처리를 위한 asyncHandler 추가
+import { generateAccessToken, generateRefreshToken } from "../../utils/jwt.js";
+import setRefreshTokenCookie from "../../utils/auth.utils.js";
 
-// ----------------------------------------------------
-// 1. OAuth 로그인/회원가입 처리 및 토큰 발급 (Passport 콜백용)
-// ----------------------------------------------------
-export const loginOrCreateUser = asyncHandler(async (req, res, next) => {
-  // Passport가 인증 후 전달한 통일된 사용자 정보 객체 사용
+// 1. 티켓 저장소 (서버 메모리 상에 위치)
+// 서버가 여러 대라면 Redis를 사용해야 합니다.
+const ticketStore = new Map();
+
+/**
+ * @desc 1 & 2. OAuth 인증 후 로그인 또는 회원가입 처리
+ * 최종적으로 토큰을 바로 주지 않고 '티켓'을 발급하여 리다이렉트함
+ */
+
+export const loginOrCreateUser = asyncHandler(async (req, res) => {
   const authInfo = req.user || req.authInfo;
-
-  // Passport Strategy의 mapProfileToUser 헬퍼 함수를 통해 통일된 데이터 구조를 받음
   const { provider, providerId, email, nickName } = authInfo;
 
   if (!provider || !providerId) {
-    return res.status(401).json({
-      message: "OAuth 인증 정보를 가져올 수 없습니다. 다시 시도해 주세요.",
-    });
+    return res.status(401).json({ message: "인증 정보를 가져올 수 없습니다." });
   }
 
   // 1. DB에서 사용자 검색 (provider와 providerId 쌍으로)
@@ -33,119 +30,123 @@ export const loginOrCreateUser = asyncHandler(async (req, res, next) => {
       providerId,
       email: email || null,
       nickName: nickName,
-      address: [], // 초기 주소는 비워 둡니다.
+      address: [],
     });
-    console.log(`[DB] New user created: ${user.nickName} (${user.provider})`);
-  } else {
-    console.log(
-      `[DB] Existing user logged in: ${user.nickName} (${user.provider})`
-    );
   }
 
-  // 2. 토큰 생성 및 회전
+  // JWT 토큰 생성
   const payload = { id: user._id, roles: user.roles };
   const accessToken = generateAccessToken(payload);
-  const newRefreshToken = generateRefreshToken(payload);
+  const refreshToken = generateRefreshToken(payload);
 
-  // DB에 새 토큰 저장 (Schema Setter가 암호화 처리)
-  user.refreshToken = newRefreshToken;
+  // DB에 Refresh Token 업데이트 (토큰 로테이션 준비)
+  user.refreshToken = refreshToken;
   await user.save();
 
-  // HttpOnly 쿠키 설정
-  setRefreshTokenCookie(res, newRefreshToken);
+  // 티켓 발권 로직
+  const ticketId = Math.random().toString(36).substring(2, 15);
 
-  return res.status(200).json({
-    message: "로그인 및 토큰 발급 성공",
-    accessToken: accessToken,
+  // 티켓에 토큰 정보를 매핑하여 저장 (유효시간 1분)
+  ticketStore.set(ticketId, {
+    accessToken,
+    refreshToken,
     userId: user._id,
-    nickName: user.nickName,
+    nickName: nickName,
+  });
+  setTimeout(() => ticketStore.delete(ticketId), 60000);
+
+  //프론트엔드 리다이렉트 (토큰 대신 티켓만 노출)
+  const FRONTEND_URL = req.query.state || "http://localhost:3000";
+
+  return res.redirect(`${FRONTEND_URL}/login/success?ticket=${ticketId}`);
+});
+
+/**
+ * @desc 3. 티켓을 토큰으로 교환 (프론트엔드 최초 진입 시 호출)
+ */
+export const exchangeTicket = asyncHandler(async (req, res) => {
+  const { ticket } = req.body;
+
+  if (!ticket || !ticketStore.has(ticket)) {
+    return res
+      .status(400)
+      .json({ message: "유효하지 않거나 만료된 티켓입니다." });
+  }
+
+  const tokenData = ticketStore.get(ticket);
+
+  // 사용 즉시 티켓 폐기 (일회용 보안)
+  ticketStore.delete(ticket);
+
+  // 보안 응답: Refresh Token은 쿠키에 굽기
+  setRefreshTokenCookie(res, tokenData.refreshToken);
+
+  // 일반 응답: Access Token은 JSON으로 전달
+  return res.status(200).json({
+    message: "인증 성공",
+    accessToken: tokenData.accessToken,
+    userId: tokenData.userId,
+    nickName: tokenData.nickName,
   });
 });
 
-// ----------------------------------------------------
-// 2. 토큰 갱신 (Token Rotation & Refresh)
-// ----------------------------------------------------
+/**
+ * @desc 4. 토큰 재발급 (Access Token 만료 시 로테이션)
+ */
 export const refreshTokens = asyncHandler(async (req, res) => {
-  const incomingRefreshToken = req.cookies.refreshToken;
+  // refreshMiddleware를 거쳐온 user 정보 사용
+  const user = req.user;
 
-  if (!incomingRefreshToken) {
-    return res
-      .status(401)
-      .json({ message: "Refresh token not found in cookies." });
-  }
-
-  // 1. JWT 검증
-  const decoded = verifyToken(incomingRefreshToken);
-  if (!decoded) {
-    return res.status(401).json({
-      message: "Invalid or expired refresh token (JWT verify failed).",
-    });
-  }
-
-  // 2. DB에서 사용자 검색 (DB에서 가져올 때 복호화 Getter가 작동)
-  const user = await User.findById(decoded.id);
-
-  if (!user) {
-    return res.status(403).json({ message: "User not found." });
-  }
-
-  // 3. 토큰 일치 확인 (🚨 토큰 재사용 공격 방어)
-  if (user.refreshToken !== incomingRefreshToken) {
-    console.warn(
-      `[Security Alert] Token mismatch! Revoking session for user ID: ${user._id}`
-    );
-    user.refreshToken = null; // 모든 토큰 무효화
-    await user.save();
-    return res.status(403).json({
-      message: "Token mismatch or revoked. Please log in again.",
-    });
-  }
-
-  // 4. 토큰 회전 (Token Rotation) 실행 및 저장
   const payload = { id: user._id, roles: user.roles };
   const newAccessToken = generateAccessToken(payload);
   const newRefreshToken = generateRefreshToken(payload);
 
-  user.refreshToken = newRefreshToken; // Schema Setter가 암호화하여 저장
+  // DB 토큰 갱신 (로테이션)
+  user.refreshToken = newRefreshToken;
   await user.save();
 
-  // 5. 클라이언트에 새 Refresh Token을 HttpOnly 쿠키로 설정
+  // 새 쿠키 설정
   setRefreshTokenCookie(res, newRefreshToken);
 
   return res.status(200).json({
-    message: "토큰이 성공적으로 갱신되었습니다. (Rotation OK)",
     accessToken: newAccessToken,
   });
 });
 
-// ----------------------------------------------------
-// 3. 로그아웃 함수
-// ----------------------------------------------------
+/**
+ * @desc 5. 로그아웃
+ */
 export const logoutUser = asyncHandler(async (req, res) => {
-  const incomingRefreshToken = req.cookies.refreshToken;
-  const cookieOptions = {
+  const user = req.user;
+
+  // DB에서 리프레시 토큰 제거
+  user.refreshToken = null;
+  await user.save();
+
+  // 브라우저 쿠키 삭제
+  res.clearCookie("refreshToken", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    path: "/",
-  };
+    sameSite: "none",
+  });
 
-  // 클라이언트 쿠키 삭제 (무조건 실행)
-  res.clearCookie("refreshToken", cookieOptions);
+  return res.status(200).json({ message: "로그아웃 성공" });
+});
 
-  if (!incomingRefreshToken) {
-    return res.status(204).send();
+/**
+ * @desc 현재 로그인된 유저 최신정보 반환
+ */
+export const getMe = asyncHandler(async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ message: "인증되지 않은 사용자입니다." });
   }
 
-  // DB에서 토큰 무효화
-  const decoded = verifyToken(incomingRefreshToken);
-  if (decoded?.id) {
-    // 토큰이 복호화될 때 getter가 작동하므로 select() 사용 불필요
-    const user = await User.findById(decoded.id);
-    if (user) {
-      user.refreshToken = null;
-      await user.save(); // DB의 토큰 무효화
-    }
-  }
-  return res.status(204).send();
+  res.status(200).json({
+    user: {
+      userId: req.user._id,
+      nickName: req.user.nickName,
+      roles: req.user.roles,
+      email: req.user.email || "",
+    },
+  });
 });
