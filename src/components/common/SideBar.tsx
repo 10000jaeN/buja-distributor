@@ -1,6 +1,7 @@
 "use client";
 
 import { CancelIcon, Logo } from "@/assets";
+import useAuthStore from "@/store/useAuthStore";
 import useMenuStore from "@/store/useMenuStore";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -16,6 +17,7 @@ const category = [
 const SideBar = () => {
   const { isOpen, closeMenu } = useMenuStore();
   const [openCategory, setOpenCategory] = useState<boolean>(false);
+  const { isLoggedIn, logout } = useAuthStore();
 
   useEffect(() => {
     if (isOpen) {
@@ -24,6 +26,11 @@ const SideBar = () => {
       document.body.style.overflow = "unset";
     }
   }, [isOpen]);
+
+  const handleClickLogout = () => {
+    logout();
+    closeMenu();
+  };
 
   const onClickOpenCategory = () => {
     setOpenCategory(!openCategory);
@@ -43,24 +50,33 @@ const SideBar = () => {
           <Link href={"/"}>
             <Logo className="flex" />
           </Link>
-          <Link href={"/login"} onClick={closeMenu}>
-            로그인
-          </Link>
+
           <CancelIcon className="h-5 w-5 cursor-pointer" onClick={closeMenu} />
         </div>
+        {isLoggedIn && (
+          <div className="mt-10 flex justify-between">
+            <p>
+              내 정보? 부분
+              <br /> 디자인 레퍼런스 찾는 중
+            </p>
+            <button onClick={handleClickLogout}>로그아웃(임시)</button>
+          </div>
+        )}
         <ul className="mt-10 flex cursor-pointer flex-col gap-1 font-bold">
           <li className="">
             <div className="flex justify-between hover:bg-gray-300">
               <p>카테고리</p>
               <p onClick={onClickOpenCategory} className="cursor-pointer">
-                +
+                {openCategory ? "-" : "+"}
               </p>
             </div>
             <ul className="ml-3 font-medium">
               {openCategory &&
                 category.map((cat) => (
                   <li>
-                    <Link href={`/category/${cat.name}`}>{cat.name}</Link>
+                    <Link href={`/products?category=${cat.name}`}>
+                      {cat.name}
+                    </Link>
                   </li>
                 ))}
             </ul>
