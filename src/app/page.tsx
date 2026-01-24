@@ -6,7 +6,9 @@ import { Product } from "@/types/product";
 
 export default async function Home() {
   const getProducts = async (): Promise<Product[]> => {
-    const { data } = await axiosInstance.get<Product[]>("/products");
+    const { data } = await axiosInstance.get<Product[]>(
+      "/products?sort=populate&limit=4",
+    );
     return data;
   };
 
