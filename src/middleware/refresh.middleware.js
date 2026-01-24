@@ -1,4 +1,6 @@
-// middleware/refreshMiddleware.js
+import User from "../api/user/user.model.js";
+import { verifyToken } from "../utils/jwt.js";
+
 export const refreshMiddleware = async (req, res, next) => {
   const incomingRefreshToken = req.cookies.refreshToken;
 
@@ -13,7 +15,7 @@ export const refreshMiddleware = async (req, res, next) => {
   try {
     const user = await User.findById(decoded.id);
 
-    // 🚨 여기서만 DB의 refreshToken과 대조합니다 (보안의 핵심)
+    // 여기서만 DB의 refreshToken과 대조합니다 (보안의 핵심)
     if (!user || user.refreshToken !== incomingRefreshToken) {
       user.refreshToken = null; // 탈취 의심 시 무효화
       await user.save();
