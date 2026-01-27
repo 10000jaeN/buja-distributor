@@ -9,6 +9,7 @@ interface ExchangeResponse {
   accessToken: string;
   userId: string;
   nickName: string;
+  roles: string;
 }
 
 const LoginSuccessHandler = () => {
@@ -27,7 +28,7 @@ const LoginSuccessHandler = () => {
           "/auth/exchange",
           { ticket },
         );
-        const { accessToken, userId, nickName } = res.data;
+        const { accessToken, userId, nickName, roles } = res.data;
 
         if (res.data.accessToken) {
           localStorage.setItem("accessToken", accessToken);
@@ -35,7 +36,7 @@ const LoginSuccessHandler = () => {
             `Bearer ${accessToken}`;
         }
 
-        login({ userId, nickName });
+        login({ userId, nickName, roles });
 
         router.replace("/");
       } catch (err) {

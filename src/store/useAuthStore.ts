@@ -5,7 +5,7 @@ interface User {
   userId: string;
   nickName: string;
   email?: string;
-  roles?: string[];
+  roles?: string;
 }
 
 interface AuthState {
