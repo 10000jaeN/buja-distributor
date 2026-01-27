@@ -2,6 +2,11 @@ export interface Product {
   _id: string;
   name: string;
   slug: string;
+  stats: {
+    orderCount: number;
+    ratingAverage: number;
+    reviewCount: number;
+  };
   contentBlock: [
     {
       type: "text" | "image";
