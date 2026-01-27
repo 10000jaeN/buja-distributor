@@ -21,7 +21,9 @@ axiosInstance.interceptors.request.use(
     }
     return config;
   },
-  (error: AxiosError) => {},
+  (error: AxiosError) => {
+    return Promise.reject(error);
+  },
 );
 
 axiosInstance.interceptors.response.use(
@@ -34,6 +36,7 @@ axiosInstance.interceptors.response.use(
   },
   (error: AxiosError) => {
     if (error.status === 401) {
+      console.error("인증이 만료되었습니다. 다시 로그인해주세요.");
     }
     return Promise.reject(error);
   },
