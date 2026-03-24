@@ -8,6 +8,7 @@ import ArrowIcon from "./Icon-arrow.svg";
 import CartIcon from "./Icon-cart.svg";
 import CartInIcon from "./Icon-cartIn.svg";
 import CancelIcon from "./Icon-x.svg";
+import StarIcon from "./Icon-star.svg";
 
 export const GoogleIcon = ({ className }: { className: string }) => {
   return (
@@ -39,4 +40,4 @@ export const GoogleIcon = ({ className }: { className: string }) => {
   );
 };
 
-export { ArrowIcon, CartIcon, CartInIcon, CancelIcon };
+export { ArrowIcon, CartIcon, CartInIcon, CancelIcon, StarIcon };
