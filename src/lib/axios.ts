@@ -5,7 +5,7 @@ import axios, {
 } from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000",
+  baseURL: process.env.NEXT_PUBLIC_API_TEST_URL || "http://localhost:4000",
   timeout: process.env.NODE_ENV === "development" ? 60000 : 1000,
   withCredentials: true,
   headers: { "Content-Type": "application/json" },

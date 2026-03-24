@@ -11,6 +11,16 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "i.ibb.co",
+        port: "",
+        pathname: "/**", // 모든 경로의 이미지를 허용
+      },
+    ],
+  },
 
   reactCompiler: true,
 };
