@@ -8,7 +8,13 @@ import noImage from "@/public/images/no-image.png";
 import { CartInIcon } from "@/assets";
 import useAuthStore from "@/store/useAuthStore";
 
-const ProductList = ({ products }: { products: Product[] }) => {
+const ProductList = ({
+  products,
+  title,
+}: {
+  products: Product[];
+  title: string;
+}) => {
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
 
   const handleAddToCart = (e: React.MouseEvent) => {
@@ -26,36 +32,42 @@ const ProductList = ({ products }: { products: Product[] }) => {
 
   return (
     <>
-      {products &&
-        products.map((product) => (
-          <li
-            key={product._id}
-            className="mx-auto mb-4 flex w-[45vw] flex-col gap-1 transition-normal duration-100 md:w-[30vw]"
-          >
-            <Link href={`/products/${product.slug}`} className="relative">
-              <Image
-                src={product.thumbnail[0] || noImage}
-                alt="thumbnail"
-                width={0}
-                height={0}
-                sizes="45vw"
-                className="mb-2 h-auto w-full rounded-lg"
-              />
-              <button
-                className="absolute right-3 bottom-5 z-10"
-                onClick={handleAddToCart}
-              >
-                <CartInIcon />
-              </button>
-            </Link>
-            <div className="flex flex-col items-start gap-1 text-[14px]">
-              <div>{product.name}</div>
-              <div className="text-[12px] font-bold">
-                {product.price.toLocaleString()}원
+      <p className="my-8 flex justify-center text-2xl font-bold">{title}</p>
+      <ul
+        aria-label="지금 가장 인기있는 상품 목록"
+        className="no-scrollbar mx-auto flex snap-x scroll-pl-4 gap-4 overflow-auto pr-[70vw] pl-4 whitespace-nowrap"
+      >
+        {products &&
+          products.map((product) => (
+            <li
+              key={product.name}
+              className="mx-auto mb-4 flex w-[40vw] shrink-0 snap-start flex-col gap-1 transition-normal md:w-[30vw] lg:w-55"
+            >
+              <Link href={`/products/${product.slug}`} className="relative">
+                <Image
+                  src={product.thumbnail[0] || noImage}
+                  alt="thumbnail"
+                  width={240}
+                  height={240}
+                  sizes="45vw"
+                  className="mb-2 h-auto w-full rounded-lg"
+                />
+                <button
+                  className="absolute right-3 bottom-5 z-10 flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-800 hover:bg-gray-200"
+                  onClick={handleAddToCart}
+                >
+                  <CartInIcon className="h-4 w-4" />
+                </button>
+              </Link>
+              <div className="flex flex-col items-start gap-1 text-[14px]">
+                <div>{product.name}</div>
+                <div className="text-[12px] font-bold">
+                  {product.price.toLocaleString()}원
+                </div>
               </div>
-            </div>
-          </li>
-        ))}
+            </li>
+          ))}
+      </ul>
     </>
   );
 };
