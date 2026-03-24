@@ -74,7 +74,7 @@ const SideBar = () => {
             <ul className="ml-3 font-medium">
               {openCategory &&
                 category.map((cat) => (
-                  <li>
+                  <li key={cat.name}>
                     <Link href={`/products?category=${cat.name}`}>
                       {cat.name}
                     </Link>
