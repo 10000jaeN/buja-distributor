@@ -17,7 +17,9 @@ const category = [
 const SideBar = () => {
   const { isOpen, closeMenu } = useMenuStore();
   const [openCategory, setOpenCategory] = useState<boolean>(false);
-  const { isLoggedIn, logout } = useAuthStore();
+  const { isLoggedIn, logout, user } = useAuthStore();
+
+  console.log(user);
 
   useEffect(() => {
     if (isOpen) {
@@ -56,8 +58,7 @@ const SideBar = () => {
         {isLoggedIn && (
           <div className="mt-10 flex justify-between">
             <p>
-              내 정보? 부분
-              <br /> 디자인 레퍼런스 찾는 중
+              {user?.nickName} <br /> 여기에 어떤 정보를 넣을까요
             </p>
             <button onClick={handleClickLogout}>로그아웃(임시)</button>
           </div>
