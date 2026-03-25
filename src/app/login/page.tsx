@@ -10,7 +10,7 @@ const Login = () => {
   const router = useRouter();
   const handleClickSocialLogin = (social: "google" | "kakao" | "naver") => {
     window.location.replace(
-      `${process.env.NEXT_PUBLIC_API_URL}/auth/${social}`,
+      `${process.env.NEXT_PUBLIC_API_TEST_URL}/auth/${social}`,
     );
   };
 
