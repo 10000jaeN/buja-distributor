@@ -1,11 +1,12 @@
 "use client";
 
+import { useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
 import { Product } from "@/types/product";
 import noImage from "@/public/images/no-image.png";
-import { CartInIcon } from "@/assets";
+import { CartInIcon, ArrowIcon } from "@/assets";
 import useAuthStore from "@/store/useAuthStore";
 
 const ProductList = ({
@@ -16,31 +17,75 @@ const ProductList = ({
   title: string;
 }) => {
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+  const scrollRef = useRef<HTMLUListElement>(null);
+  const tripled = [...products, ...products, ...products];
 
   const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault(); // Link의 기본 동작(페이지 이동) 방지
-    e.stopPropagation(); // 부모 요소로 이벤트 전파 차단
+    e.preventDefault();
+    e.stopPropagation();
 
     if (!isLoggedIn) {
-      alert("로그인이 필요합니다."); // toast UI로 대체 예정
+      alert("로그인이 필요합니다.");
       return;
     }
 
     console.log("장바구니 담기 로직 실행");
-    // 여기에 스토어 액션이나 API 호출 추가
+  };
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollLeft = el.scrollWidth / 3;
+  }, []);
+
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const third = el.scrollWidth / 3;
+    if (el.scrollLeft >= third * 2) {
+      el.scrollLeft -= third;
+    } else if (el.scrollLeft < third) {
+      el.scrollLeft += third;
+    }
+  };
+
+  const getItemWidth = () => {
+    const el = scrollRef.current;
+    if (!el) return 0;
+    const firstItem = el.firstElementChild as HTMLElement;
+    if (!firstItem) return 0;
+    return firstItem.offsetWidth + 16; // gap-4 = 16px
+  };
+
+  const scrollPrev = () => {
+    scrollRef.current?.scrollBy({ left: -getItemWidth(), behavior: "smooth" });
+  };
+
+  const scrollNext = () => {
+    scrollRef.current?.scrollBy({ left: getItemWidth(), behavior: "smooth" });
   };
 
   return (
     <>
-      <p className="my-8 flex justify-center text-2xl font-bold">{title}</p>
-      <ul
-        aria-label="지금 가장 인기있는 상품 목록"
-        className="no-scrollbar mx-auto flex snap-x scroll-pl-4 gap-4 overflow-auto pr-[70vw] pl-4 whitespace-nowrap"
-      >
-        {products &&
-          products.map((product) => (
+      <div className="relative lg:px-12">
+        <p className="my-8 flex justify-center text-2xl font-bold">{title}</p>
+        <button
+          type="button"
+          onClick={scrollPrev}
+          className="absolute top-1/2 left-0 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-gray-800 shadow-md hover:bg-gray-100 lg:flex"
+        >
+          <ArrowIcon className="rotate-180 fill-white" />
+        </button>
+
+        <ul
+          ref={scrollRef}
+          onScroll={handleScroll}
+          aria-label={title}
+          className="no-scrollbar mx-auto flex snap-x scroll-pl-2 gap-4 overflow-auto pr-[70vw] pl-4 whitespace-nowrap lg:scroll-pl-0 lg:px-12"
+        >
+          {tripled.map((product, idx) => (
             <li
-              key={product.name}
+              key={`${product.name}-${idx}`}
               className="mx-auto mb-4 flex w-[40vw] shrink-0 snap-start flex-col gap-1 transition-normal md:w-[30vw] lg:w-55"
             >
               <Link href={`/products/${product.slug}`} className="relative">
@@ -67,7 +112,16 @@ const ProductList = ({
               </div>
             </li>
           ))}
-      </ul>
+        </ul>
+
+        <button
+          type="button"
+          onClick={scrollNext}
+          className="absolute top-1/2 right-0 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-gray-800 text-white shadow-md hover:bg-gray-100 lg:flex"
+        >
+          <ArrowIcon className="fill-white" />
+        </button>
+      </div>
     </>
   );
 };
