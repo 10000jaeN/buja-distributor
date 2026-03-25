@@ -11,7 +11,7 @@ export const productService = {
     limit,
     category,
   }: {
-    sort?: string;
+    sort?: "recent" | "populate" | "price_asc" | "price_desc";
     limit?: number;
     category?: string;
   }): Promise<Product[]> => {

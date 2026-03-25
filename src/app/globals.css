@@ -9,6 +9,9 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-pretendard), ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-blue: #1285ff;
+  --color-brand-blue-dark: #0831ffeb;
 }
 
 /* @media (prefers-color-scheme: dark) {
@@ -30,4 +33,12 @@ body {
     background-color: transparent;
     border: none;
   }
+}
+
+@utility no-scrollbar {
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
