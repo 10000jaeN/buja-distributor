@@ -1,3 +1,8 @@
+export interface Category {
+  parent: string;
+  children: string[];
+}
+
 export interface Product {
   _id: string;
   name: string;

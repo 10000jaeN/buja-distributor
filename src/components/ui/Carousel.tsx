@@ -32,7 +32,7 @@ const Carousel = () => {
   }, [currentIdx]);
 
   return (
-    <div className="relative mb-4">
+    <div className="relative mx-auto mb-4 max-w-320">
       <div className="overflow-hidden">
         <div className="flex">
           {items.map((item) => (
@@ -57,8 +57,9 @@ const Carousel = () => {
         </button>
 
         {items &&
-          items.map((_, idx) => (
+          items.map((item, idx) => (
             <button
+              key={item.title}
               type="button"
               className={`${currentIdx === idx ? "w-7" : "w-3"} h-3 rounded-full bg-white duration-300`}
               onClick={() => onClickPagination(idx)}
