@@ -4,6 +4,9 @@ import axiosInstance from "@/lib/axios";
 import useAuthStore from "@/store/useAuthStore";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -55,30 +58,26 @@ export default function AdminLoginPage() {
         <p className="mb-6 text-sm text-gray-500">부자유통 어드민 페이지</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              이메일
-            </label>
-            <input
+          <div className="space-y-1">
+            <Label htmlFor="email">이메일</Label>
+            <Input
+              id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="admin@buja.com"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
               required
               autoComplete="email"
             />
           </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              비밀번호
-            </label>
-            <input
+          <div className="space-y-1">
+            <Label htmlFor="password">비밀번호</Label>
+            <Input
+              id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
               required
               autoComplete="current-password"
             />
@@ -86,13 +85,9 @@ export default function AdminLoginPage() {
 
           {error && <p className="text-sm text-red-500">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-md bg-brand-blue py-2 text-sm font-medium text-white transition-colors hover:bg-brand-blue-dark disabled:opacity-50"
-          >
+          <Button type="submit" disabled={loading} className="w-full">
             {loading ? "로그인 중..." : "로그인"}
-          </button>
+          </Button>
         </form>
       </div>
     </div>
