@@ -1,5 +1,5 @@
 import axiosInstance from "@/lib/axios";
-import { Product } from "@/types/product";
+import { Category, Product } from "@/types/product";
 
 export const productService = {
   /**
@@ -51,6 +51,16 @@ export const productService = {
   },
 
   /**
+   * 카테고리 목록 가져오기
+   */
+  getCategories: async (): Promise<Category[]> => {
+    const res = await axiosInstance.get<{ data: Category[] }>(
+      "/products/categories",
+    );
+    return res.data.data;
+  },
+
+  /**
    * 특정 슬러그를 가진 상품 삭제하기
    * @access Admin Only
    * @param slug
@@ -59,5 +69,44 @@ export const productService = {
     const decodedSlug = decodeURIComponent(slug);
 
     const res = await axiosInstance.delete(`/products/${decodedSlug}`);
+  },
+
+  /**
+   * 상품 생성
+   * @access Admin Only
+   */
+  createProduct: async (data: {
+    name: string;
+    price: number;
+    category: { parent: string; child: string };
+    thumbnail: string[];
+    isAvailable?: boolean;
+    contentBlocks: { type: "text" | "image"; value: string }[];
+  }): Promise<Product> => {
+    const res = await axiosInstance.post<{ data: Product }>("/products", data);
+    return res.data.data;
+  },
+
+  /**
+   * 상품 수정
+   * @access Admin Only
+   * @param slug
+   */
+  updateProduct: async (
+    slug: string,
+    data: Partial<{
+      name: string;
+      price: number;
+      category: { parent: string; child: string };
+      thumbnail: string[];
+      isAvailable: boolean;
+      contentBlocks: { type: "text" | "image"; value: string }[];
+    }>,
+  ): Promise<Product> => {
+    const res = await axiosInstance.patch<{ data: Product }>(
+      `/products/${encodeURIComponent(slug)}`,
+      data,
+    );
+    return res.data.data;
   },
 };

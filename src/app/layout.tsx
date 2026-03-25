@@ -1,15 +1,11 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import Nav from "@/components/common/Nav";
-import Footer from "@/components/common/Footer";
-import SideBar from "@/components/common/SideBar";
-import AuthProvider from "@/components/provider/AuthProvider";
 
 const pretendard = localFont({
   src: "../public/fonts/PretendardVariable.woff2",
   display: "swap",
-  weight: "45 920", // 가변 폰트의 범위를 지정합니다.
+  weight: "45 920",
   variable: "--font-pretendard",
 });
 
@@ -25,16 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" className={pretendard.variable}>
-      <body className="flex min-h-screen flex-col font-sans antialiased">
-        <AuthProvider>
-          <Nav />
-          <SideBar />
-
-          <main className="flex-1">{children}</main>
-
-          <Footer />
-        </AuthProvider>
-      </body>
+      <body className="font-sans antialiased">{children}</body>
     </html>
   );
 }

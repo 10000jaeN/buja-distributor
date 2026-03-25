@@ -9,7 +9,7 @@ export default function AuthProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const { login, logout, setUser } = useAuthStore();
+  const { login, logout, setUser, setInitialized } = useAuthStore();
 
   useEffect(() => {
     const initAuth = async () => {
@@ -17,6 +17,7 @@ export default function AuthProvider({
 
       if (!token) {
         logout();
+        setInitialized(true);
         return;
       }
 
@@ -32,6 +33,8 @@ export default function AuthProvider({
         console.error("세션 만료:", err);
         localStorage.removeItem("accessToken");
         logout();
+      } finally {
+        setInitialized(true);
       }
     };
 
