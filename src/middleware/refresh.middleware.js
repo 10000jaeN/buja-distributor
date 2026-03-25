@@ -1,5 +1,5 @@
 import User from "../api/user/user.model.js";
-import { verifyToken } from "../utils/jwt.js";
+import { verifyRefreshToken } from "../utils/jwt.js";
 
 export const refreshMiddleware = async (req, res, next) => {
   const incomingRefreshToken = req.cookies.refreshToken;
@@ -8,7 +8,7 @@ export const refreshMiddleware = async (req, res, next) => {
     return res.status(401).json({ message: "리프레시 토큰이 없습니다." });
   }
 
-  const decoded = verifyToken(incomingRefreshToken);
+  const decoded = verifyRefreshToken(incomingRefreshToken);
   if (!decoded)
     return res.status(401).json({ message: "로그인이 필요합니다." });
 

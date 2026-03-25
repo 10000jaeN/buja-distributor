@@ -15,7 +15,7 @@ const cookieOptions = {
  */
 export const getUserProfile = async (req, res) => {
   // 1. 인증된 사용자 ID
-  const userId = req.user.id;
+  const userId = req.user._id;
 
   // 2. DB에서 사용자 문서 조회 (CustomError를 던지므로 try-catch가 필요 없습니다.)
   const user = await User.findById(userId).select("-refreshToken -__v");
@@ -38,7 +38,7 @@ export const getUserProfile = async (req, res) => {
  */
 export const patchUser = async (req, res) => {
   // 1. 인증된 사용자 ID
-  const userIdToUpdate = req.user.id;
+  const userIdToUpdate = req.user._id;
 
   // 2. 클라이언트로부터 받은 수정 데이터
   const updateData = req.body;

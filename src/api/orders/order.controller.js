@@ -2,6 +2,7 @@ import Order from "./order.model.js";
 import Product from "../products/product.model.js";
 import User from "../user/user.model.js";
 import mongoose from "mongoose";
+import crypto from "crypto";
 import CustomError from "../../utils/customError.js";
 
 // =================================================================
@@ -16,8 +17,8 @@ const generateOrderNumber = () => {
     (now.getMonth() + 1).toString().padStart(2, "0") +
     now.getDate().toString().padStart(2, "0");
 
-  // 6자리 랜덤 문자열 (대소문자 + 숫자)
-  const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase();
+  // 6자리 랜덤 문자열 (대문자 + 숫자, crypto 기반)
+  const randomPart = crypto.randomBytes(4).toString("hex").toUpperCase().substring(0, 6);
 
   return `${datePart}-${randomPart}`;
 };

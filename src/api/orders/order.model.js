@@ -61,6 +61,14 @@ const OrderSchema = new mongoose.Schema(
       type: AddressSchema,
       required: true,
     },
+    // 타임스탬프
+    paidAt: { type: Date },
+    cancelledAt: { type: Date },
+    shippedAt: { type: Date },
+    deliveredAt: { type: Date },
+    // 배송 정보
+    trackingNumber: { type: String },
+    courierName: { type: String },
   },
   {
     timestamps: true,
