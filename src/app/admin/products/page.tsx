@@ -1,6 +1,8 @@
 "use client";
 
 import { productService } from "@/api/productService";
+import { categoryService } from "@/api/categoryService";
+import { Category, Product } from "@/types/product";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,12 +52,14 @@ function ProductForm({
   onBlockChange,
   onAddBlock,
   onRemoveBlock,
+  categories,
 }: {
   form: FormData;
   onChange: (field: keyof FormData, value: string | boolean) => void;
   onBlockChange: (index: number, field: keyof ContentBlock, value: string) => void;
   onAddBlock: () => void;
   onRemoveBlock: (index: number) => void;
+  categories: Category[];
 }) {
   return (
     <div className="space-y-4">
@@ -186,6 +190,7 @@ function ProductForm({
 // ─── 메인 페이지 ──────────────────────────────────────────────────────────────
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -210,7 +215,10 @@ export default function AdminProductsPage() {
     }
   };
 
-  useEffect(() => { fetchProducts(); }, []);
+  useEffect(() => {
+    fetchProducts();
+    categoryService.getCategories().then(setCategories).catch(() => {});
+  }, []);
 
   const handleFormChange = (field: keyof FormData, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -421,6 +429,7 @@ export default function AdminProductsPage() {
                 onBlockChange={handleBlockChange}
                 onAddBlock={handleAddBlock}
                 onRemoveBlock={handleRemoveBlock}
+                categories={categories}
               />
               {formError && <p className="mt-3 text-sm text-red-500">{formError}</p>}
             </div>
@@ -447,6 +456,7 @@ export default function AdminProductsPage() {
                 onBlockChange={handleBlockChange}
                 onAddBlock={handleAddBlock}
                 onRemoveBlock={handleRemoveBlock}
+                categories={categories}
               />
               {formError && <p className="mt-3 text-sm text-red-500">{formError}</p>}
             </div>

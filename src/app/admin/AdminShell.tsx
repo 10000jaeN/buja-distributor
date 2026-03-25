@@ -12,7 +12,10 @@ const isAdminRole = (roles?: unknown) => {
   return roles === "admin";
 };
 
-const NAV_ITEMS = [{ href: "/admin/products", label: "상품 관리" }];
+const NAV_ITEMS = [
+  { href: "/admin/products", label: "상품 관리" },
+  { href: "/admin/categories", label: "카테고리 관리" },
+];
 
 export default function AdminShell({
   children,
