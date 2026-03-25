@@ -6,12 +6,24 @@ import {
   logoutUser,
   exchangeTicket,
   getMe,
+  adminLogin,
 } from "./auth.controller.js";
 import asyncHandler from "../../utils/asyncHandler.js";
 import { refreshMiddleware } from "../../middleware/refresh.middleware.js";
 import { authMiddleware } from "../../middleware/auth.middleware.js";
 
 const router = Router();
+
+// ===============================================
+// 0. Admin Local Login
+// ===============================================
+
+/**
+ * @route POST /auth/admin/login
+ * @desc 어드민 로컬 로그인 (이메일/비밀번호)
+ * @access Public
+ */
+router.post("/admin/login", asyncHandler(adminLogin));
 
 // ===============================================
 // A. OAuth (Social Login) Routes

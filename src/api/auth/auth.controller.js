@@ -3,6 +3,67 @@ import asyncHandler from "../../utils/asyncHandler.js"; // 에러 처리를 위�
 import { generateAccessToken, generateRefreshToken } from "../../utils/jwt.js";
 import setRefreshTokenCookie from "../../utils/auth.utils.js";
 
+/**
+ * @desc 어드민 로컬 로그인
+ * 환경변수 ADMIN_EMAIL / ADMIN_PASSWORD 와 일치하면 어드민 계정을 찾거나 생성 후 토큰 발급
+ */
+export const adminLogin = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (!adminEmail || !adminPassword) {
+    return res.status(500).json({ message: "서버에 어드민 계정이 설정되지 않았습니다." });
+  }
+
+  if (email !== adminEmail || password !== adminPassword) {
+    return res.status(401).json({ message: "이메일 또는 비밀번호가 올바르지 않습니다." });
+  }
+
+  let user = await User.findOne({ provider: "local", providerId: email });
+
+  if (!user) {
+    try {
+      user = await User.create({
+        provider: "local",
+        providerId: email,
+        email,
+        nickName: email.split("@")[0],
+        roles: ["admin"],
+      });
+    } catch (err) {
+      if (err.code === 11000) {
+        return res.status(409).json({ message: "닉네임 충돌이 발생했습니다. ADMIN_EMAIL을 변경해주세요." });
+      }
+      throw err;
+    }
+  }
+
+  // 기존 계정이 admin 역할이 없으면 추가
+  if (!user.roles.includes("admin")) {
+    user.roles = [...user.roles, "admin"];
+  }
+
+  const payload = { id: user._id, roles: user.roles };
+  const accessToken = generateAccessToken(payload);
+  const refreshToken = generateRefreshToken(payload);
+
+  user.refreshToken = refreshToken;
+  await user.save();
+
+  setRefreshTokenCookie(res, refreshToken);
+
+  return res.status(200).json({
+    message: "로그인 성공",
+    accessToken,
+    userId: user._id,
+    nickName: user.nickName,
+    email: user.email || "",
+    roles: user.roles,
+  });
+});
+
 // 1. 티켓 저장소 (서버 메모리 상에 위치)
 // 서버가 여러 대라면 Redis를 사용해야 합니다.
 const ticketStore = new Map();
@@ -52,6 +113,7 @@ export const loginOrCreateUser = asyncHandler(async (req, res) => {
     refreshToken,
     userId: user._id,
     nickName: nickName,
+    roles: user.roles,
   });
   setTimeout(() => ticketStore.delete(ticketId), 60000);
 
@@ -87,6 +149,7 @@ export const exchangeTicket = asyncHandler(async (req, res) => {
     accessToken: tokenData.accessToken,
     userId: tokenData.userId,
     nickName: tokenData.nickName,
+    roles: tokenData.roles,
   });
 });
 

@@ -6,6 +6,7 @@ import {
   createProduct,
   getProducts,
   getProductBySlug,
+  getCategories,
   patchProduct,
   deleteProduct,
 } from "./product.controller.js";
@@ -37,6 +38,7 @@ const checkProductSlug = (req, res, next) => {
  * @access Public (All)
  */
 router.get("/", asyncHandler(getProducts));
+router.get("/categories", asyncHandler(getCategories));
 
 /**
  * @route POST /products
