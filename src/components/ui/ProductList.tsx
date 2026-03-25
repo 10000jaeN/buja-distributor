@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -19,13 +19,15 @@ const ProductList = ({
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const scrollRef = useRef<HTMLUListElement>(null);
   const tripled = [...products, ...products, ...products];
+  const [loginRequired, setLoginRequired] = useState(false);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
     if (!isLoggedIn) {
-      alert("로그인이 필요합니다.");
+      setLoginRequired(true);
+      setTimeout(() => setLoginRequired(false), 2500);
       return;
     }
 
@@ -67,6 +69,11 @@ const ProductList = ({
 
   return (
     <>
+      {loginRequired && (
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-gray-800 px-4 py-2 text-sm text-white shadow-lg">
+          로그인이 필요합니다.
+        </div>
+      )}
       <div className="relative lg:px-12">
         <p className="my-8 flex justify-center text-2xl font-bold">{title}</p>
         <button
