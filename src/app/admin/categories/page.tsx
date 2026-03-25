@@ -1,6 +1,17 @@
 "use client";
 
 import { categoryService } from "@/api/categoryService";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Category } from "@/types/product";
 import { useEffect, useState } from "react";
 
@@ -24,6 +35,13 @@ export default function AdminCategoriesPage() {
   const [editChild, setEditChild] = useState<{ parent: string; child: string } | null>(null);
   const [editChildValue, setEditChildValue] = useState("");
 
+  // 삭제 확인
+  const [deleteTarget, setDeleteTarget] = useState<
+    | { type: "parent"; parent: string }
+    | { type: "child"; parent: string; child: string }
+    | null
+  >(null);
+
   const fetchCategories = async () => {
     try {
       const data = await categoryService.getCategories();
@@ -44,9 +62,14 @@ export default function AdminCategoriesPage() {
     fetchCategories();
   };
 
-  const handleDeleteParent = async (parent: string) => {
-    if (!confirm(`'${parent}' 카테고리를 삭제할까요?`)) return;
-    await categoryService.deleteCategory(parent);
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    if (deleteTarget.type === "parent") {
+      await categoryService.deleteCategory(deleteTarget.parent);
+    } else {
+      await categoryService.removeChild(deleteTarget.parent, deleteTarget.child);
+    }
+    setDeleteTarget(null);
     fetchCategories();
   };
 
@@ -69,12 +92,6 @@ export default function AdminCategoriesPage() {
     if (!editChild || !editChildValue.trim() || editChildValue === editChild.child) { setEditChild(null); return; }
     await categoryService.updateChild(editChild.parent, editChild.child, editChildValue.trim());
     setEditChild(null);
-    fetchCategories();
-  };
-
-  const handleDeleteChild = async (parent: string, child: string) => {
-    if (!confirm(`'${child}' 소분류를 삭제할까요?`)) return;
-    await categoryService.removeChild(parent, child);
     fetchCategories();
   };
 
@@ -134,7 +151,7 @@ export default function AdminCategoriesPage() {
                       수정
                     </button>
                     <button
-                      onClick={() => handleDeleteParent(cat.parent)}
+                      onClick={() => setDeleteTarget({ type: "parent", parent: cat.parent })}
                       className="text-xs text-red-400 hover:text-red-600"
                     >
                       삭제
@@ -176,7 +193,7 @@ export default function AdminCategoriesPage() {
                             ✎
                           </button>
                           <button
-                            onClick={() => handleDeleteChild(cat.parent, child)}
+                            onClick={() => setDeleteTarget({ type: "child", parent: cat.parent, child })}
                             className="text-xs text-red-300 hover:text-red-500"
                           >
                             ✕
@@ -218,52 +235,71 @@ export default function AdminCategoriesPage() {
         </div>
       )}
 
-      {/* 카테고리 추가 모달 */}
-      {showCreateModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={() => setShowCreateModal(false)}
-        >
-          <div
-            className="w-full max-w-sm rounded-lg bg-white shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <form onSubmit={handleCreateParent}>
-              <div className="border-b border-gray-200 px-6 py-4">
-                <h2 className="text-base font-bold text-gray-800">카테고리 추가</h2>
-              </div>
-              <div className="px-6 py-4">
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  대분류명 <span className="text-red-500">*</span>
-                </label>
-                <input
-                  autoFocus
-                  type="text"
-                  value={newParent}
-                  onChange={(e) => setNewParent(e.target.value)}
-                  placeholder="예: 장류"
-                  className="focus:border-brand-blue focus:ring-brand-blue w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-1"
-                />
-              </div>
-              <div className="flex justify-end gap-2 border-t border-gray-200 px-6 py-4">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  취소
-                </button>
-                <button
-                  type="submit"
-                  className="bg-brand-blue hover:bg-brand-blue-dark rounded-md px-4 py-2 text-sm font-medium text-white"
-                >
-                  추가
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* 카테고리 추가 Dialog */}
+      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+        <DialogContent className="max-w-sm">
+          <form onSubmit={handleCreateParent}>
+            <DialogHeader>
+              <DialogTitle>카테고리 추가</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                대분류명 <span className="text-red-500">*</span>
+              </label>
+              <input
+                autoFocus
+                type="text"
+                value={newParent}
+                onChange={(e) => setNewParent(e.target.value)}
+                placeholder="예: 장류"
+                className="focus:border-brand-blue focus:ring-brand-blue w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-1"
+              />
+            </div>
+            <DialogFooter>
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(false)}
+                className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                취소
+              </button>
+              <button
+                type="submit"
+                className="bg-brand-blue hover:bg-brand-blue-dark rounded-md px-4 py-2 text-sm font-medium text-white"
+              >
+                추가
+              </button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* 삭제 확인 AlertDialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {deleteTarget?.type === "parent" ? "카테고리 삭제" : "소분류 삭제"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget?.type === "parent"
+                ? `'${deleteTarget.parent}' 카테고리를 삭제할까요?`
+                : `'${deleteTarget?.child}' 소분류를 삭제할까요?`}
+              <br />
+              이 작업은 되돌릴 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              삭제
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
