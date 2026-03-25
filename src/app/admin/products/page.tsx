@@ -1,7 +1,8 @@
 "use client";
 
 import { productService } from "@/api/productService";
-import { Product } from "@/types/product";
+import { categoryService } from "@/api/categoryService";
+import { Category, Product } from "@/types/product";
 import { useEffect, useState } from "react";
 
 type ContentBlock = { type: "text" | "image"; value: string };
@@ -56,6 +57,7 @@ function ProductForm({
   onBlockChange,
   onAddBlock,
   onRemoveBlock,
+  categories,
 }: {
   form: FormData;
   onChange: (field: keyof FormData, value: string | boolean) => void;
@@ -66,6 +68,7 @@ function ProductForm({
   ) => void;
   onAddBlock: () => void;
   onRemoveBlock: (index: number) => void;
+  categories: Category[];
 }) {
   return (
     <div className="space-y-4">
@@ -101,32 +104,47 @@ function ProductForm({
       </div>
 
       {/* 카테고리 */}
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
-            카테고리 (부모)
-          </label>
-          <input
-            type="text"
-            value={form.categoryParent}
-            onChange={(e) => onChange("categoryParent", e.target.value)}
-            placeholder="예: 장류"
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors duration-200 focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
-            카테고리 (자식)
-          </label>
-          <input
-            type="text"
-            value={form.categoryChild}
-            onChange={(e) => onChange("categoryChild", e.target.value)}
-            placeholder="예: 된장"
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors duration-200 focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
-          />
-        </div>
-      </div>
+      {(() => {
+        const selectedCat = categories.find((c) => c.parent === form.categoryParent);
+        return (
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                대분류
+              </label>
+              <select
+                value={form.categoryParent}
+                onChange={(e) => {
+                  onChange("categoryParent", e.target.value);
+                  onChange("categoryChild", "");
+                }}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors duration-200 focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
+              >
+                <option value="">선택하세요</option>
+                {categories.map((c) => (
+                  <option key={c.parent} value={c.parent}>{c.parent}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                소분류
+              </label>
+              <select
+                value={form.categoryChild}
+                onChange={(e) => onChange("categoryChild", e.target.value)}
+                disabled={!selectedCat}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none transition-colors duration-200 focus:border-brand-blue focus:ring-1 focus:ring-brand-blue disabled:bg-gray-50 disabled:text-gray-400"
+              >
+                <option value="">선택하세요</option>
+                {selectedCat?.children.map((child) => (
+                  <option key={child} value={child}>{child}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* 썸네일 */}
       <div>
@@ -227,6 +245,7 @@ function ProductForm({
 // ─── 메인 페이지 ──────────────────────────────────────────────────────────────
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -256,6 +275,7 @@ export default function AdminProductsPage() {
 
   useEffect(() => {
     fetchProducts();
+    categoryService.getCategories().then(setCategories).catch(() => {});
   }, []);
 
   // ── 폼 핸들러 ─────────────────────────────────────────────────────────────
@@ -543,6 +563,7 @@ export default function AdminProductsPage() {
                 onBlockChange={handleBlockChange}
                 onAddBlock={handleAddBlock}
                 onRemoveBlock={handleRemoveBlock}
+                categories={categories}
               />
               {formError && (
                 <p className="mt-3 text-sm text-red-500">{formError}</p>
@@ -588,6 +609,7 @@ export default function AdminProductsPage() {
                 onBlockChange={handleBlockChange}
                 onAddBlock={handleAddBlock}
                 onRemoveBlock={handleRemoveBlock}
+                categories={categories}
               />
               {formError && (
                 <p className="mt-3 text-sm text-red-500">{formError}</p>
