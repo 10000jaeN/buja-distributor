@@ -8,7 +8,10 @@ class CustomError extends Error {
   constructor(message, statusCode) {
     super(message);
     this.statusCode = statusCode;
-    this.status = `${statusCode}`.startsWith("4") ? "fail" : "error";
+
+    // 💡 'status' 대신 'errorType' 혹은 'result' 같은 이름을 사용하세요.
+    // 익스프레스 에러 핸들러가 err.status를 숫자로 오해하는 것을 방지합니다.
+    this.errorType = `${statusCode}`.startsWith("4") ? "fail" : "error";
 
     // 💡 운영 오류(Operational Error)로 플래그를 지정합니다.
     // error.middleware.js가 이 속성을 사용하여 클라이언트에게 메시지를 공개합니다.

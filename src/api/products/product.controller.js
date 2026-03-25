@@ -52,8 +52,15 @@ export const createProduct = async (req, res) => {
  * GET /products - 상품 목록 전체 조회
  */
 export const getProducts = async (req, res) => {
-  const { sort } = req.query;
-  const { limit } = req.query;
+  const { sort, limit, category, sub } = req.query;
+
+  const query = {};
+  if (category) {
+    query["category.parent"] = category;
+  }
+  if (sub) {
+    query["category.child"] = sub;
+  }
 
   const sortMap = {
     // 최신 순?
@@ -67,10 +74,34 @@ export const getProducts = async (req, res) => {
     price_desc: { price: -1 },
   };
 
-  const sortOption = sortMap[sort];
+  const sortOption = sortMap[sort] || { createdAt: -1 };
 
-  const products = await Product.find().sort(sortOption).limit(limit);
-  return res.send(products);
+  const products = await Product.find(query)
+    .sort(sortOption)
+    .limit(Number(limit));
+  return res.json({
+    message: "성공적으로 상품을 조회하였습니다.",
+    data: products,
+  });
+};
+
+/**
+ * GET /products/categories - 카테고리 목록 조회
+ */
+export const getCategories = async (req, res) => {
+  const result = await Product.aggregate([
+    { $match: { "category.parent": { $exists: true } } },
+    {
+      $group: {
+        _id: "$category.parent",
+        children: { $addToSet: "$category.child" },
+      },
+    },
+    { $project: { _id: 0, parent: "$_id", children: 1 } },
+    { $sort: { parent: 1 } },
+  ]);
+
+  return res.status(200).json({ data: result });
 };
 
 /**
@@ -127,7 +158,7 @@ export const patchProduct = async (req, res) => {
  */
 export const deleteProduct = async (req, res) => {
   const { slug } = req.params;
-  const deletedProduct = await Product.findByOneAndDelete({ slug });
+  const deletedProduct = await Product.findOneAndDelete({ slug });
 
   if (!deletedProduct) {
     // 💡 CustomError 사용
