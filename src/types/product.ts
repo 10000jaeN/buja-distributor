@@ -1,7 +1,18 @@
+export interface Category {
+  parent: string;
+  children: string[];
+  order?: number;
+}
+
 export interface Product {
   _id: string;
   name: string;
   slug: string;
+  stats: {
+    orderCount: number;
+    ratingAverage: number;
+    reviewCount: number;
+  };
   contentBlock: [
     {
       type: "text" | "image";
@@ -9,6 +20,8 @@ export interface Product {
     },
   ];
   price: number;
+  shippingFee: number;
+  freeShippingThreshold: number;
   category: {
     parent: string;
     child: string;

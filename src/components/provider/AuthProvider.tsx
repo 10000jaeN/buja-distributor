@@ -9,7 +9,7 @@ export default function AuthProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const { login, logout, setUser } = useAuthStore();
+  const { login, logout, setUser, setInitialized } = useAuthStore();
 
   useEffect(() => {
     const initAuth = async () => {
@@ -17,21 +17,24 @@ export default function AuthProvider({
 
       if (!token) {
         logout();
+        setInitialized(true);
         return;
       }
 
       try {
-        const res = await axiosInstance.get("/auth/me", {
+        const { data } = await axiosInstance.get("/auth/me", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
 
-        setUser(res.data);
+        setUser(data.user);
       } catch (err) {
         console.error("세션 만료:", err);
         localStorage.removeItem("accessToken");
         logout();
+      } finally {
+        setInitialized(true);
       }
     };
 

@@ -1,61 +1,134 @@
 "use client";
 
+import { useRef, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
 import { Product } from "@/types/product";
 import noImage from "@/public/images/no-image.png";
-import { CartInIcon } from "@/assets";
+import { CartInIcon, ArrowIcon } from "@/assets";
 import useAuthStore from "@/store/useAuthStore";
 
-const ProductList = ({ products }: { products: Product[] }) => {
+const ProductList = ({
+  products,
+  title,
+}: {
+  products: Product[];
+  title: string;
+}) => {
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+  const scrollRef = useRef<HTMLUListElement>(null);
+  const tripled = [...products, ...products, ...products];
+  const [loginRequired, setLoginRequired] = useState(false);
 
   const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault(); // Link의 기본 동작(페이지 이동) 방지
-    e.stopPropagation(); // 부모 요소로 이벤트 전파 차단
+    e.preventDefault();
+    e.stopPropagation();
 
     if (!isLoggedIn) {
-      alert("로그인이 필요합니다."); // toast UI로 대체 예정
+      setLoginRequired(true);
+      setTimeout(() => setLoginRequired(false), 2500);
       return;
     }
 
     console.log("장바구니 담기 로직 실행");
-    // 여기에 스토어 액션이나 API 호출 추가
+  };
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollLeft = el.scrollWidth / 3;
+  }, []);
+
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const third = el.scrollWidth / 3;
+    if (el.scrollLeft >= third * 2) {
+      el.scrollLeft -= third;
+    } else if (el.scrollLeft < third) {
+      el.scrollLeft += third;
+    }
+  };
+
+  const getItemWidth = () => {
+    const el = scrollRef.current;
+    if (!el) return 0;
+    const firstItem = el.firstElementChild as HTMLElement;
+    if (!firstItem) return 0;
+    return firstItem.offsetWidth + 16; // gap-4 = 16px
+  };
+
+  const scrollPrev = () => {
+    scrollRef.current?.scrollBy({ left: -getItemWidth(), behavior: "smooth" });
+  };
+
+  const scrollNext = () => {
+    scrollRef.current?.scrollBy({ left: getItemWidth(), behavior: "smooth" });
   };
 
   return (
     <>
-      {products &&
-        products.map((product) => (
-          <li
-            key={product._id}
-            className="mx-auto mb-4 flex w-[45vw] flex-col gap-1 transition-normal duration-100 md:w-[30vw]"
-          >
-            <Link href={`/products/${product.slug}`} className="relative">
-              <Image
-                src={product.thumbnail[0] || noImage}
-                alt="thumbnail"
-                width={0}
-                height={0}
-                sizes="45vw"
-                className="mb-2 h-auto w-full rounded-lg"
-              />
-              <button
-                className="absolute right-3 bottom-5 z-10"
-                onClick={handleAddToCart}
-              >
-                <CartInIcon />
-              </button>
-            </Link>
-            <div className="flex flex-col items-start gap-1 text-[14px]">
-              <div>{product.name}</div>
-              <div className="text-[12px] font-bold">
-                {product.price.toLocaleString()}원
+      {loginRequired && (
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-gray-800 px-4 py-2 text-sm text-white shadow-lg">
+          로그인이 필요합니다.
+        </div>
+      )}
+      <div className="relative lg:px-12">
+        <p className="my-8 flex justify-center text-2xl font-bold">{title}</p>
+        <button
+          type="button"
+          onClick={scrollPrev}
+          className="absolute top-1/2 left-0 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-gray-800 shadow-md hover:bg-gray-100 lg:flex"
+        >
+          <ArrowIcon className="rotate-180 fill-white" />
+        </button>
+
+        <ul
+          ref={scrollRef}
+          onScroll={handleScroll}
+          aria-label={title}
+          className="no-scrollbar mx-auto flex snap-x scroll-pl-2 gap-4 overflow-auto pr-[70vw] pl-4 whitespace-nowrap lg:scroll-pl-0 lg:px-12"
+        >
+          {tripled.map((product, idx) => (
+            <li
+              key={`${product.name}-${idx}`}
+              className="mx-auto mb-4 flex w-[40vw] shrink-0 snap-start flex-col gap-1 transition-normal md:w-[30vw] lg:w-55"
+            >
+              <Link href={`/products/${product.slug}`} className="relative">
+                <Image
+                  src={product.thumbnail[0] || noImage}
+                  alt="thumbnail"
+                  width={240}
+                  height={240}
+                  sizes="45vw"
+                  className="mb-2 h-auto w-full rounded-lg"
+                />
+                <button
+                  className="absolute right-3 bottom-5 z-10 flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-800 hover:bg-gray-200"
+                  onClick={handleAddToCart}
+                >
+                  <CartInIcon className="h-4 w-4" />
+                </button>
+              </Link>
+              <div className="flex flex-col items-start gap-1 text-[14px]">
+                <div>{product.name}</div>
+                <div className="text-[12px] font-bold">
+                  {product.price.toLocaleString()}원
+                </div>
               </div>
-            </div>
-          </li>
-        ))}
+            </li>
+          ))}
+        </ul>
+
+        <button
+          type="button"
+          onClick={scrollNext}
+          className="absolute top-1/2 right-0 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-gray-800 text-white shadow-md hover:bg-gray-100 lg:flex"
+        >
+          <ArrowIcon className="fill-white" />
+        </button>
+      </div>
     </>
   );
 };
