@@ -7,11 +7,11 @@ import CustomError from "../../utils/customError.js"; // CustomError 임포트
 // 장바구니가 없으면 빈 목록 반환
 // =================================================================
 export const getCart = async (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user._id;
 
   // 사용자 ID로 장바구니를 찾고 상품 세부 정보 채우기
   const cart = await Cart.findOne({ user: userId })
-    .populate("items.productId", "name price stock isAvailable imageUrl")
+    .populate("items.productId", "name price slug thumbnail isAvailable")
     .select("-__v"); // 불필요한 필드 제거
 
   if (!cart) {
@@ -46,7 +46,7 @@ export const getCart = async (req, res) => {
 // 2. 장바구니에 상품 추가/수량 증가 (POST /carts)
 // =================================================================
 export const addItemToCart = async (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user._id;
   const { productId, quantity } = req.body;
 
   if (!productId || typeof quantity !== "number" || quantity <= 0) {
@@ -114,7 +114,7 @@ export const addItemToCart = async (req, res) => {
 // 3. 장바구니 상품 수량 변경 (PATCH /carts/:productId)
 // =================================================================
 export const updateCartItemQuantity = async (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user._id;
   const productId = req.params.productId;
   const { quantity } = req.body;
 
@@ -156,7 +156,7 @@ export const updateCartItemQuantity = async (req, res) => {
 // productId 대신 productIds 배열을 받도록 수정
 // =================================================================
 export const removeCartItems = async (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user._id;
   // 요청 본문에서 제거할 상품 ID 배열을 받습니다.
   const { productIds } = req.body;
 
