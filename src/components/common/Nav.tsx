@@ -1,9 +1,10 @@
 "use client";
 
-import { CartIcon, Logo, MenuIcon, SearchIcon } from "@/assets";
+import { Logo, MenuIcon } from "@/assets";
 import useAuthStore from "@/store/useAuthStore";
 import useMenuStore from "@/store/useMenuStore";
 import { MenuItem } from "@/types/menu";
+import { Search, ShoppingCart, UserCircle } from "lucide-react";
 import Link from "next/link";
 import { useRef, useState } from "react";
 
@@ -69,14 +70,21 @@ const Nav = ({ menu }: { menu: MenuItem[] }) => {
               ref={inputRef}
               className={`${openSearchBar ? `${loggedIn ? "w-[70vw]" : "w-[60vw]"} px-2.5 pl-10 opacity-100` : "w-7 px-0 opacity-0"} h-9 rounded-full bg-gray-200 transition-normal duration-300`}
             />
-            <SearchIcon
-              className="absolute top-1/2 left-2 h-6 w-6 -translate-y-1/2 hover:cursor-pointer"
+            <Search
+              className="absolute top-1/2 left-2 h-5 w-5 -translate-y-1/2 cursor-pointer text-gray-600 hover:text-brand-blue"
               onClick={onClickSearchBar}
             />
           </div>
 
           {loggedIn ? (
-            <CartIcon className="h-6 w-6" shapeRendering="geometricPrecision" />
+            <>
+              <Link href="/mypage" className="text-gray-600 hover:text-brand-blue">
+                <UserCircle className="h-6 w-6" />
+              </Link>
+              <Link href="/cart" className="text-gray-600 hover:text-brand-blue">
+                <ShoppingCart className="h-6 w-6" />
+              </Link>
+            </>
           ) : (
             <Link
               href="/login"
