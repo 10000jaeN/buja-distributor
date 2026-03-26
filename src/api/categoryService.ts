@@ -48,4 +48,8 @@ export const categoryService = {
       `/categories/${encodeURIComponent(parent)}/children/${encodeURIComponent(child)}`
     );
   },
+
+  reorderCategories: async (orderedParents: string[]): Promise<void> => {
+    await axiosInstance.patch("/categories/reorder", { orderedParents });
+  },
 };

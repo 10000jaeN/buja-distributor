@@ -1,6 +1,7 @@
 export interface Category {
   parent: string;
   children: string[];
+  order?: number;
 }
 
 export interface Product {
