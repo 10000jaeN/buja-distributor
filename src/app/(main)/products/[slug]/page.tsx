@@ -5,6 +5,7 @@ import noImage from "@/public/images/no-image.png";
 import { productService } from "@/api/productService";
 import { StarIcon } from "@/assets";
 import { ProductActions } from "./ProductActions";
+import { ProductTabs } from "./ProductTabs";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -96,53 +97,11 @@ const productsDetailPage = async ({ params }: Props) => {
         </div>
       </div>
 
-      {/* 탭 툴바 */}
-      <div
-        aria-label="ToolBar"
-        className="sticky top-17.25 z-40 flex justify-around border-b border-gray-200 bg-white"
-      >
-        <button className="border-brand-blue text-brand-blue flex-1 border-b-2 py-3 text-sm font-semibold">
-          상세정보
-        </button>
-        <button className="flex-1 border-b-2 border-transparent py-3 text-sm text-gray-500 hover:text-gray-700">
-          Q&A
-        </button>
-        <button className="flex-1 border-b-2 border-transparent py-3 text-sm text-gray-500 hover:text-gray-700">
-          상품 리뷰
-        </button>
-        <button className="flex-1 border-b-2 border-transparent py-3 text-sm text-gray-500 hover:text-gray-700">
-          배송정보
-        </button>
-      </div>
-
-      {/* 상세 콘텐츠 블록 */}
-      <div className="mx-auto max-w-200">
-        {product?.contentBlock.map((content, index) => {
-          if (content.type === "image") {
-            return (
-              <Image
-                key={index}
-                src={content.value}
-                alt="상세페이지"
-                width={800}
-                height={800}
-                className="w-full"
-              />
-            );
-          } else if (content.type === "text") {
-            return (
-              <div
-                key={content.value}
-                className="px-4 py-5 text-sm leading-relaxed text-gray-700"
-              >
-                {content.value}
-              </div>
-            );
-          } else {
-            return null;
-          }
-        })}
-      </div>
+      <ProductTabs
+        contentBlock={product?.contentBlock ?? []}
+        shippingFee={product?.shippingFee ?? 3000}
+        freeShippingThreshold={product?.freeShippingThreshold ?? 0}
+      />
 
     </main>
   );
