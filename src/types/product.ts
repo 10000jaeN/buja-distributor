@@ -19,6 +19,8 @@ export interface Product {
     },
   ];
   price: number;
+  shippingFee: number;
+  freeShippingThreshold: number;
   category: {
     parent: string;
     child: string;

@@ -92,6 +92,8 @@ export default function AdminProductsPage() {
   const buildPayload = (f: ProductFormData) => ({
     name: f.name,
     price: Number(f.price),
+    shippingFee: Number(f.shippingFee),
+    freeShippingThreshold: Number(f.freeShippingThreshold),
     category: { parent: f.categoryParent, child: f.categoryChild },
     thumbnail: f.thumbnail
       .split(",")
@@ -150,6 +152,8 @@ export default function AdminProductsPage() {
     setForm({
       name: product.name,
       price: String(product.price),
+      shippingFee: String(product.shippingFee ?? 3000),
+      freeShippingThreshold: String(product.freeShippingThreshold ?? 0),
       categoryParent: product.category.parent,
       categoryChild: product.category.child,
       thumbnail: product.thumbnail.join(", "),

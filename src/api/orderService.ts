@@ -32,8 +32,8 @@ export type Order = {
 
 export const orderService = {
   getOrders: async (): Promise<Order[]> => {
-    const res = await axiosInstance.get<{ data: Order[] }>("/orders");
-    return res.data.data;
+    const res = await axiosInstance.get("/orders");
+    return Array.isArray(res.data) ? res.data : (res.data.orders ?? []);
   },
 
   getOrder: async (id: string): Promise<Order> => {

@@ -6,6 +6,7 @@ import Nav from "@/components/common/Nav";
 import SideBar from "@/components/common/SideBar";
 import { categoryService } from "@/api/categoryService";
 import { buildMenu } from "@/lib/buildMenu";
+import { Toaster } from "sonner";
 
 export default async function MainLayout({
   children,
@@ -22,6 +23,7 @@ export default async function MainLayout({
         <SideBar menu={menu} />
         <main className="flex-1">{children}</main>
         <Footer />
+        <Toaster position="top-right" richColors />
       </AuthProvider>
     </div>
   );

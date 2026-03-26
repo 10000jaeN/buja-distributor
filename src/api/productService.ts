@@ -80,6 +80,8 @@ export const productService = {
   createProduct: async (data: {
     name: string;
     price: number;
+    shippingFee: number;
+    freeShippingThreshold: number;
     category: { parent: string; child: string };
     thumbnail: string[];
     isAvailable?: boolean;
@@ -99,6 +101,8 @@ export const productService = {
     data: Partial<{
       name: string;
       price: number;
+      shippingFee: number;
+      freeShippingThreshold: number;
       category: { parent: string; child: string };
       thumbnail: string[];
       isAvailable: boolean;

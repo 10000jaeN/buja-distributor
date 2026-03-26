@@ -54,9 +54,8 @@ export default function CartPage() {
   const handleQuantityChange = async (productId: string, quantity: number) => {
     if (quantity < 1) return;
     try {
-      const cart = await cartService.updateCartItem(productId, quantity);
-      setItems(cart.items);
-      setTotalAmount(cart.totalAmount);
+      await cartService.updateCartItem(productId, quantity);
+      await fetchCart();
     } catch {
       alert("수량 변경에 실패했습니다.");
     }
@@ -64,14 +63,13 @@ export default function CartPage() {
 
   const handleRemove = async (productIds: string[]) => {
     try {
-      const cart = await cartService.removeCartItems(productIds);
-      setItems(cart.items);
-      setTotalAmount(cart.totalAmount);
+      await cartService.removeCartItems(productIds);
       setSelected((prev) => {
         const next = new Set(prev);
         productIds.forEach((id) => next.delete(id));
         return next;
       });
+      await fetchCart();
     } catch {
       alert("삭제에 실패했습니다.");
     }
@@ -161,7 +159,7 @@ export default function CartPage() {
                     />
                     <Link href={`/products/${product.slug}`} className="shrink-0">
                       <Image
-                        src={product.thumbnail[0] ?? noImage}
+                        src={product.thumbnail?.[0] ?? noImage}
                         alt={product.name}
                         width={80}
                         height={80}
