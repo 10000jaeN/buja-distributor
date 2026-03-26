@@ -11,6 +11,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Category } from "@/types/product";
 import { useEffect, useState } from "react";
@@ -102,12 +103,11 @@ export default function AdminCategoriesPage() {
       {/* 헤더 */}
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-bold text-gray-800">카테고리 관리</h1>
-        <button
+        <Button
           onClick={() => { setNewParent(""); setShowCreateModal(true); }}
-          className="bg-brand-blue hover:bg-brand-blue-dark rounded-md px-4 py-2 text-sm font-medium text-white"
         >
           + 카테고리 추가
-        </button>
+        </Button>
       </div>
 
       {/* 카테고리 카드 그리드 */}
@@ -256,19 +256,16 @@ export default function AdminCategoriesPage() {
               />
             </div>
             <DialogFooter>
-              <button
+              <Button
                 type="button"
+                variant="outline"
                 onClick={() => setShowCreateModal(false)}
-                className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
                 취소
-              </button>
-              <button
-                type="submit"
-                className="bg-brand-blue hover:bg-brand-blue-dark rounded-md px-4 py-2 text-sm font-medium text-white"
-              >
+              </Button>
+              <Button type="submit">
                 추가
-              </button>
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
