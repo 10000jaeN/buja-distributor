@@ -7,6 +7,7 @@ import {
   createCategory,
   updateCategory,
   deleteCategory,
+  reorderCategories,
   addChild,
   updateChild,
   removeChild,
@@ -16,6 +17,8 @@ const router = Router();
 
 router.get("/", asyncHandler(getCategories));
 router.post("/", authMiddleware, adminAuthMiddleware, asyncHandler(createCategory));
+// reorder는 /:parent 보다 먼저 등록해야 충돌 방지
+router.patch("/reorder", authMiddleware, adminAuthMiddleware, asyncHandler(reorderCategories));
 router.patch("/:parent", authMiddleware, adminAuthMiddleware, asyncHandler(updateCategory));
 router.delete("/:parent", authMiddleware, adminAuthMiddleware, asyncHandler(deleteCategory));
 

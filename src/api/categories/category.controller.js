@@ -5,8 +5,28 @@ import CustomError from "../../utils/customError.js";
  * GET /categories - 카테고리 전체 목록 조회
  */
 export const getCategories = async (req, res) => {
-  const categories = await Category.find().sort({ parent: 1 });
+  const categories = await Category.find().sort({ order: 1, createdAt: 1 });
   return res.status(200).json({ data: categories });
+};
+
+/**
+ * PATCH /categories/reorder - 카테고리 순서 일괄 변경 (관리자 전용)
+ * body: { orderedParents: string[] }
+ */
+export const reorderCategories = async (req, res) => {
+  const { orderedParents } = req.body;
+
+  if (!Array.isArray(orderedParents)) {
+    throw new CustomError("orderedParents 배열이 필요합니다.", 400);
+  }
+
+  await Promise.all(
+    orderedParents.map((parent, index) =>
+      Category.findOneAndUpdate({ parent }, { order: index })
+    )
+  );
+
+  return res.status(200).json({ message: "순서가 업데이트되었습니다." });
 };
 
 /**
