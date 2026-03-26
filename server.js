@@ -7,6 +7,7 @@ import passport from "passport";
 import cors from "cors";
 
 import productRouter from "./src/api/products/product.routes.js";
+import categoryRouter from "./src/api/categories/category.routes.js";
 import authRouter from "./src/api/auth/auth.routes.js";
 import userRouter from "./src/api/user/user.routes.js";
 import orderRouter from "./src/api/orders/order.routes.js";
@@ -34,8 +35,8 @@ const allowedOrigins = [
 
 app.use(
   cors({
-    origin: allowedOrigins,
-    credentials: true, // 쿠키(Refresh Token) 전송을 위해 필수
+    origin: true,
+    credentials: true,
     methods: ["GET", "POST", "PATCH", "DELETE", "PUT", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
@@ -47,6 +48,7 @@ const DB_URI = process.env.MONGO_URI;
 app.use(passport.initialize());
 
 app.use("/products", productRouter);
+app.use("/categories", categoryRouter);
 app.use("/auth", authRouter);
 app.use("/user", userRouter);
 app.use("/orders", orderRouter);

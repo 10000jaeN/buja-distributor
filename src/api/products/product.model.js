@@ -28,6 +28,18 @@ const ProductSchema = new mongoose.Schema(
       required: [true, "상품 가격은 필수 항목입니다."],
       min: [0, "가격은 0보다 크거나 같아야 합니다."],
     },
+    // 배송비
+    shippingFee: {
+      type: Number,
+      default: 3000,
+      min: [0, "배송비는 0보다 크거나 같아야 합니다."],
+    },
+    // 무료배송 기준금액 (0이면 조건 없음)
+    freeShippingThreshold: {
+      type: Number,
+      default: 0,
+      min: [0, "무료배송 기준금액은 0보다 크거나 같아야 합니다."],
+    },
     // 분류
     category: {
       parent: { type: String, required: true },
