@@ -81,7 +81,7 @@ export const productService = {
     category: { parent: string; child: string };
     thumbnail: string[];
     isAvailable?: boolean;
-    contentBlocks: { type: "text" | "image"; value: string }[];
+    contentBlock: { type: "text" | "image"; value: string }[];
   }): Promise<Product> => {
     const res = await axiosInstance.post<{ data: Product }>("/products", data);
     return res.data.data;
@@ -100,7 +100,7 @@ export const productService = {
       category: { parent: string; child: string };
       thumbnail: string[];
       isAvailable: boolean;
-      contentBlocks: { type: "text" | "image"; value: string }[];
+      contentBlock: { type: "text" | "image"; value: string }[];
     }>,
   ): Promise<Product> => {
     const res = await axiosInstance.patch<{ data: Product }>(

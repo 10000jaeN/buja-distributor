@@ -17,7 +17,13 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "i.ibb.co",
         port: "",
-        pathname: "/**", // 모든 경로의 이미지를 허용
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "*.amazonaws.com",
+        port: "",
+        pathname: "/**",
       },
     ],
   },
