@@ -6,10 +6,10 @@ import axios, {
 
 const axiosInstance = axios.create({
   baseURL:
-    process.env.NEXT_ENV === "development"
+    process.env.NODE_ENV === "production"
       ? process.env.NEXT_PUBLIC_API_URL
       : process.env.NEXT_PUBLIC_API_TEST_URL,
-  timeout: process.env.NODE_ENV === "development" ? 60000 : 10000,
+  timeout: process.env.NODE_ENV === "production" ? 60000 : 10000,
   withCredentials: true,
   headers: { "Content-Type": "application/json" },
 });
