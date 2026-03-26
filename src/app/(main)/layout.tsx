@@ -1,16 +1,19 @@
+export const dynamic = "force-dynamic";
+
 import AuthProvider from "@/components/provider/AuthProvider";
 import Footer from "@/components/common/Footer";
 import Nav from "@/components/common/Nav";
 import SideBar from "@/components/common/SideBar";
-import { productService } from "@/api/productService";
+import { categoryService } from "@/api/categoryService";
 import { buildMenu } from "@/lib/buildMenu";
+import { Toaster } from "sonner";
 
 export default async function MainLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const categories = await productService.getCategories().catch(() => []);
+  const categories = await categoryService.getCategories().catch(() => []);
   const menu = buildMenu(categories);
 
   return (
@@ -20,6 +23,7 @@ export default async function MainLayout({
         <SideBar menu={menu} />
         <main className="flex-1">{children}</main>
         <Footer />
+        <Toaster position="top-right" richColors />
       </AuthProvider>
     </div>
   );

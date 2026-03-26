@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import noImage from "@/public/images/no-image.png";
 import { productService } from "@/api/productService";
 import { StarIcon } from "@/assets";
+import { ProductActions } from "./ProductActions";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -66,48 +67,32 @@ const productsDetailPage = async ({ params }: Props) => {
             <div className="flex items-center justify-between">
               <dt className="text-sm text-gray-500">배송비</dt>
               <dd className="text-sm font-medium text-gray-700">
-                3,000원
-                <span className="ml-1.5 text-xs text-gray-400">
-                  (기본 배송)
-                </span>
+                {product?.shippingFee === 0 ? (
+                  <span className="text-brand-blue">무료</span>
+                ) : (
+                  <>
+                    {(product?.shippingFee ?? 3000).toLocaleString()}원
+                    {(product?.freeShippingThreshold ?? 0) > 0 && (
+                      <span className="ml-1.5 text-xs text-gray-400">
+                        ({(product?.freeShippingThreshold ?? 0).toLocaleString()}원 이상 무료)
+                      </span>
+                    )}
+                  </>
+                )}
               </dd>
             </div>
           </dl>
 
           <hr className="mt-5 border-gray-100" />
 
-          {/* PC 전용 수량 + 버튼 */}
-          <div className="mt-6 hidden lg:block">
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-500">수량</span>
-              <div className="flex items-center gap-3">
-                <button
-                  aria-label="수량 감소"
-                  className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 text-lg text-gray-600 hover:bg-gray-100"
-                >
-                  -
-                </button>
-                <span className="min-w-[28px] text-center text-base font-medium text-gray-800">
-                  1
-                </span>
-                <button
-                  aria-label="수량 증가"
-                  className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 text-lg text-gray-600 hover:bg-gray-100"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            <div className="mt-6 flex gap-3">
-              <button className="flex-1 rounded-xl border border-gray-300 bg-white py-4 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50">
-                장바구니
-              </button>
-              <button className="bg-brand-blue flex-1 rounded-xl py-4 text-sm font-semibold text-white transition-colors hover:opacity-90">
-                구매하기
-              </button>
-            </div>
-          </div>
+          <ProductActions
+            productId={product?._id ?? ""}
+            price={product?.price ?? 0}
+            shippingFee={product?.shippingFee ?? 3000}
+            freeShippingThreshold={product?.freeShippingThreshold ?? 0}
+            thumbnail={product?.thumbnail[0] || noImage.src}
+            name={product?.name ?? ""}
+          />
         </div>
       </div>
 
@@ -159,59 +144,6 @@ const productsDetailPage = async ({ params }: Props) => {
         })}
       </div>
 
-      {/* 하단 고정 구매 바 (모바일 전용) */}
-      <nav
-        aria-label="구매 바"
-        className="fixed bottom-0 left-0 z-50 flex h-auto w-full items-center justify-between gap-2 border-t border-gray-200 bg-white px-3 py-2 shadow-[0_-2px_8px_rgba(0,0,0,0.06)] lg:hidden"
-      >
-        <div
-          aria-label="상품 정보"
-          className="flex min-w-0 flex-1 items-center gap-2"
-        >
-          <Image
-            src={product?.thumbnail[0] || noImage}
-            alt="상품 썸네일"
-            width={56}
-            height={56}
-            className="h-14 w-14 shrink-0 rounded-md object-cover"
-          />
-          <div className="flex min-w-0 flex-1 flex-col gap-1">
-            <p className="truncate text-sm font-medium text-gray-800">
-              {product?.name}
-            </p>
-            <div className="flex items-center justify-between">
-              <p className="text-brand-blue text-sm font-bold">
-                {product?.price.toLocaleString()}원
-              </p>
-              <div className="flex items-center gap-2">
-                <button
-                  aria-label="수량 감소"
-                  className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-base text-gray-600 hover:bg-gray-100"
-                >
-                  -
-                </button>
-                <span className="min-w-[20px] text-center text-sm font-medium text-gray-800">
-                  1
-                </span>
-                <button
-                  aria-label="수량 증가"
-                  className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-base text-gray-600 hover:bg-gray-100"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="flex shrink-0 flex-col gap-1.5">
-          <button className="rounded-xl border border-gray-300 bg-white px-4 py-2 text-xs font-semibold text-gray-700 transition-colors hover:bg-gray-50">
-            장바구니
-          </button>
-          <button className="bg-brand-blue rounded-xl px-4 py-2 text-xs font-semibold text-white transition-colors hover:opacity-90">
-            구매하기
-          </button>
-        </div>
-      </nav>
     </main>
   );
 };

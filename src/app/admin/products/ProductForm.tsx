@@ -20,6 +20,8 @@ export type ContentBlock = { type: "text" | "image"; value: string };
 export type ProductFormData = {
   name: string;
   price: string;
+  shippingFee: string;
+  freeShippingThreshold: string;
   categoryParent: string;
   categoryChild: string;
   thumbnail: string;
@@ -30,6 +32,8 @@ export type ProductFormData = {
 export const INITIAL_FORM: ProductFormData = {
   name: "",
   price: "",
+  shippingFee: "3000",
+  freeShippingThreshold: "0",
   categoryParent: "",
   categoryChild: "",
   thumbnail: "",
@@ -91,6 +95,37 @@ export function ProductForm({
           min="0"
           required
         />
+      </div>
+
+      {/* 배송비 */}
+      <div className="space-y-1.5">
+        <Label className="text-sm font-semibold text-gray-700">
+          배송비 (원) <span className="text-brand-blue">*</span>
+        </Label>
+        <Input
+          type="number"
+          value={form.shippingFee}
+          onChange={(e) => onChange("shippingFee", e.target.value)}
+          placeholder="0"
+          min="0"
+          required
+        />
+        <p className="text-xs text-gray-400">무료배송은 0으로 입력하세요.</p>
+      </div>
+
+      {/* 무료배송 기준금액 */}
+      <div className="space-y-1.5">
+        <Label className="text-sm font-semibold text-gray-700">
+          무료배송 기준금액 (원)
+        </Label>
+        <Input
+          type="number"
+          value={form.freeShippingThreshold}
+          onChange={(e) => onChange("freeShippingThreshold", e.target.value)}
+          placeholder="0"
+          min="0"
+        />
+        <p className="text-xs text-gray-400">0이면 무료배송 조건 없음.</p>
       </div>
 
       {/* 카테고리 */}

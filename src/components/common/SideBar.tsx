@@ -64,7 +64,7 @@ const SideBar = ({ menu }: { menu: MenuItem[] }) => {
           {/* 유저 섹션 */}
           <div className="px-5 py-5">
             {isLoggedIn ? (
-              <div className="flex items-center gap-3">
+              <Link href="/mypage" onClick={closeMenu} className="flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-blue text-sm font-bold text-white">
                   {initials}
                 </div>
@@ -72,9 +72,9 @@ const SideBar = ({ menu }: { menu: MenuItem[] }) => {
                   <span className="text-sm font-semibold text-gray-900">
                     {user?.nickName}
                   </span>
-                  <span className="text-xs text-gray-400">환영합니다</span>
+                  <span className="text-xs text-brand-blue">마이페이지 →</span>
                 </div>
-              </div>
+              </Link>
             ) : (
               <div className="flex flex-col gap-2">
                 <p className="mb-1 text-xs text-gray-400">
