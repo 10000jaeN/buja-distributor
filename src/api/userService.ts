@@ -31,4 +31,24 @@ export const userService = {
     const res = await axiosInstance.patch<{ data: UserProfile }>("/user", data);
     return res.data.data;
   },
+
+  addAddress: async (data: Omit<Address, "_id" | "isDefault"> & { isDefault?: boolean }): Promise<Address[]> => {
+    const res = await axiosInstance.post<{ data: Address[] }>("/user/address", data);
+    return res.data.data;
+  },
+
+  updateAddress: async (addressId: string, data: Partial<Omit<Address, "_id" | "isDefault">>): Promise<Address[]> => {
+    const res = await axiosInstance.patch<{ data: Address[] }>(`/user/address/${addressId}`, data);
+    return res.data.data;
+  },
+
+  deleteAddress: async (addressId: string): Promise<Address[]> => {
+    const res = await axiosInstance.delete<{ data: Address[] }>(`/user/address/${addressId}`);
+    return res.data.data;
+  },
+
+  setDefaultAddress: async (addressId: string): Promise<Address[]> => {
+    const res = await axiosInstance.patch<{ data: Address[] }>(`/user/address/${addressId}/default`);
+    return res.data.data;
+  },
 };

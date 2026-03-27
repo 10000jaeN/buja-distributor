@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import useCartStore from "./useCartStore";
 
 interface User {
   userId: string;
@@ -29,6 +30,7 @@ const useAuthStore = create<AuthState>()(
 
       logout: () => {
         localStorage.removeItem("accessToken");
+        useCartStore.getState().reset();
         set({ user: null, isLoggedIn: false });
       },
 
