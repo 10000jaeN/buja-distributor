@@ -55,15 +55,12 @@ export const createProduct = async (req, res) => {
  * GET /products - 상품 목록 전체 조회
  */
 export const getProducts = async (req, res) => {
-  const { sort, limit, category, sub } = req.query;
+  const { sort, limit, category, sub, q } = req.query;
 
   const query = {};
-  if (category) {
-    query["category.parent"] = category;
-  }
-  if (sub) {
-    query["category.child"] = sub;
-  }
+  if (category) query["category.parent"] = category;
+  if (sub) query["category.child"] = sub;
+  if (q) query["name"] = { $regex: q, $options: "i" };
 
   const sortMap = {
     // 최신 순?
