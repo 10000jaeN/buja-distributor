@@ -119,6 +119,135 @@ export const deleteUser = async (req, res) => {
 };
 
 /**
+ * 💡 배송지 추가 (POST /api/user/address)
+ */
+export const addAddress = async (req, res) => {
+  const userId = req.user._id;
+  const { recipientName, phoneNumber, zipCode, mainAddress, detailAddress, jibunAddress, isDefault } = req.body;
+
+  if (!recipientName || !phoneNumber || !zipCode || !mainAddress) {
+    throw new CustomError("수령인, 전화번호, 우편번호, 주소는 필수입니다.", 400);
+  }
+
+  const user = await User.findById(userId).select("address");
+  if (!user) throw new CustomError("사용자를 찾을 수 없습니다.", 404);
+  if (user.address.length >= 10) throw new CustomError("배송지는 최대 10개까지 등록 가능합니다.", 400);
+
+  // 첫 번째 배송지는 자동으로 기본 배송지
+  const shouldBeDefault = isDefault || user.address.length === 0;
+
+  let updatedUser;
+  if (shouldBeDefault) {
+    // isDefault 전체 false → 새 주소 추가(기본) 순서로 처리
+    await User.findByIdAndUpdate(userId, { $set: { "address.$[].isDefault": false } });
+    updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $push: { address: { recipientName, phoneNumber, zipCode, mainAddress, detailAddress, jibunAddress, isDefault: true } } },
+      { new: true, runValidators: true, select: "address" }
+    );
+  } else {
+    updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $push: { address: { recipientName, phoneNumber, zipCode, mainAddress, detailAddress, jibunAddress, isDefault: false } } },
+      { new: true, runValidators: true, select: "address" }
+    );
+  }
+
+  return res.status(201).json({ message: "배송지가 추가되었습니다.", data: updatedUser.address });
+};
+
+/**
+ * 💡 배송지 수정 (PATCH /api/user/address/:addressId)
+ */
+export const updateAddress = async (req, res) => {
+  const userId = req.user._id;
+  const { addressId } = req.params;
+  const { recipientName, phoneNumber, zipCode, mainAddress, detailAddress, jibunAddress } = req.body;
+
+  const updatedUser = await User.findOneAndUpdate(
+    { _id: userId, "address._id": addressId },
+    {
+      $set: {
+        ...(recipientName && { "address.$.recipientName": recipientName }),
+        ...(phoneNumber && { "address.$.phoneNumber": phoneNumber }),
+        ...(zipCode && { "address.$.zipCode": zipCode }),
+        ...(mainAddress && { "address.$.mainAddress": mainAddress }),
+        ...(detailAddress !== undefined && { "address.$.detailAddress": detailAddress }),
+        ...(jibunAddress !== undefined && { "address.$.jibunAddress": jibunAddress }),
+      },
+    },
+    { new: true, runValidators: true, select: "address" }
+  );
+
+  if (!updatedUser) throw new CustomError("배송지를 찾을 수 없습니다.", 404);
+
+  return res.status(200).json({ message: "배송지가 수정되었습니다.", data: updatedUser.address });
+};
+
+/**
+ * 💡 배송지 삭제 (DELETE /api/user/address/:addressId)
+ * 기본 배송지 삭제 시 남은 첫 번째 배송지를 기본으로 설정
+ */
+export const deleteAddress = async (req, res) => {
+  const userId = req.user._id;
+  const { addressId } = req.params;
+
+  const user = await User.findOne({ _id: userId, "address._id": addressId }).select("address");
+  if (!user) throw new CustomError("배송지를 찾을 수 없습니다.", 404);
+
+  const target = user.address.id(addressId);
+  const wasDefault = target.isDefault;
+
+  await User.findByIdAndUpdate(userId, { $pull: { address: { _id: addressId } } });
+
+  // 기본 배송지를 삭제했을 경우 남은 첫 번째를 기본으로 설정
+  if (wasDefault) {
+    const updated = await User.findById(userId).select("address");
+    if (updated.address.length > 0) {
+      await User.findOneAndUpdate(
+        { _id: userId, "address._id": updated.address[0]._id },
+        { $set: { "address.$.isDefault": true } }
+      );
+    }
+  }
+
+  const result = await User.findById(userId).select("address");
+  return res.status(200).json({ message: "배송지가 삭제되었습니다.", data: result.address });
+};
+
+/**
+ * 💡 기본 배송지 설정 (PATCH /api/user/address/:addressId/default)
+ * arrayFilters로 단일 연산 처리
+ */
+export const setDefaultAddress = async (req, res) => {
+  const userId = req.user._id;
+  const { addressId } = req.params;
+
+  const user = await User.findOne({ _id: userId, "address._id": addressId });
+  if (!user) throw new CustomError("배송지를 찾을 수 없습니다.", 404);
+
+  const updatedUser = await User.findByIdAndUpdate(
+    userId,
+    {
+      $set: {
+        "address.$[other].isDefault": false,
+        "address.$[target].isDefault": true,
+      },
+    },
+    {
+      arrayFilters: [
+        { "other._id": { $ne: addressId } },
+        { "target._id": addressId },
+      ],
+      new: true,
+      select: "address",
+    }
+  );
+
+  return res.status(200).json({ message: "기본 배송지가 설정되었습니다.", data: updatedUser.address });
+};
+
+/**
  * 💡 전체 사용자 목록 조회 (GET /api/user/admin/all)
  * adminAuthMiddleware의 보호 하에 실행되며, 관리자만 접근 가능합니다.
  * @access Private (Admin Only)
