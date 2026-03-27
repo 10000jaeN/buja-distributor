@@ -189,7 +189,7 @@ export default function AddressesPage() {
                 </p>
                 <div className="mt-3 flex gap-3">
                   {!addr.isDefault && (
-                    <button onClick={() => handleSetDefault(addr._id)} className="text-xs text-gray-400 hover:text-gray-700">
+                    <button onClick={() => handleSetDefault(addr._id)} className="text-brand-blue/50 text-xs hover:text-brand-blue">
                       기본 배송지 설정
                     </button>
                   )}
