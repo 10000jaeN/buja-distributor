@@ -23,7 +23,7 @@ export default async function MainLayout({
         <SideBar menu={menu} />
         <main className="flex-1">{children}</main>
         <Footer />
-        <Toaster position="top-right" richColors />
+        <Toaster position="bottom-center" richColors />
       </AuthProvider>
     </div>
   );

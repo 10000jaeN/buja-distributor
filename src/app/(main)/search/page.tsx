@@ -98,7 +98,7 @@ export default function SearchPage() {
               </Link>
             </div>
           ) : (
-            <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-3 md:gap-5 lg:grid-cols-4">
               {products.map((product) => (
                 <li key={product._id}>
                   <Link href={`/products/${product.slug}`} className="group block">
@@ -108,7 +108,7 @@ export default function SearchPage() {
                         alt={product.name}
                         width={300}
                         height={300}
-                        className="h-44 w-full object-cover transition-transform duration-300 group-hover:scale-105 sm:h-52"
+                        className="h-44 w-full object-cover transition-transform duration-300 group-hover:scale-105 sm:h-52 md:h-60 lg:h-56"
                       />
                     </div>
                     <div className="mt-2.5 space-y-1 px-0.5">
