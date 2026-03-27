@@ -5,6 +5,10 @@ import {
   getUserProfile,
   patchUser,
   getAllUsers,
+  addAddress,
+  updateAddress,
+  deleteAddress,
+  setDefaultAddress,
 } from "./user.controller.js";
 import { authMiddleware } from "../../middleware/auth.middleware.js";
 import { adminAuthMiddleware } from "../../middleware/admin.middleware.js";
@@ -36,6 +40,11 @@ router.patch("/", authMiddleware, asyncHandler(patchUser));
  * @access Private (User)
  */
 router.delete("/delete", authMiddleware, asyncHandler(deleteUser));
+
+router.post("/address", authMiddleware, asyncHandler(addAddress));
+router.patch("/address/:addressId/default", authMiddleware, asyncHandler(setDefaultAddress));
+router.patch("/address/:addressId", authMiddleware, asyncHandler(updateAddress));
+router.delete("/address/:addressId", authMiddleware, asyncHandler(deleteAddress));
 
 /**
  * @route GET /admin/all
