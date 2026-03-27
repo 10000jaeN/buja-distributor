@@ -2,6 +2,7 @@
 
 import { cartService } from "@/api/cartService";
 import useAuthStore from "@/store/useAuthStore";
+import useCartStore from "@/store/useCartStore";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -27,6 +28,7 @@ export function ProductActions({
   const [quantity, setQuantity] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+  const incrementCart = useCartStore((state) => state.increment);
   const router = useRouter();
 
   const subtotal = price * quantity;
@@ -43,6 +45,7 @@ export function ProductActions({
     setIsLoading(true);
     try {
       await cartService.addToCart(productId, quantity);
+      incrementCart(1);
       toast.success("장바구니에 담았습니다.", {
         action: { label: "장바구니 보기", onClick: () => router.push("/cart") },
       });
