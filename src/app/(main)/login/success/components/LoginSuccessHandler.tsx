@@ -4,6 +4,7 @@ import axiosInstance from "@/lib/axios";
 import useAuthStore from "@/store/useAuthStore";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
+import { toast } from "sonner";
 
 interface ExchangeResponse {
   accessToken: string;
@@ -38,10 +39,11 @@ const LoginSuccessHandler = () => {
 
         login({ userId, nickName, roles });
 
+        toast.success(`${nickName}님, 환영합니다!`);
         router.replace("/");
       } catch (err) {
         console.error("인증 실패: ", err);
-        alert("로그인에 실패했습니다. 다시 시도해주세요.");
+        toast.error("로그인에 실패했습니다. 다시 시도해주세요.");
         router.replace("/login");
       }
     };

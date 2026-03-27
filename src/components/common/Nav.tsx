@@ -1,89 +1,123 @@
 "use client";
 
+import { useRef, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+import { Search, ShoppingCart, UserCircle } from "lucide-react";
+
+import { Tooltip } from "@/components/ui/tooltip";
+import { DropdownMenu } from "@/components/ui/dropdown-menu";
 import { Logo, MenuIcon } from "@/assets";
+import CategoryNav from "@/components/common/CategoryNav";
+
 import useAuthStore from "@/store/useAuthStore";
+import useCartStore from "@/store/useCartStore";
 import useMenuStore from "@/store/useMenuStore";
 import { MenuItem } from "@/types/menu";
-import { Search, ShoppingCart, UserCircle } from "lucide-react";
-import Link from "next/link";
-import { useRef, useState } from "react";
+import { USER_MENU } from "@/constants/menu";
 
 const Nav = ({ menu }: { menu: MenuItem[] }) => {
-  const [openSearchBar, setOpenSearchBar] = useState<boolean>(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const openMenu = useMenuStore((state) => state.openMenu);
-  const loggedIn = useAuthStore((state) => state.isLoggedIn);
+  const [searchOpen, setSearchOpen] = useState(false);
 
-  const onClickSearchBar = () => {
-    setOpenSearchBar(!openSearchBar);
-    setTimeout(() => inputRef.current?.focus(), 300);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const openMenu = useMenuStore((state) => state.openMenu);
+  const { isLoggedIn } = useAuthStore();
+  const cartCount = useCartStore((state) => state.count);
+  const router = useRouter();
+
+  const onSearchSubmit = () => {
+    const q = inputRef.current?.value.trim();
+    if (q) router.push(`/search?q=${encodeURIComponent(q)}`);
+  };
+
+  const onSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") onSearchSubmit();
+    if (e.key === "Escape") inputRef.current?.blur();
   };
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-gray-300 bg-white">
-      {/* 상단 바 */}
       <div className="mx-auto flex h-17.25 w-full max-w-[1024px] items-center justify-between p-5">
         {/* 왼쪽: 햄버거(모바일) + 로고 + 카테고리(PC) */}
         <div className="flex items-center gap-6">
-          <MenuIcon
-            className="h-6 w-6 hover:cursor-pointer lg:hidden"
-            onClick={openMenu}
-          />
-          <Link href="/" className="absolute left-1/2 -translate-x-1/2 lg:static lg:translate-x-0">
+          <Tooltip label="메뉴" className="lg:hidden">
+            <MenuIcon
+              className="h-6 w-6 hover:cursor-pointer"
+              onClick={openMenu}
+            />
+          </Tooltip>
+
+          <Link
+            href="/"
+            className="absolute left-1/2 -translate-x-1/2 lg:static lg:translate-x-0"
+          >
             <Logo className="w-[102px]" shapeRendering="crispEdges" />
           </Link>
 
-          {/* PC 메뉴 */}
-          <ul className="hidden items-center gap-5 lg:flex">
-            {menu.map((item) => (
-              <li key={item.label} className="group relative">
-                {item.href ? (
-                  <Link href={item.href} className="text-sm font-semibold hover:text-gray-500">
-                    {item.label}
-                  </Link>
-                ) : (
-                  <span className="cursor-default text-sm font-semibold">{item.label}</span>
-                )}
-                {item.children && item.children.length > 0 && (
-                  <ul className="absolute top-full left-1/2 z-50 hidden min-w-[120px] -translate-x-1/2 rounded-lg border border-gray-200 bg-white py-2 shadow-lg group-hover:block">
-                    {item.children.map((child) => (
-                      <li key={child.label}>
-                        <Link
-                          href={child.href ?? "#"}
-                          className="block px-4 py-2 text-sm hover:bg-gray-100"
-                        >
-                          {child.label}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </li>
-            ))}
-          </ul>
+          {/* PC 카테고리 메뉴 */}
+          <CategoryNav menu={menu} />
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            <input
-              placeholder="검색어를 입력해주세요"
-              ref={inputRef}
-              className={`${openSearchBar ? `${loggedIn ? "w-[70vw]" : "w-[60vw]"} px-2.5 pl-10 opacity-100` : "w-7 px-0 opacity-0"} h-9 rounded-full bg-gray-200 transition-normal duration-300`}
-            />
-            <Search
-              className="absolute top-1/2 left-2 h-5 w-5 -translate-y-1/2 cursor-pointer text-gray-600 hover:text-brand-blue"
-              onClick={onClickSearchBar}
-            />
+        {/* 오른쪽: 검색 + 장바구니 + 유저 */}
+        <div className="flex items-center gap-3">
+          {/* 검색 */}
+          <div className="flex items-center">
+            {!searchOpen && (
+              <Tooltip label="검색" className="lg:hidden">
+                <button
+                  onClick={() => {
+                    setSearchOpen(true);
+                    setTimeout(() => inputRef.current?.focus(), 50);
+                  }}
+                  className="hover:text-brand-blue flex items-center text-gray-600"
+                >
+                  <Search className="h-6 w-6" />
+                </button>
+              </Tooltip>
+            )}
+            <div
+              className={`overflow-hidden transition-all duration-300 ${searchOpen ? "w-[calc(100vw-12rem)]" : "w-0"} lg:w-52`}
+            >
+              <div className="relative">
+                <input
+                  ref={inputRef}
+                  placeholder="검색어를 입력해주세요"
+                  onKeyDown={onSearchKeyDown}
+                  onBlur={() => setSearchOpen(false)}
+                  className="focus:border-brand-blue focus:ring-brand-blue/10 h-9 w-full rounded-full border border-gray-200 bg-gray-50 pr-9 pl-3 text-sm text-gray-700 outline-none placeholder:text-gray-400 focus:ring-2"
+                />
+                <Search
+                  className="hover:text-brand-blue absolute top-1/2 right-2.5 h-4 w-4 -translate-y-1/2 cursor-pointer text-gray-400"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={onSearchSubmit}
+                />
+              </div>
+            </div>
           </div>
 
-          {loggedIn ? (
+          {isLoggedIn ? (
             <>
-              <Link href="/mypage" className="text-gray-600 hover:text-brand-blue">
-                <UserCircle className="h-6 w-6" />
-              </Link>
-              <Link href="/cart" className="text-gray-600 hover:text-brand-blue">
-                <ShoppingCart className="h-6 w-6" />
-              </Link>
+              <Tooltip label="장바구니">
+                <Link
+                  href="/cart"
+                  className="hover:text-brand-blue relative flex items-center text-gray-600"
+                >
+                  <ShoppingCart className="h-6 w-6" />
+                  {cartCount > 0 && (
+                    <span className="bg-brand-blue absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold text-white">
+                      {cartCount > 99 ? "99+" : cartCount}
+                    </span>
+                  )}
+                </Link>
+              </Tooltip>
+
+              <DropdownMenu
+                trigger={<UserCircle className="h-6 w-6" />}
+                tooltipLabel="내 계정"
+                items={USER_MENU}
+              />
             </>
           ) : (
             <Link

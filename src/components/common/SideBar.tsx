@@ -4,13 +4,14 @@ import { CancelIcon, Logo } from "@/assets";
 import useAuthStore from "@/store/useAuthStore";
 import useMenuStore from "@/store/useMenuStore";
 import { MenuItem } from "@/types/menu";
+import { Tooltip } from "@/components/ui/tooltip";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
 const SideBar = ({ menu }: { menu: MenuItem[] }) => {
   const { isOpen, closeMenu } = useMenuStore();
   const [openItems, setOpenItems] = useState<Set<string>>(new Set());
-  const { isLoggedIn, logout, user } = useAuthStore();
+  const { isLoggedIn, logout, user, isInitialized } = useAuthStore();
 
   useEffect(() => {
     if (isOpen) {
@@ -50,20 +51,30 @@ const SideBar = ({ menu }: { menu: MenuItem[] }) => {
           <Link href={"/"} onClick={closeMenu}>
             <Logo className="flex" />
           </Link>
-          <button
-            aria-label="메뉴 닫기"
-            className="flex h-8 w-8 items-center justify-center rounded-full transition-colors duration-200 hover:bg-gray-100"
-            onClick={closeMenu}
-          >
-            <CancelIcon className="h-4 w-4" />
-          </button>
+          <Tooltip label="닫기">
+            <button
+              aria-label="메뉴 닫기"
+              className="flex h-8 w-8 items-center justify-center rounded-full transition-colors duration-200 hover:bg-gray-100"
+              onClick={closeMenu}
+            >
+              <CancelIcon className="h-4 w-4" />
+            </button>
+          </Tooltip>
         </div>
 
         {/* 스크롤 가능한 본문 */}
         <div className="no-scrollbar flex-1 overflow-auto">
           {/* 유저 섹션 */}
           <div className="px-5 py-5">
-            {isLoggedIn ? (
+            {!isInitialized ? (
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-gray-200" />
+                <div className="flex flex-col gap-1.5">
+                  <div className="h-3.5 w-20 animate-pulse rounded bg-gray-200" />
+                  <div className="h-3 w-14 animate-pulse rounded bg-gray-100" />
+                </div>
+              </div>
+            ) : isLoggedIn ? (
               <Link href="/mypage" onClick={closeMenu} className="flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-blue text-sm font-bold text-white">
                   {initials}
@@ -98,6 +109,7 @@ const SideBar = ({ menu }: { menu: MenuItem[] }) => {
                 </div>
               </div>
             )}
+
           </div>
 
           <div className="h-px bg-gray-100" />

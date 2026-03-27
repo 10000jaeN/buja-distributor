@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 
 import noImage from "@/public/images/no-image.png";
 import { productService } from "@/api/productService";
@@ -9,6 +10,24 @@ import { ProductTabs } from "./ProductTabs";
 
 interface Props {
   params: Promise<{ slug: string }>;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const product = await productService.getProductBySlug(slug).catch(() => null);
+
+  if (!product) return { title: "상품을 찾을 수 없습니다" };
+
+  return {
+    title: product.name,
+    description: `${product.name} — ${product.price.toLocaleString()}원`,
+    openGraph: {
+      title: product.name,
+      description: `${product.name} — ${product.price.toLocaleString()}원`,
+      images: product.thumbnail[0] ? [{ url: product.thumbnail[0] }] : [],
+      type: "website",
+    },
+  };
 }
 
 const productsDetailPage = async ({ params }: Props) => {
@@ -21,11 +40,11 @@ const productsDetailPage = async ({ params }: Props) => {
   }
 
   return (
-    <main className="pb-24 lg:pb-0">
-      {/* PC: 2열 레이아웃 / 모바일: 1열 */}
-      <div className="mx-auto max-w-[1024px] lg:grid lg:grid-cols-[460px_1fr] lg:items-stretch lg:gap-12 lg:py-10">
+    <main className="pb-24 md:pb-0">
+      {/* 태블릿+PC: 2열 레이아웃 / 모바일: 1열 */}
+      <div className="mx-auto max-w-[1024px] md:grid md:grid-cols-[320px_1fr] md:items-stretch md:gap-8 md:px-5 md:py-8 lg:grid-cols-[460px_1fr] lg:gap-12 lg:py-10">
         {/* 썸네일 이미지 */}
-        <div className="w-full overflow-hidden bg-gray-50 lg:w-[460px] lg:shrink-0 lg:rounded-2xl">
+        <div className="w-full overflow-hidden bg-gray-50 md:shrink-0 md:rounded-2xl lg:w-[460px]">
           <Image
             src={product?.thumbnail[0] || noImage}
             alt="thumbnail"
@@ -37,7 +56,7 @@ const productsDetailPage = async ({ params }: Props) => {
         </div>
 
         {/* 상품 정보 섹션 */}
-        <div className="px-4 pt-5 pb-4 lg:flex lg:flex-col lg:justify-between lg:pt-0 lg:pb-0">
+        <div className="px-4 pt-5 pb-4 md:flex md:flex-col md:justify-between md:px-0 md:pt-0 md:pb-0">
           {/* 별점 */}
           <div aria-label="별점" className="flex items-center gap-1.5">
             <StarIcon className="h-4 w-4 text-amber-400" />
@@ -50,7 +69,7 @@ const productsDetailPage = async ({ params }: Props) => {
           </div>
 
           {/* 상품명 */}
-          <h1 className="mt-3 text-xl leading-snug font-bold text-gray-900 lg:text-2xl">
+          <h1 className="mt-3 text-xl leading-snug font-bold text-gray-900 md:text-xl lg:text-2xl">
             {product?.name}
           </h1>
 
@@ -61,7 +80,7 @@ const productsDetailPage = async ({ params }: Props) => {
           <dl className="mt-5 flex-1 space-y-4">
             <div className="flex items-center justify-between">
               <dt className="text-sm text-gray-500">판매가</dt>
-              <dd className="text-brand-blue text-2xl font-bold lg:text-3xl">
+              <dd className="text-brand-blue text-2xl font-bold md:text-2xl lg:text-3xl">
                 {product?.price.toLocaleString()}원
               </dd>
             </div>

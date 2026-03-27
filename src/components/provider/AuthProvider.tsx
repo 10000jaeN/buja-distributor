@@ -2,16 +2,21 @@
 
 import axiosInstance from "@/lib/axios";
 import useAuthStore from "@/store/useAuthStore";
-import { useEffect } from "react";
+import useCartStore from "@/store/useCartStore";
+import { useEffect, useRef } from "react";
 
 export default function AuthProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { login, logout, setUser, setInitialized } = useAuthStore();
+  const { logout, setUser, setInitialized } = useAuthStore();
+  const hasCalled = useRef(false);
 
   useEffect(() => {
+    if (hasCalled.current) return;
+    hasCalled.current = true;
+
     const initAuth = async () => {
       const token = localStorage.getItem("accessToken");
 
@@ -29,6 +34,10 @@ export default function AuthProvider({
         });
 
         setUser(data.user);
+
+        axiosInstance.get("/carts").then((res) => {
+          useCartStore.getState().setCount(res.data.data.items.length);
+        }).catch(() => {});
       } catch (err) {
         console.error("세션 만료:", err);
         localStorage.removeItem("accessToken");
@@ -39,7 +48,7 @@ export default function AuthProvider({
     };
 
     initAuth();
-  }, [login, logout]);
+  }, []);
 
   return <>{children}</>;
 }

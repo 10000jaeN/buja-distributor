@@ -2,7 +2,9 @@
 
 import { userService, UserProfile } from "@/api/userService";
 import useAuthStore from "@/store/useAuthStore";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 const PROVIDER_LABEL: Record<string, string> = {
   google: "구글",
@@ -12,7 +14,14 @@ const PROVIDER_LABEL: Record<string, string> = {
 };
 
 export default function MypagePage() {
-  const { user, setUser } = useAuthStore();
+  const { user, setUser, logout } = useAuthStore();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    logout();
+    toast.success("로그아웃 됐습니다.");
+    router.push("/");
+  };
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -131,6 +140,14 @@ export default function MypagePage() {
           </div>
         </div>
       </div>
+
+      {/* 로그아웃 */}
+      <button
+        onClick={handleLogout}
+        className="w-full rounded-xl border border-red-100 py-3 text-sm font-medium text-red-500 hover:bg-red-50"
+      >
+        로그아웃
+      </button>
     </div>
   );
 }

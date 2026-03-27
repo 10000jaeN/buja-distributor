@@ -1,35 +1,39 @@
 "use client";
 
 import { cartService, CartItem } from "@/api/cartService";
+import useAuthStore from "@/store/useAuthStore";
+import useCartStore from "@/store/useCartStore";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import noImage from "@/public/images/no-image.png";
 
 export default function CartPage() {
+  const { isLoggedIn, isInitialized } = useAuthStore();
   const [items, setItems] = useState<CartItem[]>([]);
-  const [totalAmount, setTotalAmount] = useState(0);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const setCartCount = useCartStore((state) => state.setCount);
 
-  const fetchCart = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const cart = await cartService.getCart();
-      setItems(cart.items);
-      setTotalAmount(cart.totalAmount);
-      setSelected(new Set(cart.items.map((i) => i.productId._id)));
-    } catch {
-      setError("장바구니를 불러오지 못했습니다.");
-    } finally {
-      setIsLoading(false);
+  // items 변경 시 nav 뱃지 카운트 동기화
+  useEffect(() => {
+    if (!isLoading) {
+      setCartCount(items.length);
     }
-  };
+  }, [items, isLoading, setCartCount]);
 
   useEffect(() => {
-    fetchCart();
+    setIsLoading(true);
+    cartService
+      .getCart()
+      .then((cart) => {
+        setItems(cart.items);
+        setSelected(new Set(cart.items.map((i) => i.productId._id)));
+      })
+      .catch(() => setError("장바구니를 불러오지 못했습니다."))
+      .finally(() => setIsLoading(false));
   }, []);
 
   const isAllSelected = items.length > 0 && selected.size === items.length;
@@ -53,25 +57,37 @@ export default function CartPage() {
 
   const handleQuantityChange = async (productId: string, quantity: number) => {
     if (quantity < 1) return;
+
+    const prevItems = items;
+    setItems((prev) =>
+      prev.map((i) => (i.productId._id === productId ? { ...i, quantity } : i)),
+    );
+
     try {
       await cartService.updateCartItem(productId, quantity);
-      await fetchCart();
     } catch {
-      alert("수량 변경에 실패했습니다.");
+      setItems(prevItems);
+      toast.error("수량 변경에 실패했습니다.");
     }
   };
 
   const handleRemove = async (productIds: string[]) => {
+    const prevItems = items;
+    const prevSelected = selected;
+
+    setItems((prev) => prev.filter((i) => !productIds.includes(i.productId._id)));
+    setSelected((prev) => {
+      const next = new Set(prev);
+      productIds.forEach((id) => next.delete(id));
+      return next;
+    });
+
     try {
       await cartService.removeCartItems(productIds);
-      setSelected((prev) => {
-        const next = new Set(prev);
-        productIds.forEach((id) => next.delete(id));
-        return next;
-      });
-      await fetchCart();
     } catch {
-      alert("삭제에 실패했습니다.");
+      setItems(prevItems);
+      setSelected(prevSelected);
+      toast.error("삭제에 실패했습니다.");
     }
   };
 
@@ -80,6 +96,34 @@ export default function CartPage() {
     (sum, i) => sum + i.productId.price * i.quantity,
     0,
   );
+
+  if (!isInitialized) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="border-t-brand-blue h-8 w-8 animate-spin rounded-full border-3 border-gray-200" />
+      </div>
+    );
+  }
+
+  if (!isLoggedIn) {
+    return (
+      <div className="mx-auto max-w-[1024px] px-5 py-10">
+        <h1 className="mb-8 text-2xl font-bold text-gray-900">장바구니</h1>
+        <div className="flex min-h-[50vh] flex-col items-center justify-center gap-5">
+          <div className="flex flex-col items-center gap-2 text-center">
+            <p className="text-base font-medium text-gray-700">로그인이 필요한 서비스입니다.</p>
+            <p className="text-sm text-gray-400">로그인하고 장바구니를 이용해보세요.</p>
+          </div>
+          <Link
+            href="/login"
+            className="bg-brand-blue rounded-xl px-8 py-3 text-sm font-semibold text-white hover:opacity-90"
+          >
+            로그인하기
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -161,9 +205,9 @@ export default function CartPage() {
                       <Image
                         src={product.thumbnail?.[0] ?? noImage}
                         alt={product.name}
-                        width={80}
-                        height={80}
-                        className="h-20 w-20 rounded-lg border border-gray-100 object-cover"
+                        width={96}
+                        height={96}
+                        className="h-24 w-24 rounded-lg border border-gray-100 object-cover"
                       />
                     </Link>
                     <div className="flex flex-1 flex-col gap-2">
