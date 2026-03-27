@@ -4,19 +4,54 @@ import { Logo, MenuIcon } from "@/assets";
 import useAuthStore from "@/store/useAuthStore";
 import useMenuStore from "@/store/useMenuStore";
 import { MenuItem } from "@/types/menu";
-import { Search, ShoppingCart, UserCircle } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+import { Search, UserCircle } from "lucide-react";
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 const Nav = ({ menu }: { menu: MenuItem[] }) => {
-  const [openSearchBar, setOpenSearchBar] = useState<boolean>(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [activeParent, setActiveParent] = useState<string | null>(null);
+  const [openUserMenu, setOpenUserMenu] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const navRef = useRef<HTMLUListElement>(null);
   const openMenu = useMenuStore((state) => state.openMenu);
-  const loggedIn = useAuthStore((state) => state.isLoggedIn);
+  const { isLoggedIn: loggedIn } = useAuthStore();
+  const router = useRouter();
 
-  const onClickSearchBar = () => {
-    setOpenSearchBar(!openSearchBar);
-    setTimeout(() => inputRef.current?.focus(), 300);
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (navRef.current && !navRef.current.contains(e.target as Node)) {
+        setOpenDropdown(null);
+        setActiveParent(null);
+      }
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(e.target as Node)
+      ) {
+        setOpenUserMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const onClickSearchIcon = () => {
+    setSearchOpen(true);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  };
+
+  const onSearchSubmit = () => {
+    const q = inputRef.current?.value.trim();
+    if (q) router.push(`/search?q=${encodeURIComponent(q)}`);
+  };
+
+  const onSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") onSearchSubmit();
+    if (e.key === "Escape") inputRef.current?.blur();
   };
 
   return (
@@ -29,61 +64,164 @@ const Nav = ({ menu }: { menu: MenuItem[] }) => {
             className="h-6 w-6 hover:cursor-pointer lg:hidden"
             onClick={openMenu}
           />
-          <Link href="/" className="absolute left-1/2 -translate-x-1/2 lg:static lg:translate-x-0">
+          <Link
+            href="/"
+            className="absolute left-1/2 -translate-x-1/2 lg:static lg:translate-x-0"
+          >
             <Logo className="w-[102px]" shapeRendering="crispEdges" />
           </Link>
 
           {/* PC 메뉴 */}
-          <ul className="hidden items-center gap-5 lg:flex">
-            {menu.map((item) => (
-              <li key={item.label} className="group relative">
-                {item.href ? (
-                  <Link href={item.href} className="text-sm font-semibold hover:text-gray-500">
-                    {item.label}
-                  </Link>
-                ) : (
-                  <span className="cursor-default text-sm font-semibold">{item.label}</span>
-                )}
-                {item.children && item.children.length > 0 && (
-                  <ul className="absolute top-full left-1/2 z-50 hidden min-w-[120px] -translate-x-1/2 rounded-lg border border-gray-200 bg-white py-2 shadow-lg group-hover:block">
-                    {item.children.map((child) => (
-                      <li key={child.label}>
-                        <Link
-                          href={child.href ?? "#"}
-                          className="block px-4 py-2 text-sm hover:bg-gray-100"
-                        >
-                          {child.label}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </li>
-            ))}
+          <ul ref={navRef} className="hidden items-center gap-5 lg:flex">
+            {menu.map((item) => {
+              const isOpen = openDropdown === item.label;
+              return (
+                <li key={item.label} className="relative">
+                  {item.href ? (
+                    <Link
+                      href={item.href}
+                      className="text-sm font-semibold hover:text-gray-500"
+                    >
+                      {item.label}
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setOpenDropdown(isOpen ? null : item.label);
+                        setActiveParent(null);
+                      }}
+                      className="flex cursor-pointer items-center gap-1 text-sm font-semibold hover:text-gray-500"
+                    >
+                      {item.label}
+                      {item.children && (
+                        <ChevronDown
+                          className={`h-3.5 w-3.5 text-gray-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+                        />
+                      )}
+                    </button>
+                  )}
+
+                  {item.children && item.children.length > 0 && (
+                    <div
+                      className={`absolute top-full -left-2 z-50 mt-3.5 flex origin-top overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg transition-all duration-200 ${isOpen ? "pointer-events-auto scale-y-100 opacity-100" : "pointer-events-none scale-y-95 opacity-0"}`}
+                    >
+                      {/* 대분류 패널 */}
+                      <ul className="w-40 border-r border-gray-100 py-1">
+                        {item.children.map((parent) => (
+                          <li
+                            key={parent.label}
+                            onMouseEnter={() => setActiveParent(parent.label)}
+                          >
+                            <Link
+                              href={parent.href ?? "#"}
+                              onClick={() => setOpenDropdown(null)}
+                              className={`flex items-center justify-between px-4 py-2.5 text-sm font-medium transition-colors hover:bg-gray-50 ${
+                                activeParent === parent.label
+                                  ? "text-brand-blue bg-blue-50/60"
+                                  : "text-gray-700"
+                              }`}
+                            >
+                              {parent.label}
+                              {parent.children &&
+                                parent.children.length > 0 && (
+                                  <ChevronDown
+                                    className={`h-3.5 w-3.5 shrink-0 -rotate-90 ${activeParent === parent.label ? "text-brand-blue" : "text-gray-300"}`}
+                                  />
+                                )}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+
+                      {/* 소분류 패널 */}
+                      <ul
+                        className={`w-36 py-1 transition-opacity duration-150 ${activeParent ? "opacity-100" : "opacity-0"}`}
+                      >
+                        {item.children
+                          .find((p) => p.label === activeParent)
+                          ?.children?.map((child) => (
+                            <li key={child.label}>
+                              <Link
+                                href={child.href ?? "#"}
+                                onClick={() => setOpenDropdown(null)}
+                                className="block px-4 py-2.5 text-sm text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-800"
+                              >
+                                {child.label}
+                              </Link>
+                            </li>
+                          ))}
+                      </ul>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            <input
-              placeholder="검색어를 입력해주세요"
-              ref={inputRef}
-              className={`${openSearchBar ? `${loggedIn ? "w-[70vw]" : "w-[60vw]"} px-2.5 pl-10 opacity-100` : "w-7 px-0 opacity-0"} h-9 rounded-full bg-gray-200 transition-normal duration-300`}
-            />
-            <Search
-              className="absolute top-1/2 left-2 h-5 w-5 -translate-y-1/2 cursor-pointer text-gray-600 hover:text-brand-blue"
-              onClick={onClickSearchBar}
-            />
+        <div className="flex items-center gap-3">
+          {/* 검색 */}
+          <div className="flex items-center gap-1.5">
+            {/* 모바일 전용 검색 버튼: 열리면 숨김 */}
+            {!searchOpen && (
+              <button
+                onClick={onClickSearchIcon}
+                className="hover:text-brand-blue flex items-center text-gray-400 lg:hidden"
+              >
+                <Search className="h-6 w-6" />
+              </button>
+            )}
+
+            {/* 인풋 컨테이너: 모바일은 state로 확장, PC는 항상 표시 */}
+            <div
+              className={`overflow-hidden transition-all duration-300 ${searchOpen ? "w-[calc(100vw-12rem)]" : "w-0"} lg:w-52`}
+            >
+              <div className="relative">
+                <input
+                  placeholder="검색어를 입력해주세요"
+                  ref={inputRef}
+                  onKeyDown={onSearchKeyDown}
+                  onBlur={() => setSearchOpen(false)}
+                  className="focus:border-brand-blue focus:ring-brand-blue/10 h-9 w-full rounded-full border border-gray-200 bg-gray-50 pr-9 pl-3 text-sm text-gray-700 outline-none placeholder:text-gray-400 focus:ring-2"
+                />
+                <Search
+                  className="hover:text-brand-blue absolute top-1/2 right-2.5 h-4 w-4 -translate-y-1/2 cursor-pointer text-gray-400"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={onSearchSubmit}
+                />
+              </div>
+            </div>
           </div>
 
           {loggedIn ? (
             <>
-              <Link href="/mypage" className="text-gray-600 hover:text-brand-blue">
-                <UserCircle className="h-6 w-6" />
-              </Link>
-              <Link href="/cart" className="text-gray-600 hover:text-brand-blue">
-                <ShoppingCart className="h-6 w-6" />
-              </Link>
+              {/* 유저 드롭다운 */}
+              <div ref={userMenuRef} className="relative flex items-center">
+                <button
+                  onClick={() => setOpenUserMenu((v) => !v)}
+                  className="hover:text-brand-blue flex items-center text-gray-600"
+                >
+                  <UserCircle className="h-6 w-6" />
+                </button>
+                {openUserMenu && (
+                  <div className="absolute top-full right-0 z-50 mt-2 w-36 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
+                    {[
+                      { label: "내 프로필", href: "/mypage" },
+                      { label: "주문내역", href: "/mypage/orders" },
+                      { label: "배송지 관리", href: "/mypage/addresses" },
+                    ].map(({ label, href }) => (
+                      <Link
+                        key={href}
+                        href={href}
+                        onClick={() => setOpenUserMenu(false)}
+                        className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        {label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             </>
           ) : (
             <Link
