@@ -4,11 +4,13 @@ import { Logo, MenuIcon } from "@/assets";
 import useAuthStore from "@/store/useAuthStore";
 import useMenuStore from "@/store/useMenuStore";
 import { MenuItem } from "@/types/menu";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, ShoppingCart } from "lucide-react";
 import { Search, UserCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import useCartStore from "@/store/useCartStore";
+import { Tooltip } from "@/components/ui/tooltip";
 
 const Nav = ({ menu }: { menu: MenuItem[] }) => {
   const [searchOpen, setSearchOpen] = useState(false);
@@ -20,6 +22,7 @@ const Nav = ({ menu }: { menu: MenuItem[] }) => {
   const navRef = useRef<HTMLUListElement>(null);
   const openMenu = useMenuStore((state) => state.openMenu);
   const { isLoggedIn: loggedIn } = useAuthStore();
+  const cartCount = useCartStore((state) => state.count);
   const router = useRouter();
 
   useEffect(() => {
@@ -60,10 +63,12 @@ const Nav = ({ menu }: { menu: MenuItem[] }) => {
       <div className="mx-auto flex h-17.25 w-full max-w-[1024px] items-center justify-between p-5">
         {/* 왼쪽: 햄버거(모바일) + 로고 + 카테고리(PC) */}
         <div className="flex items-center gap-6">
-          <MenuIcon
-            className="h-6 w-6 hover:cursor-pointer lg:hidden"
-            onClick={openMenu}
-          />
+          <Tooltip label="메뉴" className="lg:hidden">
+            <MenuIcon
+              className="h-6 w-6 hover:cursor-pointer"
+              onClick={openMenu}
+            />
+          </Tooltip>
           <Link
             href="/"
             className="absolute left-1/2 -translate-x-1/2 lg:static lg:translate-x-0"
@@ -161,15 +166,17 @@ const Nav = ({ menu }: { menu: MenuItem[] }) => {
 
         <div className="flex items-center gap-3">
           {/* 검색 */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center">
             {/* 모바일 전용 검색 버튼: 열리면 숨김 */}
             {!searchOpen && (
-              <button
-                onClick={onClickSearchIcon}
-                className="hover:text-brand-blue flex items-center text-gray-400 lg:hidden"
-              >
-                <Search className="h-6 w-6" />
-              </button>
+              <Tooltip label="검색" className="lg:hidden">
+                <button
+                  onClick={onClickSearchIcon}
+                  className="hover:text-brand-blue flex items-center text-gray-600"
+                >
+                  <Search className="h-6 w-6" />
+                </button>
+              </Tooltip>
             )}
 
             {/* 인풋 컨테이너: 모바일은 state로 확장, PC는 항상 표시 */}
@@ -195,14 +202,31 @@ const Nav = ({ menu }: { menu: MenuItem[] }) => {
 
           {loggedIn ? (
             <>
+              {/* 장바구니 */}
+              <Tooltip label="장바구니">
+                <Link
+                  href="/cart"
+                  className="hover:text-brand-blue relative flex items-center text-gray-600"
+                >
+                  <ShoppingCart className="h-6 w-6" />
+                  {cartCount > 0 && (
+                    <span className="bg-brand-blue absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold text-white">
+                      {cartCount > 99 ? "99+" : cartCount}
+                    </span>
+                  )}
+                </Link>
+              </Tooltip>
+
               {/* 유저 드롭다운 */}
               <div ref={userMenuRef} className="relative flex items-center">
-                <button
-                  onClick={() => setOpenUserMenu((v) => !v)}
-                  className="hover:text-brand-blue flex items-center text-gray-600"
-                >
-                  <UserCircle className="h-6 w-6" />
-                </button>
+                <Tooltip label="내 계정">
+                  <button
+                    onClick={() => setOpenUserMenu((v) => !v)}
+                    className="hover:text-brand-blue flex items-center text-gray-600"
+                  >
+                    <UserCircle className="h-6 w-6" />
+                  </button>
+                </Tooltip>
                 {openUserMenu && (
                   <div className="absolute top-full right-0 z-50 mt-2 w-36 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
                     {[
