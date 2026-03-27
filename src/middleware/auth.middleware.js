@@ -34,6 +34,7 @@ export const authMiddleware = async (req, res, next) => {
       _id: decoded.id,
       roles: decoded.roles,
       email: decoded.email || "",
+      nickName: decoded.nickName || "",
     };
 
     next();

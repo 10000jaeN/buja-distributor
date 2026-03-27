@@ -45,7 +45,7 @@ export const adminLogin = asyncHandler(async (req, res) => {
     user.roles = [...user.roles, "admin"];
   }
 
-  const payload = { id: user._id, roles: user.roles };
+  const payload = { id: user._id, roles: user.roles, nickName: user.nickName };
   const accessToken = generateAccessToken(payload);
   const refreshToken = generateRefreshToken(payload);
 
@@ -96,7 +96,7 @@ export const loginOrCreateUser = asyncHandler(async (req, res) => {
   }
 
   // JWT 토큰 생성
-  const payload = { id: user._id, roles: user.roles };
+  const payload = { id: user._id, roles: user.roles, nickName: user.nickName || nickName };
   const accessToken = generateAccessToken(payload);
   const refreshToken = generateRefreshToken(payload);
 
@@ -204,12 +204,18 @@ export const getMe = asyncHandler(async (req, res) => {
     return res.status(401).json({ message: "인증되지 않은 사용자입니다." });
   }
 
+  const user = await User.findById(req.user._id).select("nickName email roles");
+
+  if (!user) {
+    return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+  }
+
   res.status(200).json({
     user: {
       userId: req.user._id,
-      nickName: req.user.nickName,
+      nickName: user.nickName,
       roles: req.user.roles,
-      email: req.user.email || "",
+      email: user.email || "",
     },
   });
 });
