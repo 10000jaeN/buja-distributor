@@ -4,8 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
-  { label: "프로필", href: "/mypage" },
-  { label: "주문 내역", href: "/mypage/orders" },
+  { label: "내 프로필", href: "/mypage" },
+  { label: "주문내역", href: "/mypage/orders" },
+  { label: "배송지 관리", href: "/mypage/addresses" },
 ];
 
 export default function MypageLayout({ children }: { children: React.ReactNode }) {

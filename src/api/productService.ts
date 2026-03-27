@@ -11,14 +11,16 @@ export const productService = {
     limit,
     category,
     sub,
+    q,
   }: {
     sort?: "recent" | "populate" | "price_asc" | "price_desc";
     limit?: number;
     category?: string;
     sub?: string;
+    q?: string;
   }): Promise<Product[]> => {
     const res = await axiosInstance.get<{ data: Product[] }>("/products", {
-      params: { sort, limit, category, sub },
+      params: { sort, limit, category, sub, q },
     });
 
     return res.data.data;
