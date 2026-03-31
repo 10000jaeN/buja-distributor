@@ -4,7 +4,7 @@ import { productService } from "@/api/productService";
 import { categoryService } from "@/api/categoryService";
 import { Category, Product } from "@/types/product";
 import { Button } from "@/components/ui/button";
-import { ProductDialogs } from "./ProductDialogs";
+import { ProductDialogs } from "./_components/ProductDialogs";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -22,7 +22,7 @@ import {
   ContentBlock,
   INITIAL_FORM,
   type ProductFormData,
-} from "./ProductForm";
+} from "./_components/ProductForm";
 
 // ─── 메인 페이지 ──────────────────────────────────────────────────────────────
 export default function AdminProductsPage() {
