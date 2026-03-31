@@ -1,13 +1,17 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useMemo, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { Product } from "@/types/product";
 import noImage from "@/public/images/no-image.png";
 import { CartInIcon, ArrowIcon } from "@/assets";
 import useAuthStore from "@/store/useAuthStore";
+import useCartStore from "@/store/useCartStore";
+import { cartService } from "@/api/cartService";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
 
 const ProductList = ({
   products,
@@ -17,22 +21,38 @@ const ProductList = ({
   title: string;
 }) => {
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+  const incrementCart = useCartStore((state) => state.increment);
+  const router = useRouter();
   const scrollRef = useRef<HTMLUListElement>(null);
-  const tripled = [...products, ...products, ...products];
-  const [loginRequired, setLoginRequired] = useState(false);
+  const itemWidthRef = useRef<number>(0);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [cartModalOpen, setCartModalOpen] = useState(false);
 
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const tripled = useMemo(
+    () => [...products, ...products, ...products],
+    [products],
+  );
 
-    if (!isLoggedIn) {
-      setLoginRequired(true);
-      setTimeout(() => setLoginRequired(false), 2500);
-      return;
-    }
+  const handleAddToCart = useCallback(
+    async (e: React.MouseEvent, productId: string) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-    console.log("장바구니 담기 로직 실행");
-  };
+      if (!isLoggedIn) {
+        setLoginModalOpen(true);
+        return;
+      }
+
+      try {
+        await cartService.addToCart(productId, 1);
+        incrementCart(1);
+        setCartModalOpen(true);
+      } catch {
+        // TODO: 에러 처리
+      }
+    },
+    [isLoggedIn, incrementCart],
+  );
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -40,7 +60,20 @@ const ProductList = ({
     el.scrollLeft = el.scrollWidth / 3;
   }, []);
 
-  const handleScroll = () => {
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const firstItem = el.firstElementChild as HTMLElement;
+    if (!firstItem) return;
+
+    const observer = new ResizeObserver(() => {
+      itemWidthRef.current = firstItem.offsetWidth + 16; // gap-4 = 16px
+    });
+    observer.observe(firstItem);
+    return () => observer.disconnect();
+  }, []);
+
+  const handleScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
     const third = el.scrollWidth / 3;
@@ -49,39 +82,48 @@ const ProductList = ({
     } else if (el.scrollLeft < third) {
       el.scrollLeft += third;
     }
-  };
+  }, []);
 
-  const getItemWidth = () => {
-    const el = scrollRef.current;
-    if (!el) return 0;
-    const firstItem = el.firstElementChild as HTMLElement;
-    if (!firstItem) return 0;
-    return firstItem.offsetWidth + 16; // gap-4 = 16px
-  };
+  const scrollPrev = useCallback(() => {
+    scrollRef.current?.scrollBy({
+      left: -itemWidthRef.current,
+      behavior: "smooth",
+    });
+  }, []);
 
-  const scrollPrev = () => {
-    scrollRef.current?.scrollBy({ left: -getItemWidth(), behavior: "smooth" });
-  };
-
-  const scrollNext = () => {
-    scrollRef.current?.scrollBy({ left: getItemWidth(), behavior: "smooth" });
-  };
+  const scrollNext = useCallback(() => {
+    scrollRef.current?.scrollBy({
+      left: itemWidthRef.current,
+      behavior: "smooth",
+    });
+  }, []);
 
   return (
     <>
-      {loginRequired && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-gray-800 px-4 py-2 text-sm text-white shadow-lg">
-          로그인이 필요합니다.
-        </div>
-      )}
+      <ConfirmDialog
+        open={loginModalOpen}
+        onOpenChange={setLoginModalOpen}
+        title="로그인이 필요합니다"
+        description="이 기능을 사용하려면 로그인이 필요합니다."
+        confirmLabel="로그인하러 가기"
+        onConfirm={() => router.push("/login")}
+      />
+      <ConfirmDialog
+        open={cartModalOpen}
+        onOpenChange={setCartModalOpen}
+        title="장바구니에 담았습니다"
+        description="장바구니로 이동하시겠습니까?"
+        confirmLabel="장바구니 보기"
+        onConfirm={() => router.push("/cart")}
+      />
       <div className="relative lg:px-12">
         <p className="my-8 flex justify-center text-2xl font-bold">{title}</p>
         <button
           type="button"
           onClick={scrollPrev}
-          className="absolute top-1/2 left-0 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-gray-800 shadow-md hover:bg-gray-100 lg:flex"
+          className="absolute top-1/2 left-0 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-700 shadow-md hover:border-brand-blue hover:bg-brand-blue hover:text-white lg:flex"
         >
-          <ArrowIcon className="rotate-180 fill-white" />
+          <ArrowIcon className="rotate-180 fill-current" />
         </button>
 
         <ul
@@ -92,7 +134,7 @@ const ProductList = ({
         >
           {tripled.map((product, idx) => (
             <li
-              key={`${product.name}-${idx}`}
+              key={`${product._id}-${idx}`}
               className="mx-auto mb-4 flex w-[40vw] shrink-0 snap-start flex-col gap-1 transition-normal md:w-[30vw] lg:w-55"
             >
               <Link href={`/products/${product.slug}`} className="relative">
@@ -102,11 +144,12 @@ const ProductList = ({
                   width={240}
                   height={240}
                   sizes="45vw"
+                  loading={idx < 3 ? "eager" : "lazy"}
                   className="mb-2 h-auto w-full rounded-lg"
                 />
                 <button
-                  className="absolute right-3 bottom-5 z-10 flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-800 hover:bg-gray-200"
-                  onClick={handleAddToCart}
+                  className="absolute right-3 bottom-5 z-10 flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 hover:border-brand-blue hover:bg-brand-blue hover:text-white"
+                  onClick={(e) => handleAddToCart(e, product._id)}
                 >
                   <CartInIcon className="h-4 w-4" />
                 </button>
@@ -124,9 +167,9 @@ const ProductList = ({
         <button
           type="button"
           onClick={scrollNext}
-          className="absolute top-1/2 right-0 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-gray-800 text-white shadow-md hover:bg-gray-100 lg:flex"
+          className="absolute top-1/2 right-0 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-700 shadow-md hover:border-brand-blue hover:bg-brand-blue hover:text-white lg:flex"
         >
-          <ArrowIcon className="fill-white" />
+          <ArrowIcon className="fill-current" />
         </button>
       </div>
     </>

@@ -25,7 +25,6 @@ export default function CartPage() {
   }, [items, isLoading, setCartCount]);
 
   useEffect(() => {
-    setIsLoading(true);
     cartService
       .getCart()
       .then((cart) => {
@@ -75,7 +74,9 @@ export default function CartPage() {
     const prevItems = items;
     const prevSelected = selected;
 
-    setItems((prev) => prev.filter((i) => !productIds.includes(i.productId._id)));
+    setItems((prev) =>
+      prev.filter((i) => !productIds.includes(i.productId._id)),
+    );
     setSelected((prev) => {
       const next = new Set(prev);
       productIds.forEach((id) => next.delete(id));
@@ -96,6 +97,12 @@ export default function CartPage() {
     (sum, i) => sum + i.productId.price * i.quantity,
     0,
   );
+  const totalShipping = selectedItems.reduce((sum, i) => {
+    const { price, shippingFee = 3000, freeShippingThreshold } = i.productId;
+    const subtotal = price * i.quantity;
+    const isFree = freeShippingThreshold && subtotal >= freeShippingThreshold;
+    return sum + (isFree ? 0 : shippingFee);
+  }, 0);
 
   if (!isInitialized) {
     return (
@@ -111,8 +118,12 @@ export default function CartPage() {
         <h1 className="mb-8 text-2xl font-bold text-gray-900">장바구니</h1>
         <div className="flex min-h-[50vh] flex-col items-center justify-center gap-5">
           <div className="flex flex-col items-center gap-2 text-center">
-            <p className="text-base font-medium text-gray-700">로그인이 필요한 서비스입니다.</p>
-            <p className="text-sm text-gray-400">로그인하고 장바구니를 이용해보세요.</p>
+            <p className="text-base font-medium text-gray-700">
+              로그인이 필요한 서비스입니다.
+            </p>
+            <p className="text-sm text-gray-400">
+              로그인하고 장바구니를 이용해보세요.
+            </p>
           </div>
           <Link
             href="/login"
@@ -201,7 +212,10 @@ export default function CartPage() {
                       onChange={() => toggleItem(product._id)}
                       className="accent-brand-blue h-4 w-4 shrink-0 cursor-pointer"
                     />
-                    <Link href={`/products/${product.slug}`} className="shrink-0">
+                    <Link
+                      href={`/products/${product.slug}`}
+                      className="shrink-0"
+                    >
                       <Image
                         src={product.thumbnail?.[0] ?? noImage}
                         alt={product.name}
@@ -224,7 +238,10 @@ export default function CartPage() {
                         <div className="flex items-center rounded-lg border border-gray-200">
                           <button
                             onClick={() =>
-                              handleQuantityChange(product._id, item.quantity - 1)
+                              handleQuantityChange(
+                                product._id,
+                                item.quantity - 1,
+                              )
                             }
                             disabled={item.quantity <= 1}
                             className="px-3 py-1.5 text-gray-500 hover:text-gray-800 disabled:opacity-30"
@@ -236,7 +253,10 @@ export default function CartPage() {
                           </span>
                           <button
                             onClick={() =>
-                              handleQuantityChange(product._id, item.quantity + 1)
+                              handleQuantityChange(
+                                product._id,
+                                item.quantity + 1,
+                              )
                             }
                             className="px-3 py-1.5 text-gray-500 hover:text-gray-800"
                           >
@@ -260,7 +280,9 @@ export default function CartPage() {
           {/* 주문 요약 */}
           <div className="lg:w-72">
             <div className="sticky top-24 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
-              <h2 className="mb-4 text-base font-bold text-gray-900">주문 요약</h2>
+              <h2 className="mb-4 text-base font-bold text-gray-900">
+                주문 요약
+              </h2>
               <div className="space-y-2 text-sm text-gray-600">
                 <div className="flex justify-between">
                   <span>상품 금액</span>
@@ -268,14 +290,20 @@ export default function CartPage() {
                 </div>
                 <div className="flex justify-between">
                   <span>배송비</span>
-                  <span className="text-brand-blue">무료</span>
+                  <span
+                    className={totalShipping === 0 ? "text-brand-blue" : ""}
+                  >
+                    {totalShipping === 0
+                      ? "무료"
+                      : `${totalShipping.toLocaleString()}원`}
+                  </span>
                 </div>
               </div>
               <div className="my-4 border-t border-gray-100" />
               <div className="flex justify-between text-base font-bold text-gray-900">
                 <span>총 결제 금액</span>
                 <span className="text-brand-blue">
-                  {selectedTotal.toLocaleString()}원
+                  {(selectedTotal + totalShipping).toLocaleString()}원
                 </span>
               </div>
               <button
