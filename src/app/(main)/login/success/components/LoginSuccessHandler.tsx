@@ -2,6 +2,7 @@
 
 import axiosInstance from "@/lib/axios";
 import useAuthStore from "@/store/useAuthStore";
+import useCartStore from "@/store/useCartStore";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
@@ -38,6 +39,10 @@ const LoginSuccessHandler = () => {
         }
 
         login({ userId, nickName, roles });
+
+        axiosInstance.get("/carts").then((res) => {
+          useCartStore.getState().setCount(res.data.data.items.length);
+        }).catch(() => {});
 
         toast.success(`${nickName}님, 환영합니다!`);
         router.replace("/");

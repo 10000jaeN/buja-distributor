@@ -23,7 +23,15 @@ export default async function MainLayout({
         <SideBar menu={menu} />
         <main className="flex-1">{children}</main>
         <Footer />
-        <Toaster position="bottom-center" richColors />
+        <Toaster
+          position="top-center"
+          richColors
+          toastOptions={{
+            classNames: {
+              success: "!bg-blue-50 !border-brand-blue !text-brand-blue [&_[data-icon]]:text-brand-blue",
+            },
+          }}
+        />
       </AuthProvider>
     </div>
   );
