@@ -11,7 +11,7 @@ import { CartInIcon, ArrowIcon } from "@/assets";
 import useAuthStore from "@/store/useAuthStore";
 import useCartStore from "@/store/useCartStore";
 import { cartService } from "@/api/cartService";
-import ConfirmDialog from "@/components/common/ConfirmDialog";
+import ConfirmDialog from "@/components/shared/ConfirmDialog";
 
 const ProductList = ({
   products,
