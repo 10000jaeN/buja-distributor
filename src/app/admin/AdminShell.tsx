@@ -61,9 +61,9 @@ export default function AdminShell({
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex h-screen overflow-hidden bg-gray-100">
       {/* ── 사이드바 ── */}
-      <aside className="flex w-52 flex-shrink-0 flex-col bg-gray-900 text-white">
+      <aside className="flex h-full w-52 flex-shrink-0 flex-col overflow-y-auto bg-gray-900 text-white">
         <div className="border-b border-gray-700 px-5 py-5">
           <span className="text-sm font-bold tracking-tight">
             부자유통 관리자
@@ -106,8 +106,8 @@ export default function AdminShell({
       </aside>
 
       {/* ── 콘텐츠 영역 ── */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-3">
+      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
+        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-6 py-3">
           <p className="text-sm text-gray-400">
             {NAV_ITEMS.find((n) => pathname.startsWith(n.href))?.label ??
               "관리자"}
