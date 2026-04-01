@@ -1,5 +1,5 @@
 import Link from "next/link";
-import BackButton from "@/components/ui/BackButton";
+import BackButton from "@/components/shared/BackButton";
 
 export default function NotFound() {
   return (

@@ -5,8 +5,8 @@ import type { Metadata } from "next";
 import noImage from "@/public/images/no-image.png";
 import { productService } from "@/api/productService";
 import { StarIcon } from "@/assets";
-import { ProductActions } from "./ProductActions";
-import { ProductTabs } from "./ProductTabs";
+import { ProductActions } from "./_components/ProductActions";
+import { ProductTabs } from "./_components/ProductTabs";
 
 interface Props {
   params: Promise<{ slug: string }>;

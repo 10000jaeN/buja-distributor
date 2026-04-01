@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import MypageShell from "./MypageShell";
+import MypageShell from "./_components/MypageShell";
 
 export const metadata: Metadata = {
   title: "마이페이지",

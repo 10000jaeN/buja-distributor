@@ -1,5 +1,5 @@
-import Carousel from "@/components/ui/Carousel";
-import ProductList from "@/components/ui/ProductList";
+import Carousel from "@/components/shared/Carousel";
+import ProductList from "@/components/shared/ProductList";
 import { productService } from "@/api/productService";
 
 export default async function Home() {

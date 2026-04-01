@@ -1,7 +1,7 @@
 "use client";
 
 import { userService, Address } from "@/api/userService";
-import ConfirmDialog from "@/components/common/ConfirmDialog";
+import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
