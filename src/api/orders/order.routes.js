@@ -5,6 +5,7 @@ import {
   getMyOrders,
   getOrderById,
   getAllOrders,
+  getOrderStats,
   completePayment,
   cancelOrder,
   startPreparation,
@@ -32,6 +33,7 @@ router.use(authMiddleware);
  * @access Private (Admin)
  */
 router.get("/all", adminAuthMiddleware, asyncHandler(getAllOrders));
+router.get("/stats", adminAuthMiddleware, asyncHandler(getOrderStats));
 
 /**
  * @route [PATCH] /orders/:id/prepare
