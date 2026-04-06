@@ -384,7 +384,66 @@ export const startShipping = async (req, res) => {
 };
 
 // =================================================================
-// 9. 배송 완료 처리 (PATCH /api/orders/:id/complete) - 관리자 전용
+// 9. 주문 통계 조회 (GET /api/orders/stats?year=YYYY) - 관리자 전용
+// =================================================================
+export const getOrderStats = async (req, res) => {
+  const year = parseInt(req.query.year) || new Date().getFullYear();
+  const startDate = new Date(`${year}-01-01`);
+  const endDate = new Date(`${year + 1}-01-01`);
+  const validStatuses = ["paid", "processing", "shipped", "delivered"];
+
+  const [monthlySales, productRanking, categoryRevenue] = await Promise.all([
+    // 1. 월별 매출 (해당 연도)
+    Order.aggregate([
+      { $match: { status: { $in: validStatuses }, createdAt: { $gte: startDate, $lt: endDate } } },
+      { $group: { _id: { $month: "$createdAt" }, revenue: { $sum: "$totalAmount" }, orders: { $sum: 1 } } },
+      { $sort: { _id: 1 } },
+    ]),
+
+    // 2. 상품별 판매 순위 Top 10 (전체 기간)
+    Order.aggregate([
+      { $match: { status: { $in: validStatuses } } },
+      { $unwind: "$items" },
+      {
+        $group: {
+          _id: "$items.productId",
+          name: { $first: "$items.name" },
+          quantity: { $sum: "$items.quantity" },
+          revenue: { $sum: { $multiply: ["$items.price", "$items.quantity"] } },
+        },
+      },
+      { $sort: { quantity: -1 } },
+      { $limit: 10 },
+    ]),
+
+    // 3. 카테고리별 매출 비율 (해당 연도)
+    Order.aggregate([
+      { $match: { status: { $in: validStatuses }, createdAt: { $gte: startDate, $lt: endDate } } },
+      { $unwind: "$items" },
+      {
+        $lookup: {
+          from: "products",
+          localField: "items.productId",
+          foreignField: "_id",
+          as: "product",
+        },
+      },
+      { $unwind: "$product" },
+      {
+        $group: {
+          _id: "$product.category.parent",
+          revenue: { $sum: { $multiply: ["$items.price", "$items.quantity"] } },
+        },
+      },
+      { $sort: { revenue: -1 } },
+    ]),
+  ]);
+
+  res.status(200).json({ monthlySales, productRanking, categoryRevenue });
+};
+
+// =================================================================
+// 10. 배송 완료 처리 (PATCH /api/orders/:id/complete) - 관리자 전용
 //    상태: shipped -> delivered
 // =================================================================
 export const completeDelivery = async (req, res) => {
