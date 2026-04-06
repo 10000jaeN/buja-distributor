@@ -37,7 +37,14 @@ const OrderSchema = new mongoose.Schema(
         "주문 상품은 최소 하나 이상이어야 합니다.",
       ],
     },
-    // 총 결제 금액
+    // 배송비 (주문 당시 스냅샷)
+    shippingFee: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
+    },
+    // 총 결제 금액 (상품 소계 + 배송비)
     totalAmount: {
       type: Number,
       required: true,

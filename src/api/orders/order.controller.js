@@ -64,8 +64,10 @@ export const createOrder = async (req, res) => {
       );
     }
 
-    let totalAmount = 0;
+    let itemSubtotal = 0;
+    let shippingFee = 0;
     const orderItems = [];
+    const seenProductIds = new Set();
 
     for (const item of items) {
       const product = products.find((p) => p._id.toString() === item.productId);
@@ -78,8 +80,13 @@ export const createOrder = async (req, res) => {
       }
 
       // 3. 주문 당시 스냅샷 데이터 생성 및 금액 계산
-      const itemTotal = product.price * item.quantity;
-      totalAmount += itemTotal;
+      itemSubtotal += product.price * item.quantity;
+
+      // 배송비: 상품별로 한 번만 합산 (수량 무관)
+      if (!seenProductIds.has(product._id.toString())) {
+        shippingFee += product.shippingFee ?? 0;
+        seenProductIds.add(product._id.toString());
+      }
 
       orderItems.push({
         productId: product._id,
@@ -89,11 +96,14 @@ export const createOrder = async (req, res) => {
       });
     }
 
+    const totalAmount = itemSubtotal + shippingFee;
+
     // 4. 주문 문서 생성 (pending 상태로 DB에 저장)
     const newOrder = new Order({
       orderNumber: generateOrderNumber(),
       user: userId,
       items: orderItems,
+      shippingFee,
       totalAmount,
       shippingAddress,
       status: "pending", // 초기 상태는 결제 대기
