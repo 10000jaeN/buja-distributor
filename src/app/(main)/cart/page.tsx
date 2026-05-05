@@ -94,17 +94,31 @@ export default function CartPage() {
     }
   };
 
+  const BUNDLE_FREE_THRESHOLD = 50000;
+
   const selectedItems = items.filter((i) => selected.has(i.productId._id));
   const selectedTotal = selectedItems.reduce(
     (sum, i) => sum + i.productId.price * i.quantity,
     0,
   );
-  const totalShipping = selectedItems.reduce((sum, i) => {
-    const { price, shippingFee = 3000, freeShippingThreshold } = i.productId;
-    const subtotal = price * i.quantity;
-    const isFree = freeShippingThreshold && subtotal >= freeShippingThreshold;
-    return sum + (isFree ? 0 : shippingFee);
+
+  const bundleItems = selectedItems.filter((i) => i.productId.bundleShipping);
+  const nonBundleItems = selectedItems.filter((i) => !i.productId.bundleShipping);
+
+  const nonBundleShipping = nonBundleItems.reduce((sum, i) => {
+    return sum + (i.productId.shippingFee ?? 0);
   }, 0);
+
+  const bundleSubtotal = bundleItems.reduce(
+    (sum, i) => sum + i.productId.price * i.quantity,
+    0,
+  );
+  const bundleShipping =
+    bundleItems.length === 0 ? 0 :
+    bundleSubtotal >= BUNDLE_FREE_THRESHOLD ? 0 :
+    Math.max(...bundleItems.map((i) => i.productId.shippingFee ?? 0));
+
+  const totalShipping = nonBundleShipping + bundleShipping;
 
   if (!isInitialized) {
     return (

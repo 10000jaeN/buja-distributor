@@ -22,6 +22,7 @@ import {
   ContentBlock,
   INITIAL_FORM,
   type ProductFormData,
+  type ShippingType,
 } from "./_components/ProductForm";
 
 // ─── 메인 페이지 ──────────────────────────────────────────────────────────────
@@ -89,19 +90,24 @@ export default function AdminProductsPage() {
     }));
   };
 
-  const buildPayload = (f: ProductFormData) => ({
-    name: f.name,
-    price: Number(f.price),
-    shippingFee: Number(f.shippingFee),
-    freeShippingThreshold: Number(f.freeShippingThreshold),
-    category: { parent: f.categoryParent, child: f.categoryChild },
-    thumbnail: f.thumbnail
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean),
-    isAvailable: f.isAvailable,
-    contentBlock: f.contentBlocks,
-  });
+  const buildPayload = (f: ProductFormData) => {
+    const isFree = f.shippingType === "free";
+    const isBundle = f.shippingType === "bundle";
+    return {
+      name: f.name,
+      price: Number(f.price),
+      shippingFee: isFree ? 0 : Number(f.shippingFee),
+      freeShippingThreshold: isBundle ? Number(f.freeShippingThreshold) : 0,
+      bundleShipping: isBundle,
+      category: { parent: f.categoryParent, child: f.categoryChild },
+      thumbnail: f.thumbnail
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+      isAvailable: f.isAvailable,
+      contentBlock: f.contentBlocks,
+    };
+  };
 
   const openCreateModal = () => {
     setForm(INITIAL_FORM);
@@ -149,9 +155,13 @@ export default function AdminProductsPage() {
   };
 
   const openEditModal = (product: Product) => {
+    const shippingType: ShippingType =
+      product.shippingFee === 0 ? "free" :
+      product.bundleShipping ? "bundle" : "paid";
     setForm({
       name: product.name,
       price: String(product.price),
+      shippingType,
       shippingFee: String(product.shippingFee ?? 3000),
       freeShippingThreshold: String(product.freeShippingThreshold ?? 0),
       categoryParent: product.category.parent,

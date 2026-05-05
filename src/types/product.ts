@@ -22,6 +22,7 @@ export interface Product {
   price: number;
   shippingFee: number;
   freeShippingThreshold: number;
+  bundleShipping: boolean;
   category: {
     parent: string;
     child: string;
