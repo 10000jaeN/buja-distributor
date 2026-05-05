@@ -278,7 +278,7 @@ export default function CartPage() {
           </div>
 
           {/* 주문 요약 */}
-          <div className="lg:w-72">
+          <div className="sticky top-28 lg:w-72">
             <div className="sticky top-24 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
               <h2 className="mb-4 text-base font-bold text-gray-900">
                 주문 요약
