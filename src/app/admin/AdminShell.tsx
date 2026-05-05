@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { href: "/admin/products", label: "상품 관리" },
   { href: "/admin/categories", label: "카테고리 관리" },
   { href: "/admin/orders", label: "주문 관리" },
+  { href: "/admin/settings", label: "사이트 설정" },
 ];
 
 export default function AdminShell({

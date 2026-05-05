@@ -1,6 +1,7 @@
 "use client";
 
 import { cartService, CartItem } from "@/api/cartService";
+import { settingsService } from "@/api/settingsService";
 import useAuthStore from "@/store/useAuthStore";
 import useCartStore from "@/store/useCartStore";
 import Image from "next/image";
@@ -18,6 +19,7 @@ export default function CartPage() {
   const [error, setError] = useState<string | null>(null);
   const setCartCount = useCartStore((state) => state.setCount);
   const [removeTarget, setRemoveTarget] = useState<string[] | null>(null);
+  const [bundleFreeThreshold, setBundleFreeThreshold] = useState(50000);
 
   // items 변경 시 nav 뱃지 카운트 동기화
   useEffect(() => {
@@ -27,11 +29,14 @@ export default function CartPage() {
   }, [items, isLoading, setCartCount]);
 
   useEffect(() => {
-    cartService
-      .getCart()
-      .then((cart) => {
+    Promise.all([
+      cartService.getCart(),
+      settingsService.getSettings(),
+    ])
+      .then(([cart, settings]) => {
         setItems(cart.items);
         setSelected(new Set(cart.items.map((i) => i.productId._id)));
+        setBundleFreeThreshold(settings.bundleFreeThreshold);
       })
       .catch(() => setError("장바구니를 불러오지 못했습니다."))
       .finally(() => setIsLoading(false));
@@ -94,8 +99,6 @@ export default function CartPage() {
     }
   };
 
-  const BUNDLE_FREE_THRESHOLD = 50000;
-
   const selectedItems = items.filter((i) => selected.has(i.productId._id));
   const selectedTotal = selectedItems.reduce(
     (sum, i) => sum + i.productId.price * i.quantity,
@@ -115,7 +118,7 @@ export default function CartPage() {
   );
   const bundleShipping =
     bundleItems.length === 0 ? 0 :
-    bundleSubtotal >= BUNDLE_FREE_THRESHOLD ? 0 :
+    bundleSubtotal >= bundleFreeThreshold ? 0 :
     Math.max(...bundleItems.map((i) => i.productId.shippingFee ?? 0));
 
   const totalShipping = nonBundleShipping + bundleShipping;
