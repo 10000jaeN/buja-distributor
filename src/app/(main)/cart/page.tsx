@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import noImage from "@/public/images/no-image.png";
+import ConfirmDialog from "@/components/shared/ConfirmDialog";
 
 export default function CartPage() {
   const { isLoggedIn, isInitialized } = useAuthStore();
@@ -16,6 +17,7 @@ export default function CartPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const setCartCount = useCartStore((state) => state.setCount);
+  const [removeTarget, setRemoveTarget] = useState<string[] | null>(null);
 
   // items 변경 시 nav 뱃지 카운트 동기화
   useEffect(() => {
@@ -157,6 +159,21 @@ export default function CartPage() {
 
   return (
     <div className="mx-auto max-w-[1024px] px-5 py-10">
+      <ConfirmDialog
+        open={removeTarget !== null}
+        onOpenChange={(open) => { if (!open) setRemoveTarget(null); }}
+        title="장바구니에서 삭제"
+        description={
+          removeTarget && removeTarget.length > 1
+            ? `선택한 ${removeTarget.length}개 상품을 삭제하시겠습니까?`
+            : "상품을 삭제하시겠습니까?"
+        }
+        confirmLabel="삭제"
+        onConfirm={() => {
+          if (removeTarget) handleRemove(removeTarget);
+          setRemoveTarget(null);
+        }}
+      />
       <h1 className="mb-8 text-2xl font-bold text-gray-900">장바구니</h1>
 
       {items.length === 0 ? (
@@ -188,7 +205,7 @@ export default function CartPage() {
               </label>
               {selected.size > 0 && (
                 <button
-                  onClick={() => handleRemove([...selected])}
+                  onClick={() => setRemoveTarget([...selected])}
                   className="text-sm text-gray-400 hover:text-red-500"
                 >
                   선택 삭제
@@ -264,7 +281,7 @@ export default function CartPage() {
                           </button>
                         </div>
                         <button
-                          onClick={() => handleRemove([product._id])}
+                          onClick={() => setRemoveTarget([product._id])}
                           className="text-xs text-gray-400 hover:text-red-400"
                         >
                           삭제
