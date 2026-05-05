@@ -38,25 +38,34 @@ export default function ProductsPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setIsLoading(true);
-    Promise.all([
-      productService.getProducts({
-        category: category || undefined,
-        sub: sub || undefined,
-        sort,
-      }),
-      category
-        ? categoryService.getCategories().then(
-            (cats) =>
-              cats.find((c) => c.parent === category)?.children ?? []
-          )
-        : Promise.resolve([]),
-    ])
-      .then(([products, children]) => {
-        setProducts(products);
-        setChildren(children);
-      })
-      .finally(() => setIsLoading(false));
+    let cancelled = false;
+
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const [products, children] = await Promise.all([
+          productService.getProducts({
+            category: category || undefined,
+            sub: sub || undefined,
+            sort,
+          }),
+          category
+            ? categoryService.getCategories().then(
+                (cats) => cats.find((c) => c.parent === category)?.children ?? []
+              )
+            : Promise.resolve([]),
+        ]);
+        if (!cancelled) {
+          setProducts(products);
+          setChildren(children);
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+
+    fetchData();
+    return () => { cancelled = true; };
   }, [category, sub, sort]);
 
   const updateParam = (key: string, value: string) => {
