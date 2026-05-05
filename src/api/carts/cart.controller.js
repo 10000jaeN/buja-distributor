@@ -11,7 +11,7 @@ export const getCart = async (req, res) => {
 
   // 사용자 ID로 장바구니를 찾고 상품 세부 정보 채우기
   const cart = await Cart.findOne({ user: userId })
-    .populate("items.productId", "name price slug thumbnail isAvailable")
+    .populate("items.productId", "name price slug thumbnail isAvailable shippingFee freeShippingThreshold")
     .select("-__v"); // 불필요한 필드 제거
 
   if (!cart) {
