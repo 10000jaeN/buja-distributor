@@ -13,6 +13,7 @@ import userRouter from "./src/api/user/user.routes.js";
 import orderRouter from "./src/api/orders/order.routes.js";
 import cartRouter from "./src/api/carts/cart.route.js";
 import reviewRouter from "./src/api/reviews/review.route.js";
+import settingsRouter from "./src/api/settings/settings.routes.js";
 import { setupPassport } from "./src/config/passport.config.js";
 
 import "./src/api/user/user.model.js"; // 모델을 Mongoose에 등록하여 스키마 사용 가능하도록 함
@@ -54,6 +55,7 @@ app.use("/user", userRouter);
 app.use("/orders", orderRouter);
 app.use("/carts", cartRouter);
 app.use("/reviews", reviewRouter);
+app.use("/settings", settingsRouter);
 
 // 전역 에러 핸들러 (asyncHandler를 쓸 때 필수!)
 app.use((err, req, res, next) => {

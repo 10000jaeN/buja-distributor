@@ -40,6 +40,11 @@ const ProductSchema = new mongoose.Schema(
       default: 0,
       min: [0, "무료배송 기준금액은 0보다 크거나 같아야 합니다."],
     },
+    // 묶음배송 가능 여부
+    bundleShipping: {
+      type: Boolean,
+      default: false,
+    },
     // 분류
     category: {
       parent: { type: String, required: true },
