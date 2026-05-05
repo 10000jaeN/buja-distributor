@@ -21,7 +21,7 @@ export default function AdminLoginPage() {
     : user?.roles === "admin";
 
   useEffect(() => {
-    if (isAdmin) router.replace("/admin/products");
+    if (isAdmin) router.replace("/admin/dashboard");
   }, [isAdmin, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -40,7 +40,7 @@ export default function AdminLoginPage() {
         email: data.email || email,
         roles: data.roles,
       });
-      router.push("/admin/products");
+      router.push("/admin/dashboard");
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data

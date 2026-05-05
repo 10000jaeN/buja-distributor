@@ -13,8 +13,10 @@ const isAdminRole = (roles?: unknown) => {
 };
 
 const NAV_ITEMS = [
+  { href: "/admin/dashboard", label: "대시보드" },
   { href: "/admin/products", label: "상품 관리" },
   { href: "/admin/categories", label: "카테고리 관리" },
+  { href: "/admin/orders", label: "주문 관리" },
 ];
 
 export default function AdminShell({
