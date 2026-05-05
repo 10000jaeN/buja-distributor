@@ -97,7 +97,7 @@ export default function AdminProductsPage() {
       name: f.name,
       price: Number(f.price),
       shippingFee: isFree ? 0 : Number(f.shippingFee),
-      freeShippingThreshold: isBundle ? Number(f.freeShippingThreshold) : 0,
+      freeShippingThreshold: isFree ? 0 : Number(f.freeShippingThreshold),
       bundleShipping: isBundle,
       category: { parent: f.categoryParent, child: f.categoryChild },
       thumbnail: f.thumbnail
