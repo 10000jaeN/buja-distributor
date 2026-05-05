@@ -8,6 +8,13 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import noImage from "@/public/images/no-image.png";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const SORT_OPTIONS = [
   { label: "최신순", value: "recent" },
@@ -127,17 +134,20 @@ export default function ProductsPage() {
         <p className="text-sm text-gray-500">
           {isLoading ? "불러오는 중..." : `총 ${products.length}개`}
         </p>
-        <select
-          value={sort}
-          onChange={(e) => updateParam("sort", e.target.value)}
-          className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700 outline-none focus:border-brand-blue"
-        >
-          {SORT_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+        <Select value={sort} onValueChange={(value) => value && updateParam("sort", value)}>
+          <SelectTrigger>
+            <SelectValue>
+              {SORT_OPTIONS.find((opt) => opt.value === sort)?.label}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {SORT_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* 상품 그리드 */}
