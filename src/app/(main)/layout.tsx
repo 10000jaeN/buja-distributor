@@ -4,6 +4,7 @@ import AuthProvider from "@/components/provider/AuthProvider";
 import Footer from "@/components/common/Footer";
 import Nav from "@/components/common/Nav";
 import SideBar from "@/components/common/SideBar";
+import ScrollToTop from "@/components/common/ScrollToTop";
 import { categoryService } from "@/api/categoryService";
 import { buildMenu } from "@/lib/buildMenu";
 import { Toaster } from "sonner";
@@ -23,6 +24,7 @@ export default async function MainLayout({
         <SideBar menu={menu} />
         <main className="flex-1">{children}</main>
         <Footer />
+        <ScrollToTop />
         <Toaster
           position="top-center"
           richColors
