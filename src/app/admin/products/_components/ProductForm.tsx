@@ -155,9 +155,9 @@ export function ProductForm({
           </div>
         )}
 
-        {/* 유료배송: 배송비 + 개별 무료배송 기준금액 */}
+        {/* 유료배송: 배송비만 */}
         {form.shippingType === "paid" && (
-          <div className="space-y-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
+          <div className="rounded-lg border border-gray-100 bg-gray-50 p-3">
             <div className="space-y-1.5">
               <Label className="text-sm font-medium text-gray-600">배송비 (원)</Label>
               <Input
@@ -167,17 +167,6 @@ export function ProductForm({
                 placeholder="3000"
                 min="0"
               />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-sm font-medium text-gray-600">개별 무료배송 기준금액 (원)</Label>
-              <Input
-                type="number"
-                value={form.freeShippingThreshold}
-                onChange={(e) => onChange("freeShippingThreshold", e.target.value)}
-                placeholder="0"
-                min="0"
-              />
-              <p className="text-xs text-gray-400">0이면 무료배송 조건 없음.</p>
             </div>
           </div>
         )}

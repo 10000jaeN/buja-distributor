@@ -109,10 +109,7 @@ export default function CartPage() {
   const nonBundleItems = selectedItems.filter((i) => !i.productId.bundleShipping);
 
   const nonBundleShipping = nonBundleItems.reduce((sum, i) => {
-    const { price, shippingFee = 0, freeShippingThreshold = 0 } = i.productId;
-    const subtotal = price * i.quantity;
-    const isFree = freeShippingThreshold > 0 && subtotal >= freeShippingThreshold;
-    return sum + (isFree ? 0 : shippingFee);
+    return sum + (i.productId.shippingFee ?? 0);
   }, 0);
 
   const bundleSubtotal = bundleItems.reduce(
