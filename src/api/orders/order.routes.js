@@ -6,6 +6,7 @@ import {
   getOrderById,
   getAllOrders,
   getOrderStats,
+  getMonthlyStats,
   completePayment,
   cancelOrder,
   startPreparation,
@@ -34,6 +35,7 @@ router.use(authMiddleware);
  */
 router.get("/all", adminAuthMiddleware, asyncHandler(getAllOrders));
 router.get("/stats", adminAuthMiddleware, asyncHandler(getOrderStats));
+router.get("/monthly-stats", adminAuthMiddleware, asyncHandler(getMonthlyStats));
 
 /**
  * @route [PATCH] /orders/:id/prepare

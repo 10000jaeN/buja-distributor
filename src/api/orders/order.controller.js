@@ -396,6 +396,80 @@ export const startShipping = async (req, res) => {
 // =================================================================
 // 9. 주문 통계 조회 (GET /api/orders/stats?year=YYYY) - 관리자 전용
 // =================================================================
+export const getMonthlyStats = async (req, res) => {
+  const now = new Date();
+  const year = parseInt(req.query.year) || now.getFullYear();
+  const month = parseInt(req.query.month) || now.getMonth() + 1;
+
+  const startDate = new Date(year, month - 1, 1);
+  const endDate = new Date(year, month, 1);
+
+  // 전월 범위
+  const prevStart = new Date(year, month - 2, 1);
+  const prevEnd = new Date(year, month - 1, 1);
+
+  const validStatuses = ["paid", "processing", "shipped", "delivered"];
+
+  // 미처리 기준: paid 상태로 1일 이상 경과
+  const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+  const [salesData, cancelledCount, prevSalesData, unprocessedOrders] = await Promise.all([
+    Order.aggregate([
+      { $match: { status: { $in: validStatuses }, createdAt: { $gte: startDate, $lt: endDate } } },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: "$totalAmount" },
+          shippingRevenue: { $sum: "$shippingFee" },
+          orderCount: { $sum: 1 },
+        },
+      },
+    ]),
+    Order.countDocuments({ status: "cancelled", createdAt: { $gte: startDate, $lt: endDate } }),
+    Order.aggregate([
+      { $match: { status: { $in: validStatuses }, createdAt: { $gte: prevStart, $lt: prevEnd } } },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: "$totalAmount" },
+          orderCount: { $sum: 1 },
+        },
+      },
+    ]),
+    Order.find({ status: "paid", paidAt: { $lte: oneDayAgo } })
+      .select("orderNumber paidAt totalAmount")
+      .sort({ paidAt: 1 })
+      .lean(),
+  ]);
+
+  const data = salesData[0] ?? { totalRevenue: 0, shippingRevenue: 0, orderCount: 0 };
+  const prev = prevSalesData[0] ?? { totalRevenue: 0, orderCount: 0 };
+  const productRevenue = data.totalRevenue - data.shippingRevenue;
+
+  const revenueGrowthRate = prev.totalRevenue > 0
+    ? Math.round(((data.totalRevenue - prev.totalRevenue) / prev.totalRevenue) * 100)
+    : null;
+
+  res.status(200).json({
+    year,
+    month,
+    totalRevenue: data.totalRevenue,
+    productRevenue,
+    shippingRevenue: data.shippingRevenue,
+    orderCount: data.orderCount,
+    cancelledCount,
+    averageOrderValue: data.orderCount > 0 ? Math.round(data.totalRevenue / data.orderCount) : 0,
+    prevTotalRevenue: prev.totalRevenue,
+    prevOrderCount: prev.orderCount,
+    revenueGrowthRate,
+    unprocessedOrders: unprocessedOrders.map((o) => ({
+      orderNumber: o.orderNumber,
+      paidAt: o.paidAt,
+      totalAmount: o.totalAmount,
+    })),
+  });
+};
+
 export const getOrderStats = async (req, res) => {
   const year = parseInt(req.query.year) || new Date().getFullYear();
   const startDate = new Date(`${year}-01-01`);
