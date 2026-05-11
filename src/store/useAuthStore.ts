@@ -1,6 +1,26 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
 import useCartStore from "./useCartStore";
+
+// autoLogin 플래그에 따라 localStorage / sessionStorage를 동적으로 선택
+const adaptiveStorage = createJSONStorage(() => ({
+  getItem: (name: string) =>
+    localStorage.getItem(name) ?? sessionStorage.getItem(name),
+  setItem: (name: string, value: string) => {
+    const isAutoLogin = localStorage.getItem("autoLogin") !== "false";
+    if (isAutoLogin) {
+      localStorage.setItem(name, value);
+      sessionStorage.removeItem(name);
+    } else {
+      sessionStorage.setItem(name, value);
+      localStorage.removeItem(name);
+    }
+  },
+  removeItem: (name: string) => {
+    localStorage.removeItem(name);
+    sessionStorage.removeItem(name);
+  },
+}));
 
 interface User {
   userId: string;
@@ -30,6 +50,7 @@ const useAuthStore = create<AuthState>()(
 
       logout: () => {
         localStorage.removeItem("accessToken");
+        sessionStorage.removeItem("accessToken");
         useCartStore.getState().reset();
         set({ user: null, isLoggedIn: false });
       },
@@ -40,6 +61,7 @@ const useAuthStore = create<AuthState>()(
     }),
     {
       name: "auth-storage",
+      storage: adaptiveStorage,
       partialize: (state) => ({
         user: state.user,
         isLoggedIn: state.isLoggedIn,
