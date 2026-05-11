@@ -394,7 +394,7 @@ export const startShipping = async (req, res) => {
 };
 
 // =================================================================
-// 9. 주문 통계 조회 (GET /api/orders/stats?year=YYYY) - 관리자 전용
+// 9. 월별 매출 통계 조회 (GET /api/orders/monthly-stats?year=YYYY&month=MM) - 관리자 전용
 // =================================================================
 export const getMonthlyStats = async (req, res) => {
   const now = new Date();
