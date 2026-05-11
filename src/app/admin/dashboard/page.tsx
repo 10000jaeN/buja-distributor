@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { statsService, OrderStats } from "@/api/statsService";
-import SalesBarChart from "../_components/SalesBarChart";
+import { statsService, OrderStats, MonthlyStats, UnprocessedOrder } from "@/api/statsService";
 import CategoryPieChart from "../_components/CategoryPieChart";
 import ProductRankingTable from "../_components/ProductRankingTable";
+import MonthlySummaryCard from "../_components/MonthlySummaryCard";
 import { toast } from "sonner";
 
 const EMPTY_STATS: OrderStats = {
@@ -14,11 +14,39 @@ const EMPTY_STATS: OrderStats = {
 };
 
 export default function DashboardPage() {
-  const [year, setYear] = useState(new Date().getFullYear());
+  const now = new Date();
+  const [year, setYear] = useState(now.getFullYear());
   const [stats, setStats] = useState<OrderStats>(EMPTY_STATS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [retry, setRetry] = useState(0);
+
+  const [monthlyYear, setMonthlyYear] = useState(now.getFullYear());
+  const [monthlyMonth, setMonthlyMonth] = useState(now.getMonth() + 1);
+  const [monthlyStats, setMonthlyStats] = useState<MonthlyStats | null>(null);
+  const [unprocessedOrders, setUnprocessedOrders] = useState<UnprocessedOrder[]>([]);
+
+  const isCurrentMonth =
+    monthlyYear === now.getFullYear() && monthlyMonth === now.getMonth() + 1;
+
+  const handlePrevMonth = () => {
+    if (monthlyMonth === 1) {
+      setMonthlyYear((y) => y - 1);
+      setMonthlyMonth(12);
+    } else {
+      setMonthlyMonth((m) => m - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (isCurrentMonth) return;
+    if (monthlyMonth === 12) {
+      setMonthlyYear((y) => y + 1);
+      setMonthlyMonth(1);
+    } else {
+      setMonthlyMonth((m) => m + 1);
+    }
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -32,6 +60,17 @@ export default function DashboardPage() {
       })
       .finally(() => setLoading(false));
   }, [year, retry]);
+
+  useEffect(() => {
+    setMonthlyStats(null);
+    statsService
+      .getMonthlyStats(monthlyYear, monthlyMonth)
+      .then((data) => {
+        setMonthlyStats(data);
+        setUnprocessedOrders(data.unprocessedOrders);
+      })
+      .catch(() => toast.error("월별 통계를 불러오는 데 실패했습니다."));
+  }, [monthlyYear, monthlyMonth]);
 
   if (error) {
     return (
@@ -48,25 +87,23 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* 매출 막대 그래프 */}
-      <div
-        className={
-          loading ? "opacity-50 transition-opacity" : "transition-opacity"
-        }
-      >
-        <SalesBarChart
-          monthlySales={stats.monthlySales}
-          year={year}
-          onYearChange={setYear}
+    <div className={`space-y-6 ${loading ? "opacity-50 transition-opacity" : "transition-opacity"}`}>
+      {/* 월 매출 요약 + 카테고리별 매출 */}
+      <div className="grid grid-cols-2 gap-6">
+        <MonthlySummaryCard
+          stats={monthlyStats}
+          unprocessedOrders={unprocessedOrders}
+          year={monthlyYear}
+          month={monthlyMonth}
+          onPrev={handlePrevMonth}
+          onNext={handleNextMonth}
+          isCurrentMonth={isCurrentMonth}
         />
+        <CategoryPieChart categoryRevenue={stats.categoryRevenue} />
       </div>
 
-      {/* 카테고리 원형 + 상품 순위 */}
-      <div className="grid grid-cols-[1fr_1.5fr] gap-6">
-        <CategoryPieChart categoryRevenue={stats.categoryRevenue} />
-        <ProductRankingTable productRanking={stats.productRanking} />
-      </div>
+      {/* 상품 순위 */}
+      <ProductRankingTable productRanking={stats.productRanking} />
     </div>
   );
 }

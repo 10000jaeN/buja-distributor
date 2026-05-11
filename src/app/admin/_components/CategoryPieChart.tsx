@@ -65,7 +65,10 @@ export default function CategoryPieChart({ categoryRevenue }: Props) {
               ))}
             </Pie>
             <Tooltip
-              formatter={(value) => [`${Number(value).toLocaleString()}원`]}
+              formatter={(value, _name, props) => [
+                `${Number(value).toLocaleString()}원`,
+                props.payload?.name ?? _name,
+              ]}
               contentStyle={{
                 borderRadius: 8,
                 border: "1px solid #e5e7eb",
