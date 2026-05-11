@@ -90,7 +90,7 @@ export default function MonthlySummaryCard({ stats, monthlyError, onMonthlyRetry
                 <span className="font-bold">전월 데이터 없음</span>
               ) : (
                 <>
-                  <span className="font-bold">{isPositive ? "+" : ""}{Math.round(growthRate)}%</span>
+                  <span className="font-bold">{isPositive ? "+" : ""}{Math.round(growthRate!)}%</span>
                   <span className="ml-2 text-xs font-normal opacity-70">
                     (전월 {fmt(stats.prevTotalRevenue)}원 · {fmt(stats.prevOrderCount)}건)
                   </span>
