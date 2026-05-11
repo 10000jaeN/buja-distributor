@@ -91,7 +91,7 @@ export default function DashboardPage() {
   return (
     <div className={`space-y-6 ${loading ? "opacity-50 transition-opacity" : "transition-opacity"}`}>
       {/* 월 매출 요약 + 카테고리별 매출 */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-2 gap-6">
         <MonthlySummaryCard
           stats={monthlyStats}
           monthlyError={monthlyError}

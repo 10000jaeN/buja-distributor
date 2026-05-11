@@ -61,7 +61,7 @@ export default function MonthlySummaryCard({ stats, monthlyError, onMonthlyRetry
             <p className="mt-0.5 text-xs text-gray-400">세무·정산 참고용</p>
           </div>
           <div className="flex items-center gap-1">
-            <button onClick={onPrev} className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
+            <button onClick={onPrev} aria-label="이전 달" className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
               <ChevronLeft className="h-4 w-4" />
             </button>
             <span className="min-w-[72px] text-center text-sm font-medium text-gray-700">
@@ -70,6 +70,7 @@ export default function MonthlySummaryCard({ stats, monthlyError, onMonthlyRetry
             <button
               onClick={onNext}
               disabled={isCurrentMonth}
+              aria-label="다음 달"
               className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-30"
             >
               <ChevronRight className="h-4 w-4" />
