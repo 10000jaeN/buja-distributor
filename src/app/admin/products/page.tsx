@@ -60,7 +60,10 @@ export default function AdminProductsPage() {
       .catch(() => {});
   }, []);
 
-  const handleFormChange = (field: keyof ProductFormData, value: string | boolean) => {
+  const handleFormChange = (
+    field: keyof ProductFormData,
+    value: string | boolean,
+  ) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -156,8 +159,11 @@ export default function AdminProductsPage() {
 
   const openEditModal = (product: Product) => {
     const shippingType: ShippingType =
-      product.shippingFee === 0 ? "free" :
-      product.bundleShipping ? "bundle" : "paid";
+      product.shippingFee === 0
+        ? "free"
+        : product.bundleShipping
+          ? "bundle"
+          : "paid";
     setForm({
       name: product.name,
       price: String(product.price),
@@ -278,11 +284,7 @@ export default function AdminProductsPage() {
       {/* 페이지 헤더 */}
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-foreground text-xl font-bold">상품 관리</h1>
-        <Button
-          onClick={openCreateModal}
-        >
-          + 상품 추가
-        </Button>
+        <Button onClick={openCreateModal}>+ 상품 추가</Button>
       </div>
 
       {/* 스탯 카드 */}
@@ -311,13 +313,30 @@ export default function AdminProductsPage() {
       {/* 검색 및 필터 */}
       {!isLoading && !error && (
         <div className="mb-4 space-y-2">
-          <div className="flex flex-col gap-3 sm:flex-row">
+          {/* 검색창 + 초기화 */}
+          <div className="flex gap-2">
             <Input
               placeholder="상품명 검색..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="flex-1 bg-white"
             />
+            <button
+              onClick={() => {
+                setSearchQuery("");
+                setFilterCategory("all");
+                setFilterChild("all");
+                setFilterStatus("all");
+              }}
+              className="flex shrink-0 items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-400 hover:text-gray-600"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">초기화</span>
+            </button>
+          </div>
+
+          {/* 필터 셀렉트 */}
+          <div className="flex gap-2">
             <Select
               value={filterCategory}
               onValueChange={(v) => {
@@ -326,7 +345,7 @@ export default function AdminProductsPage() {
                 setFilterChild("all");
               }}
             >
-              <SelectTrigger className="bg-white sm:w-40">
+              <SelectTrigger className="flex-1 bg-white lg:w-40 lg:flex-none">
                 <SelectValue>
                   {filterCategory === "all" ? "전체 카테고리" : filterCategory}
                 </SelectValue>
@@ -344,7 +363,7 @@ export default function AdminProductsPage() {
               value={filterChild}
               onValueChange={(v) => v && setFilterChild(v)}
             >
-              <SelectTrigger className="bg-white sm:w-36">
+              <SelectTrigger className="flex-1 bg-white lg:w-36 lg:flex-none">
                 <SelectValue>
                   {filterChild === "all" ? "전체 소분류" : filterChild}
                 </SelectValue>
@@ -362,7 +381,7 @@ export default function AdminProductsPage() {
               value={filterStatus}
               onValueChange={(v) => v && setFilterStatus(v)}
             >
-              <SelectTrigger className="bg-white sm:w-36">
+              <SelectTrigger className="flex-1 bg-white lg:w-36 lg:flex-none">
                 <SelectValue>
                   {filterStatus === "all"
                     ? "전체 상태"
@@ -378,24 +397,10 @@ export default function AdminProductsPage() {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex justify-end">
-            <button
-              onClick={() => {
-                setSearchQuery("");
-                setFilterCategory("all");
-                setFilterChild("all");
-                setFilterStatus("all");
-              }}
-              className="mr-2 flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              필터 초기화
-            </button>
-          </div>
         </div>
       )}
 
-      {/* 상품 테이블 */}
+      {/* 상품 목록 */}
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
           <div className="flex flex-col items-center gap-3">
@@ -414,48 +419,104 @@ export default function AdminProductsPage() {
             다시 시도
           </Button>
         </div>
+      ) : filteredProducts.length === 0 ? (
+        <div className="rounded-lg border border-gray-200 bg-white py-12 text-center text-sm text-gray-400 shadow-sm">
+          {products.length === 0
+            ? "등록된 상품이 없습니다."
+            : "검색 결과가 없습니다."}
+        </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                {[
-                  "",
-                  "상품명",
-                  "가격",
-                  "카테고리",
-                  "재고",
-                  "등록일",
-                  "관리",
-                ].map((col, i, arr) => (
-                  <th
-                    key={i}
-                    className={`px-4 py-3 text-left text-xs font-semibold tracking-wide text-gray-500 uppercase ${i === arr.length - 1 ? "pr-2" : ""}`}
+        <>
+          {/* 모바일/태블릿: 카드 목록 */}
+          <div className="flex flex-col gap-3 lg:hidden">
+            {filteredProducts.map((product) => (
+              <div
+                key={product._id}
+                className="flex items-start gap-3 rounded-lg border border-gray-200 bg-white p-3 shadow-sm"
+              >
+                <Image
+                  src={product.thumbnail[0] ?? noImage}
+                  alt={product.name}
+                  width={56}
+                  height={56}
+                  className="h-21.5 w-21.5 shrink-0 rounded-md border border-gray-200 object-cover"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-foreground truncate text-sm font-semibold">
+                    {product.name}
+                  </p>
+                  <p className="mt-0.5 text-sm text-gray-700">
+                    {product.price.toLocaleString()}원
+                  </p>
+                  <p className="mt-0.5 text-xs text-gray-400">
+                    {product.category.parent}
+                    {product.category.child
+                      ? ` / ${product.category.child}`
+                      : ""}
+                  </p>
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${product.isAvailable ? "text-brand-blue bg-blue-50" : "bg-gray-100 text-gray-500"}`}
+                    >
+                      {product.isAvailable ? "재고 있음" : "품절"}
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      {formatDate(product.createdAt)}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex shrink-0 flex-col gap-1.5">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openEditModal(product)}
+                    className="text-xs"
                   >
-                    {col}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {filteredProducts.length === 0 ? (
+                    수정
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setDeleteTarget(product)}
+                    className="border-red-200 text-xs text-red-500 hover:bg-red-50"
+                  >
+                    삭제
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* 데스크탑: 테이블 */}
+          <div className="hidden overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm lg:block">
+            <table className="w-full min-w-[700px] divide-y divide-gray-200">
+              <thead className="bg-gray-50">
                 <tr>
-                  <td
-                    colSpan={7}
-                    className="py-12 text-center text-sm text-gray-400"
-                  >
-                    {products.length === 0
-                      ? "등록된 상품이 없습니다."
-                      : "검색 결과가 없습니다."}
-                  </td>
+                  {[
+                    "",
+                    "상품명",
+                    "가격",
+                    "카테고리",
+                    "재고",
+                    "등록일",
+                    "관리",
+                  ].map((col, i, arr) => (
+                    <th
+                      key={i}
+                      className={`px-4 py-3 text-left text-xs font-semibold tracking-wide whitespace-nowrap text-gray-500 uppercase ${i === arr.length - 1 ? "pr-2" : ""}`}
+                    >
+                      {col}
+                    </th>
+                  ))}
                 </tr>
-              ) : (
-                filteredProducts.map((product) => (
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filteredProducts.map((product) => (
                   <tr
                     key={product._id}
                     className="transition-colors duration-150 hover:bg-gray-50"
                   >
-                    <td className="px-4 py-2">
+                    <td className="w-18 min-w-18 px-4 py-2">
                       <Image
                         src={product.thumbnail[0] ?? noImage}
                         alt={product.name}
@@ -464,29 +525,29 @@ export default function AdminProductsPage() {
                         className="h-10 w-10 rounded-md border border-gray-200 object-cover"
                       />
                     </td>
-                    <td className="text-foreground max-w-48 truncate px-4 py-3 text-sm font-medium">
+                    <td className="text-foreground max-w-40 truncate px-4 py-3 text-sm font-medium">
                       {product.name}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">
+                    <td className="px-4 py-3 text-sm whitespace-nowrap text-gray-700">
                       {product.price.toLocaleString()}원
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">
+                    <td className="px-4 py-3 text-sm whitespace-nowrap text-gray-700">
                       {product.category.parent}
                       {product.category.child
                         ? ` / ${product.category.child}`
                         : ""}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="w-24 px-4 py-3 whitespace-nowrap">
                       <span
                         className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${product.isAvailable ? "text-brand-blue bg-blue-50" : "bg-gray-100 text-gray-500"}`}
                       >
                         {product.isAvailable ? "재고 있음" : "품절"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-500">
+                    <td className="px-4 py-3 text-sm whitespace-nowrap text-gray-500">
                       {formatDate(product.createdAt)}
                     </td>
-                    <td className="px-4 py-3 pr-2">
+                    <td className="w-28 px-4 py-3 pr-2">
                       <div className="flex items-center gap-2">
                         <Button
                           variant="outline"
@@ -506,11 +567,11 @@ export default function AdminProductsPage() {
                       </div>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       <ProductDialogs
