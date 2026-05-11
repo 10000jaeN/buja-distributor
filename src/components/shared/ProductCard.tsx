@@ -92,7 +92,10 @@ export default function ProductCard({ product, size = "lg", priority = false }: 
 
           {/* 품절 오버레이 */}
           {!product.isAvailable && (
-            <div className="absolute inset-0 flex items-end justify-start bg-black/10 pb-10 pl-2">
+            <div className="absolute inset-0 flex items-center justify-center bg-black/35">
+              <span className="text-sm font-semibold tracking-[0.2em] text-white/90">
+                SOLD OUT
+              </span>
             </div>
           )}
 
@@ -120,9 +123,6 @@ export default function ProductCard({ product, size = "lg", priority = false }: 
           <p className={isLg ? "text-sm font-bold text-gray-900" : "text-[12px] font-bold text-gray-900"}>
             {product.price.toLocaleString()}원
           </p>
-          {!product.isAvailable && (
-            <span className="text-xs text-gray-400">품절</span>
-          )}
         </div>
       </Link>
     </>
