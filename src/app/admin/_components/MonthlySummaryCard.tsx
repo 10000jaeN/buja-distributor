@@ -1,11 +1,12 @@
 "use client";
 
-import { MonthlyStats, UnprocessedOrder } from "@/api/statsService";
+import { MonthlyStats } from "@/api/statsService";
 import { ChevronLeft, ChevronRight, TrendingDown, TrendingUp } from "lucide-react";
 
 interface Props {
   stats: MonthlyStats | null;
-  unprocessedOrders: UnprocessedOrder[];
+  monthlyError: boolean;
+  onMonthlyRetry: () => void;
   year: number;
   month: number;
   onPrev: () => void;
@@ -26,10 +27,11 @@ const ITEMS = [
 
 const MONTH_NAMES = ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
 
-export default function MonthlySummaryCard({ stats, unprocessedOrders, year, month, onPrev, onNext, isCurrentMonth }: Props) {
+export default function MonthlySummaryCard({ stats, monthlyError, onMonthlyRetry, year, month, onPrev, onNext, isCurrentMonth }: Props) {
   const growthRate = stats?.revenueGrowthRate;
   const isPositive = growthRate !== null && growthRate !== undefined && growthRate > 0;
   const isNegative = growthRate !== null && growthRate !== undefined && growthRate < 0;
+  const unprocessedOrders = stats?.unprocessedOrders ?? [];
 
   return (
     <div className="flex flex-col gap-4">
@@ -87,7 +89,7 @@ export default function MonthlySummaryCard({ stats, unprocessedOrders, year, mon
                 <span className="font-bold">전월 데이터 없음</span>
               ) : (
                 <>
-                  <span className="font-bold">{isPositive ? "+" : ""}{growthRate}%</span>
+                  <span className="font-bold">{isPositive ? "+" : ""}{Math.round(growthRate)}%</span>
                   <span className="ml-2 text-xs font-normal opacity-70">
                     (전월 {fmt(stats.prevTotalRevenue)}원 · {fmt(stats.prevOrderCount)}건)
                   </span>
@@ -99,9 +101,21 @@ export default function MonthlySummaryCard({ stats, unprocessedOrders, year, mon
 
         {/* 항목 목록 */}
         {stats === null ? (
-          <div className="flex flex-1 items-center justify-center">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-200 border-t-brand-blue" />
-          </div>
+          monthlyError ? (
+            <div className="flex flex-1 flex-col items-center justify-center gap-2">
+              <p className="text-sm text-red-500">데이터를 불러오지 못했습니다.</p>
+              <button
+                onClick={onMonthlyRetry}
+                className="text-sm text-brand-blue underline underline-offset-2"
+              >
+                다시 시도
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-1 items-center justify-center">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-200 border-t-brand-blue" />
+            </div>
+          )
         ) : (
           <div className="flex flex-1 flex-col divide-y divide-gray-100">
             {ITEMS.map(({ label, key, desc, unit, highlight, warn }) => {

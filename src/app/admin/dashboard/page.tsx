@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { statsService, OrderStats, MonthlyStats, UnprocessedOrder } from "@/api/statsService";
+import { statsService, OrderStats, MonthlyStats } from "@/api/statsService";
 import CategoryPieChart from "../_components/CategoryPieChart";
 import ProductRankingTable from "../_components/ProductRankingTable";
 import MonthlySummaryCard from "../_components/MonthlySummaryCard";
@@ -15,7 +15,7 @@ const EMPTY_STATS: OrderStats = {
 
 export default function DashboardPage() {
   const now = new Date();
-  const [year, setYear] = useState(now.getFullYear());
+  const year = now.getFullYear();
   const [stats, setStats] = useState<OrderStats>(EMPTY_STATS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -24,7 +24,8 @@ export default function DashboardPage() {
   const [monthlyYear, setMonthlyYear] = useState(now.getFullYear());
   const [monthlyMonth, setMonthlyMonth] = useState(now.getMonth() + 1);
   const [monthlyStats, setMonthlyStats] = useState<MonthlyStats | null>(null);
-  const [unprocessedOrders, setUnprocessedOrders] = useState<UnprocessedOrder[]>([]);
+  const [monthlyError, setMonthlyError] = useState(false);
+  const [monthlyRetry, setMonthlyRetry] = useState(0);
 
   const isCurrentMonth =
     monthlyYear === now.getFullYear() && monthlyMonth === now.getMonth() + 1;
@@ -59,18 +60,19 @@ export default function DashboardPage() {
         toast.error("통계 데이터를 불러오는 데 실패했습니다.");
       })
       .finally(() => setLoading(false));
-  }, [year, retry]);
+  }, [retry]);
 
   useEffect(() => {
     setMonthlyStats(null);
+    setMonthlyError(false);
     statsService
       .getMonthlyStats(monthlyYear, monthlyMonth)
-      .then((data) => {
-        setMonthlyStats(data);
-        setUnprocessedOrders(data.unprocessedOrders);
-      })
-      .catch(() => toast.error("월별 통계를 불러오는 데 실패했습니다."));
-  }, [monthlyYear, monthlyMonth]);
+      .then(setMonthlyStats)
+      .catch(() => {
+        setMonthlyError(true);
+        toast.error("월별 통계를 불러오는 데 실패했습니다.");
+      });
+  }, [monthlyYear, monthlyMonth, monthlyRetry]);
 
   if (error) {
     return (
@@ -89,10 +91,11 @@ export default function DashboardPage() {
   return (
     <div className={`space-y-6 ${loading ? "opacity-50 transition-opacity" : "transition-opacity"}`}>
       {/* 월 매출 요약 + 카테고리별 매출 */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <MonthlySummaryCard
           stats={monthlyStats}
-          unprocessedOrders={unprocessedOrders}
+          monthlyError={monthlyError}
+          onMonthlyRetry={() => setMonthlyRetry((r) => r + 1)}
           year={monthlyYear}
           month={monthlyMonth}
           onPrev={handlePrevMonth}
