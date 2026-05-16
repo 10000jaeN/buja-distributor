@@ -18,7 +18,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { RotateCcw } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import OrderDetailDialog from "./_components/OrderDetailDialog";
 import OrderEditDialog from "./_components/OrderEditDialog";
@@ -69,7 +69,7 @@ export default function AdminOrdersPage() {
   const [bulkCourier, setBulkCourier] = useState("");
   const [bulkTracking, setBulkTracking] = useState("");
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -81,11 +81,12 @@ export default function AdminOrdersPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchOrders();
-  }, []);
+  }, [fetchOrders]);
 
   const handleSave = async ({
     newStatus,
