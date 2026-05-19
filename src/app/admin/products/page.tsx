@@ -4,7 +4,6 @@ import { productService } from "@/api/productService";
 import { categoryService } from "@/api/categoryService";
 import { Category, Product } from "@/types/product";
 import { Button } from "@/components/ui/button";
-import { ProductDialogs } from "./_components/ProductDialogs";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -18,25 +17,26 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import Image from "next/image";
 import noImage from "@/public/images/no-image.png";
+import { useRouter } from "next/navigation";
 import {
-  INITIAL_FORM,
-  type ProductFormData,
-  type ShippingType,
-} from "./_components/ProductForm";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-// ─── 메인 페이지 ──────────────────────────────────────────────────────────────
 export default function AdminProductsPage() {
+  const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editTarget, setEditTarget] = useState<Product | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
-
-  const [form, setForm] = useState<ProductFormData>(INITIAL_FORM);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchProducts = async () => {
     setIsLoading(true);
@@ -53,157 +53,19 @@ export default function AdminProductsPage() {
 
   useEffect(() => {
     fetchProducts();
-    categoryService
-      .getCategories()
-      .then(setCategories)
-      .catch(() => {});
+    categoryService.getCategories().then(setCategories).catch(() => {});
   }, []);
-
-  const handleFormChange = (
-    field: keyof ProductFormData,
-    value: string | boolean,
-  ) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const buildPayload = (f: ProductFormData) => {
-    const isFree = f.shippingType === "free";
-    const isBundle = f.shippingType === "bundle";
-    return {
-      name: f.name,
-      price: Number(f.price),
-      shippingFee: isFree ? 0 : Number(f.shippingFee),
-      freeShippingThreshold: isBundle ? Number(f.freeShippingThreshold) : 0,
-      bundleShipping: isBundle,
-      category: { parent: f.categoryParent, child: f.categoryChild },
-      thumbnail: f.thumbnail
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
-      isAvailable: f.isAvailable,
-      contentBlock: [{ type: "text" as const, value: f.content }],
-    };
-  };
-
-  const openCreateModal = () => {
-    setForm(INITIAL_FORM);
-    setShowCreateModal(true);
-  };
-
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.name || !form.price) {
-      toast.error("입력 오류", {
-        description: "상품명과 가격은 필수 항목입니다.",
-      });
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      await productService.createProduct(buildPayload(form));
-      setShowCreateModal(false);
-      await fetchProducts();
-      toast.success("상품이 추가됐습니다.");
-    } catch (err: unknown) {
-      const status = (err as { response?: { status?: number } })?.response
-        ?.status;
-      const serverMsg = (err as { response?: { data?: { message?: string } } })
-        ?.response?.data?.message;
-      if (status === 401)
-        toast.error("인증 오류", {
-          description: "로그인이 만료됐습니다. 다시 로그인해 주세요.",
-        });
-      else if (status === 403)
-        toast.error("권한 오류", { description: "관리자 권한이 필요합니다." });
-      else if (status === 400)
-        toast.error("요청 오류", {
-          description: serverMsg ?? "입력값을 확인해 주세요.",
-        });
-      else
-        toast.error("상품 추가 실패", {
-          description:
-            serverMsg ??
-            "서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
-        });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const openEditModal = (product: Product) => {
-    const shippingType: ShippingType =
-      product.shippingFee === 0
-        ? "free"
-        : product.bundleShipping
-          ? "bundle"
-          : "paid";
-    setForm({
-      name: product.name,
-      price: String(product.price),
-      shippingType,
-      shippingFee: String(product.shippingFee ?? 3000),
-      freeShippingThreshold: String(product.freeShippingThreshold ?? 0),
-      categoryParent: product.category.parent,
-      categoryChild: product.category.child,
-      thumbnail: product.thumbnail.join(", "),
-      isAvailable: product.isAvailable,
-      content: product.content || "",
-    });
-    setEditTarget(product);
-  };
-
-  const handleUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editTarget) return;
-    if (!form.name || !form.price) {
-      toast.error("입력 오류", {
-        description: "상품명과 가격은 필수 항목입니다.",
-      });
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      await productService.updateProduct(editTarget.slug, buildPayload(form));
-      setEditTarget(null);
-      await fetchProducts();
-      toast.success("상품이 수정됐습니다.");
-    } catch (err: unknown) {
-      const status = (err as { response?: { status?: number } })?.response
-        ?.status;
-      const serverMsg = (err as { response?: { data?: { message?: string } } })
-        ?.response?.data?.message;
-      if (status === 401)
-        toast.error("인증 오류", {
-          description: "로그인이 만료됐습니다. 다시 로그인해 주세요.",
-        });
-      else if (status === 403)
-        toast.error("권한 오류", { description: "관리자 권한이 필요합니다." });
-      else if (status === 400)
-        toast.error("요청 오류", {
-          description: serverMsg ?? "입력값을 확인해 주세요.",
-        });
-      else
-        toast.error("상품 수정 실패", {
-          description:
-            serverMsg ??
-            "서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
-        });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
-    setIsSubmitting(true);
+    setIsDeleting(true);
     try {
       await productService.deleteProductBySlug(deleteTarget.slug);
       setDeleteTarget(null);
       await fetchProducts();
       toast.success("상품이 삭제됐습니다.");
     } catch (err: unknown) {
-      const status = (err as { response?: { status?: number } })?.response
-        ?.status;
+      const status = (err as { response?: { status?: number } })?.response?.status;
       if (status === 403)
         toast.error("권한 오류", { description: "관리자 권한이 필요합니다." });
       else
@@ -211,7 +73,7 @@ export default function AdminProductsPage() {
           description: "서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
         });
     } finally {
-      setIsSubmitting(false);
+      setIsDeleting(false);
     }
   };
 
@@ -231,13 +93,9 @@ export default function AdminProductsPage() {
       : (categories.find((c) => c.parent === filterCategory)?.children ?? []);
 
   const filteredProducts = products.filter((p) => {
-    const matchSearch = p.name
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    const matchCategory =
-      filterCategory === "all" || p.category.parent === filterCategory;
-    const matchChild =
-      filterChild === "all" || p.category.child === filterChild;
+    const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchCategory = filterCategory === "all" || p.category.parent === filterCategory;
+    const matchChild = filterChild === "all" || p.category.child === filterChild;
     const matchStatus =
       filterStatus === "all" ||
       (filterStatus === "available" && p.isAvailable) ||
@@ -254,7 +112,9 @@ export default function AdminProductsPage() {
       {/* 페이지 헤더 */}
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-foreground text-xl font-bold">상품 관리</h1>
-        <Button onClick={openCreateModal}>+ 상품 추가</Button>
+        <Button onClick={() => router.push("/admin/products/new")}>
+          + 상품 추가
+        </Button>
       </div>
 
       {/* 스탯 카드 */}
@@ -262,11 +122,7 @@ export default function AdminProductsPage() {
         <div className="mb-6 grid grid-cols-3 gap-4">
           {[
             { label: "총 상품", value: totalCount, color: "text-foreground" },
-            {
-              label: "판매 가능",
-              value: availableCount,
-              color: "text-brand-blue",
-            },
+            { label: "판매 가능", value: availableCount, color: "text-brand-blue" },
             { label: "품절", value: soldOutCount, color: "text-gray-400" },
           ].map(({ label, value, color }) => (
             <div
@@ -283,7 +139,6 @@ export default function AdminProductsPage() {
       {/* 검색 및 필터 */}
       {!isLoading && !error && (
         <div className="mb-4 space-y-2">
-          {/* 검색창 + 초기화 */}
           <div className="flex gap-2">
             <Input
               placeholder="상품명 검색..."
@@ -305,7 +160,6 @@ export default function AdminProductsPage() {
             </button>
           </div>
 
-          {/* 필터 셀렉트 */}
           <div className="flex gap-2">
             <Select
               value={filterCategory}
@@ -391,9 +245,7 @@ export default function AdminProductsPage() {
         </div>
       ) : filteredProducts.length === 0 ? (
         <div className="rounded-lg border border-gray-200 bg-white py-12 text-center text-sm text-gray-400 shadow-sm">
-          {products.length === 0
-            ? "등록된 상품이 없습니다."
-            : "검색 결과가 없습니다."}
+          {products.length === 0 ? "등록된 상품이 없습니다." : "검색 결과가 없습니다."}
         </div>
       ) : (
         <>
@@ -420,9 +272,7 @@ export default function AdminProductsPage() {
                   </p>
                   <p className="mt-0.5 text-xs text-gray-400">
                     {product.category.parent}
-                    {product.category.child
-                      ? ` / ${product.category.child}`
-                      : ""}
+                    {product.category.child ? ` / ${product.category.child}` : ""}
                   </p>
                   <div className="mt-1.5 flex items-center gap-2">
                     <span
@@ -439,7 +289,7 @@ export default function AdminProductsPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => openEditModal(product)}
+                    onClick={() => router.push(`/admin/products/${product.slug}/edit`)}
                     className="text-xs"
                   >
                     수정
@@ -462,22 +312,16 @@ export default function AdminProductsPage() {
             <table className="w-full min-w-[700px] divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  {[
-                    "",
-                    "상품명",
-                    "가격",
-                    "카테고리",
-                    "재고",
-                    "등록일",
-                    "관리",
-                  ].map((col, i, arr) => (
-                    <th
-                      key={i}
-                      className={`px-4 py-3 text-left text-xs font-semibold tracking-wide whitespace-nowrap text-gray-500 uppercase ${i === arr.length - 1 ? "pr-2" : ""}`}
-                    >
-                      {col}
-                    </th>
-                  ))}
+                  {["", "상품명", "가격", "카테고리", "재고", "등록일", "관리"].map(
+                    (col, i, arr) => (
+                      <th
+                        key={i}
+                        className={`px-4 py-3 text-left text-xs font-semibold tracking-wide whitespace-nowrap text-gray-500 uppercase ${i === arr.length - 1 ? "pr-2" : ""}`}
+                      >
+                        {col}
+                      </th>
+                    ),
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -503,9 +347,7 @@ export default function AdminProductsPage() {
                     </td>
                     <td className="px-4 py-3 text-sm whitespace-nowrap text-gray-700">
                       {product.category.parent}
-                      {product.category.child
-                        ? ` / ${product.category.child}`
-                        : ""}
+                      {product.category.child ? ` / ${product.category.child}` : ""}
                     </td>
                     <td className="w-24 px-4 py-3 whitespace-nowrap">
                       <span
@@ -522,7 +364,9 @@ export default function AdminProductsPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => openEditModal(product)}
+                          onClick={() =>
+                            router.push(`/admin/products/${product.slug}/edit`)
+                          }
                         >
                           수정
                         </Button>
@@ -544,21 +388,34 @@ export default function AdminProductsPage() {
         </>
       )}
 
-      <ProductDialogs
-        showCreateModal={showCreateModal}
-        setShowCreateModal={setShowCreateModal}
-        handleCreate={handleCreate}
-        editTarget={editTarget}
-        setEditTarget={setEditTarget}
-        handleUpdate={handleUpdate}
-        deleteTarget={deleteTarget}
-        setDeleteTarget={setDeleteTarget}
-        handleDelete={handleDelete}
-        form={form}
-        onChange={handleFormChange}
-        categories={categories}
-        isSubmitting={isSubmitting}
-      />
+      {/* 삭제 확인 다이얼로그 */}
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>상품 삭제</AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="text-foreground font-medium">
+                {deleteTarget?.name}
+              </span>
+              을(를) 삭제할까요?
+              <br />이 작업은 되돌릴 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              {isDeleting ? "삭제 중..." : "삭제"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
