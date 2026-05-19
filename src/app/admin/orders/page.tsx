@@ -18,10 +18,12 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { RotateCcw } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import OrderDetailDialog from "./_components/OrderDetailDialog";
 import OrderEditDialog from "./_components/OrderEditDialog";
+
+const PAGE_SIZE = 20;
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
   pending: "결제 대기",
@@ -69,6 +71,13 @@ export default function AdminOrdersPage() {
   const [bulkCourier, setBulkCourier] = useState("");
   const [bulkTracking, setBulkTracking] = useState("");
 
+  // 일괄 취소 확인 다이얼로그
+  const [bulkCancelOpen, setBulkCancelOpen] = useState(false);
+
+  // 무한 스크롤
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
   const fetchOrders = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -84,9 +93,29 @@ export default function AdminOrdersPage() {
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchOrders();
   }, [fetchOrders]);
+
+  // 검색/필터 변경 시 visibleCount 초기화
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [searchQuery, filterStatus]);
+
+  // IntersectionObserver로 무한 스크롤
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((prev) => prev + PAGE_SIZE);
+        }
+      },
+      { threshold: 0.1 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const handleSave = async ({
     newStatus,
@@ -157,11 +186,9 @@ export default function AdminOrdersPage() {
   };
 
   // ── 일괄 처리 ────────────────────────────────────────────────
-  const selectedOrders = filteredOrders_ref(
-    orders,
-    searchQuery,
-    filterStatus,
-  ).filter((o) => selectedIds.has(o._id));
+  const selectedOrders = filterOrders(orders, searchQuery, filterStatus).filter(
+    (o) => selectedIds.has(o._id),
+  );
 
   const allPaid =
     selectedOrders.length > 0 &&
@@ -181,15 +208,17 @@ export default function AdminOrdersPage() {
   const handleBulkPrepare = async () => {
     setIsSubmitting(true);
     try {
-      await Promise.all(
+      const results = await Promise.allSettled(
         selectedOrders.map((o) => orderService.startPreparation(o._id)),
       );
-      toast.success(
-        `${selectedOrders.length}건 상품 준비 시작으로 변경했습니다.`,
-      );
+      const succeeded = results.filter((r) => r.status === "fulfilled").length;
+      const failed = results.filter((r) => r.status === "rejected").length;
+      if (failed === 0) {
+        toast.success(`${succeeded}건 상품 준비 시작으로 변경했습니다.`);
+      } else {
+        toast.error(`${succeeded}건 성공, ${failed}건 실패했습니다.`);
+      }
       await fetchOrders();
-    } catch {
-      toast.error("처리에 실패했습니다.");
     } finally {
       setIsSubmitting(false);
     }
@@ -202,16 +231,20 @@ export default function AdminOrdersPage() {
     }
     setIsSubmitting(true);
     try {
-      await Promise.all(
+      const results = await Promise.allSettled(
         selectedOrders.map((o) =>
           orderService.startShipping(o._id, bulkCourier, bulkTracking),
         ),
       );
-      toast.success(`${selectedOrders.length}건 배송 시작으로 변경했습니다.`);
+      const succeeded = results.filter((r) => r.status === "fulfilled").length;
+      const failed = results.filter((r) => r.status === "rejected").length;
+      if (failed === 0) {
+        toast.success(`${succeeded}건 배송 시작으로 변경했습니다.`);
+      } else {
+        toast.error(`${succeeded}건 성공, ${failed}건 실패했습니다.`);
+      }
       setBulkShipOpen(false);
       await fetchOrders();
-    } catch {
-      toast.error("처리에 실패했습니다.");
     } finally {
       setIsSubmitting(false);
     }
@@ -220,35 +253,47 @@ export default function AdminOrdersPage() {
   const handleBulkComplete = async () => {
     setIsSubmitting(true);
     try {
-      await Promise.all(
+      const results = await Promise.allSettled(
         selectedOrders.map((o) => orderService.completeDelivery(o._id)),
       );
-      toast.success(`${selectedOrders.length}건 배송 완료 처리했습니다.`);
+      const succeeded = results.filter((r) => r.status === "fulfilled").length;
+      const failed = results.filter((r) => r.status === "rejected").length;
+      if (failed === 0) {
+        toast.success(`${succeeded}건 배송 완료 처리했습니다.`);
+      } else {
+        toast.error(`${succeeded}건 성공, ${failed}건 실패했습니다.`);
+      }
       await fetchOrders();
-    } catch {
-      toast.error("처리에 실패했습니다.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleBulkCancel = async () => {
+    setBulkCancelOpen(false);
     setIsSubmitting(true);
     try {
-      await Promise.all(
+      const results = await Promise.allSettled(
         selectedOrders.map((o) => orderService.cancelOrder(o._id)),
       );
-      toast.success(`${selectedOrders.length}건 취소했습니다.`);
+      const succeeded = results.filter((r) => r.status === "fulfilled").length;
+      const failed = results.filter((r) => r.status === "rejected").length;
+      if (failed === 0) {
+        toast.success(`${succeeded}건 취소했습니다.`);
+      } else {
+        toast.error(`${succeeded}건 성공, ${failed}건 실패했습니다.`);
+      }
       await fetchOrders();
-    } catch {
-      toast.error("처리에 실패했습니다.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   // ── 체크박스 ─────────────────────────────────────────────────
-  const filteredOrders = filteredOrders_ref(orders, searchQuery, filterStatus);
+  const filteredOrders = filterOrders(orders, searchQuery, filterStatus);
+  const visibleOrders = filteredOrders.slice(0, visibleCount);
+  const hasMore = visibleCount < filteredOrders.length;
+
   const allChecked =
     filteredOrders.length > 0 &&
     filteredOrders.every((o) => selectedIds.has(o._id));
@@ -329,7 +374,6 @@ export default function AdminOrdersPage() {
       {/* 검색 및 필터 */}
       {!isLoading && !error && (
         <div className="mb-4 space-y-2">
-          {/* 검색창 + 초기화 */}
           <div className="flex gap-2">
             <Input
               placeholder="주문번호 / 주문자 검색..."
@@ -349,7 +393,6 @@ export default function AdminOrdersPage() {
             </button>
           </div>
 
-          {/* 필터 셀렉트 */}
           <div className="flex justify-end gap-2">
             <Select
               value={filterStatus}
@@ -424,7 +467,7 @@ export default function AdminOrdersPage() {
                 size="sm"
                 variant="outline"
                 disabled={isSubmitting}
-                onClick={handleBulkCancel}
+                onClick={() => setBulkCancelOpen(true)}
                 className="border-red-200 text-xs text-red-500 hover:bg-red-50"
               >
                 취소
@@ -469,7 +512,7 @@ export default function AdminOrdersPage() {
         <>
           {/* 모바일/태블릿: 카드 목록 */}
           <div className="flex flex-col gap-3 lg:hidden">
-            {filteredOrders.map((order) => (
+            {visibleOrders.map((order) => (
               <div
                 key={order._id}
                 className={`flex items-center gap-3 rounded-lg border bg-white p-3 shadow-sm ${selectedIds.has(order._id) ? "border-brand-blue/40 bg-blue-50/30" : "border-gray-200"}`}
@@ -478,7 +521,7 @@ export default function AdminOrdersPage() {
                   type="checkbox"
                   checked={selectedIds.has(order._id)}
                   onChange={() => toggleOne(order._id)}
-                  className="accent-brand-blue mt-0.5 h-4 w-10 shrink-0 cursor-pointer rounded"
+                  className="accent-brand-blue mt-0.5 h-10 w-10 shrink-0 cursor-pointer rounded"
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
@@ -575,7 +618,7 @@ export default function AdminOrdersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filteredOrders.map((order) => (
+                {visibleOrders.map((order) => (
                   <tr
                     key={order._id}
                     className={`transition-colors hover:bg-gray-50 ${selectedIds.has(order._id) ? "bg-blue-50/40" : ""}`}
@@ -652,6 +695,13 @@ export default function AdminOrdersPage() {
               </tbody>
             </table>
           </div>
+
+          {/* 무한 스크롤 sentinel */}
+          <div ref={sentinelRef} className="py-4 text-center">
+            {hasMore && (
+              <div className="border-t-brand-blue mx-auto h-5 w-5 animate-spin rounded-full border-2 border-gray-200" />
+            )}
+          </div>
         </>
       )}
 
@@ -700,6 +750,38 @@ export default function AdminOrdersPage() {
         </DialogContent>
       </Dialog>
 
+      {/* 일괄 취소 확인 다이얼로그 */}
+      <Dialog
+        open={bulkCancelOpen}
+        onOpenChange={(open) => !open && setBulkCancelOpen(false)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>주문 취소 확인</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-gray-600">
+            선택한{" "}
+            <span className="font-semibold text-red-500">
+              {selectedIds.size}건
+            </span>
+            의 주문을 취소하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkCancelOpen(false)}>
+              닫기
+            </Button>
+            <Button
+              onClick={handleBulkCancel}
+              disabled={isSubmitting}
+              className="border-red-200 bg-red-50 text-red-600 hover:bg-red-100"
+              variant="outline"
+            >
+              취소 확정
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <OrderDetailDialog
         order={detailTarget}
         onClose={() => setDetailTarget(null)}
@@ -715,7 +797,7 @@ export default function AdminOrdersPage() {
   );
 }
 
-function filteredOrders_ref(
+function filterOrders(
   orders: Order[],
   searchQuery: string,
   filterStatus: string,
