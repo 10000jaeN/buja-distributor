@@ -36,7 +36,6 @@ export const productService = {
     const res = await axiosInstance.get<{ data: Product }>(
       `/products/${decodedSlug}`,
     );
-    console.log(res.data);
     return res.data.data;
   },
 
@@ -88,7 +87,8 @@ export const productService = {
     category: { parent: string; child: string };
     thumbnail: string[];
     isAvailable?: boolean;
-    contentBlock: { type: "text" | "image"; value: string }[];
+    content?: string;
+    contentBlock?: { type: "text" | "image"; value: string }[];
   }): Promise<Product> => {
     const res = await axiosInstance.post<{ data: Product }>("/products", data);
     return res.data.data;
@@ -110,6 +110,7 @@ export const productService = {
       category: { parent: string; child: string };
       thumbnail: string[];
       isAvailable: boolean;
+      content: string;
       contentBlock: { type: "text" | "image"; value: string }[];
     }>,
   ): Promise<Product> => {
