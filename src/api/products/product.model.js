@@ -15,7 +15,12 @@ const ProductSchema = new mongoose.Schema(
       unique: true,
       index: true,
     },
-    // 상품 상세
+    // 상품 상세 (HTML)
+    content: {
+      type: String,
+      default: "",
+    },
+    // 상품 상세 (레거시 블록 구조, 하위 호환용)
     contentBlock: [
       {
         type: { type: String, enum: ["text", "image"], required: true },

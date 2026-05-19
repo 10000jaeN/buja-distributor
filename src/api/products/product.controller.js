@@ -8,7 +8,7 @@ import slugify from "../../utils/slugify.js";
  */
 export const createProduct = async (req, res) => {
   try {
-    const { name, price, shippingFee, freeShippingThreshold, category, thumbnail, contentBlocks, contentBlock, isAvailable } = req.body;
+    const { name, price, shippingFee, freeShippingThreshold, category, thumbnail, contentBlocks, contentBlock, content, isAvailable } = req.body;
 
     // 1. 서버에서 필요한 데이터 생성
     const generatedSlug = slugify(name);
@@ -21,7 +21,8 @@ export const createProduct = async (req, res) => {
       name,
       price,
       thumbnail,
-      contentBlock: contentBlock ?? contentBlocks,
+      content: content ?? "",
+      contentBlock: contentBlock ?? contentBlocks ?? [],
       slug: generatedSlug,
       category: {
         ...category,
