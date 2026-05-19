@@ -41,7 +41,11 @@ type Props = {
   // 공통
   form: ProductFormData;
   onChange: (field: keyof ProductFormData, value: string | boolean) => void;
-  onBlockChange: (index: number, field: keyof ContentBlock, value: string) => void;
+  onBlockChange: (
+    index: number,
+    field: keyof ContentBlock,
+    value: string,
+  ) => void;
   onAddBlock: () => void;
   onRemoveBlock: (index: number) => void;
   categories: Category[];
@@ -70,7 +74,7 @@ export function ProductDialogs({
     <>
       {/* 상품 추가 Dialog */}
       <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="sm:max-w-2xl">
           <form onSubmit={handleCreate}>
             <DialogHeader className="border-b border-gray-100 pb-5">
               <div className="flex items-center gap-2.5">
@@ -114,7 +118,7 @@ export function ProductDialogs({
           if (!open) setEditTarget(null);
         }}
       >
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="sm:max-w-2xl">
           <form onSubmit={handleUpdate}>
             <DialogHeader className="border-b border-gray-100 pb-5">
               <div className="flex items-center gap-2.5">
