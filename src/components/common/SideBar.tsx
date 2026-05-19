@@ -30,7 +30,8 @@ const SideBar = ({ menu }: { menu: MenuItem[] }) => {
   const toggleItem = (label: string) => {
     setOpenItems((prev) => {
       const next = new Set(prev);
-      next.has(label) ? next.delete(label) : next.add(label);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
       return next;
     });
   };

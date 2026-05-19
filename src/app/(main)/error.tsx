@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 export default function Error({
   error,
@@ -11,7 +10,6 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  const router = useRouter();
 
   useEffect(() => {
     // 💡 실제 운영 환경에서는 Sentry 같은 로그 수집 도구로 에러를 보냅니다.
