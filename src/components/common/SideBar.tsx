@@ -1,6 +1,7 @@
 "use client";
 
-import { CancelIcon, Logo } from "@/assets";
+import { X } from "lucide-react";
+import { Logo } from "@/assets";
 import useAuthStore from "@/store/useAuthStore";
 import useMenuStore from "@/store/useMenuStore";
 import { MenuItem } from "@/types/menu";
@@ -57,7 +58,7 @@ const SideBar = ({ menu }: { menu: MenuItem[] }) => {
               className="flex h-8 w-8 items-center justify-center rounded-full transition-colors duration-200 hover:bg-gray-100"
               onClick={closeMenu}
             >
-              <CancelIcon className="h-4 w-4" />
+              <X className="h-4 w-4" />
             </button>
           </Tooltip>
         </div>

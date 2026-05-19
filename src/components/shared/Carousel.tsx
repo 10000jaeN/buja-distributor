@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowIcon } from "@/assets";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const items = [
@@ -50,10 +50,9 @@ const Carousel = () => {
       <div className="absolute bottom-2 left-1/2 flex -translate-1/2 items-center gap-2">
         <button
           type="button"
-          className="-scale-x-100"
           onClick={onClickPrevious}
         >
-          <ArrowIcon className="fill-white" />
+          <ChevronLeft className="h-5 w-5 text-white" />
         </button>
 
         {items &&
@@ -67,7 +66,7 @@ const Carousel = () => {
           ))}
 
         <button type="button" onClick={onClickNext}>
-          <ArrowIcon className="fill-white" />
+          <ChevronRight className="h-5 w-5 text-white" />
         </button>
       </div>
     </div>

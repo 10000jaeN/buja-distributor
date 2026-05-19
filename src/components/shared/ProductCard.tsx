@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 
 import { Product } from "@/types/product";
 import noImage from "@/public/images/no-image.png";
-import { CartInIcon } from "@/assets";
+import { ShoppingCart } from "lucide-react";
 import useAuthStore from "@/store/useAuthStore";
 import useCartStore from "@/store/useCartStore";
 import { cartService } from "@/api/cartService";
@@ -105,7 +105,7 @@ export default function ProductCard({ product, size = "lg", priority = false }: 
             disabled={!product.isAvailable}
             className="absolute right-2 bottom-2 z-10 flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 transition-colors hover:border-brand-blue hover:bg-brand-blue hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <CartInIcon className="h-4 w-4" />
+            <ShoppingCart className="h-4 w-4" />
           </button>
         </div>
 

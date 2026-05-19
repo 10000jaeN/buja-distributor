@@ -3,7 +3,7 @@
 import { useRef, useEffect, useMemo, useCallback } from "react";
 
 import { Product } from "@/types/product";
-import { ArrowIcon } from "@/assets";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import ProductCard from "@/components/shared/ProductCard";
 
 const ProductList = ({
@@ -74,7 +74,7 @@ const ProductList = ({
           onClick={scrollPrev}
           className="absolute top-1/2 left-0 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-700 shadow-md hover:border-brand-blue hover:bg-brand-blue hover:text-white lg:flex"
         >
-          <ArrowIcon className="rotate-180 fill-current" />
+          <ChevronLeft className="h-5 w-5" />
         </button>
 
         <ul
@@ -98,7 +98,7 @@ const ProductList = ({
           onClick={scrollNext}
           className="absolute top-1/2 right-0 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-700 shadow-md hover:border-brand-blue hover:bg-brand-blue hover:text-white lg:flex"
         >
-          <ArrowIcon className="fill-current" />
+          <ChevronRight className="h-5 w-5" />
         </button>
       </div>
     </>

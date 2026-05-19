@@ -4,11 +4,11 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { Search, ShoppingCart, UserCircle } from "lucide-react";
+import { Menu, Search, ShoppingCart, UserCircle } from "lucide-react";
 
 import { Tooltip } from "@/components/ui/tooltip";
 import { DropdownMenu } from "@/components/ui/dropdown-menu";
-import { Logo, MenuIcon } from "@/assets";
+import { Logo } from "@/assets";
 import CategoryNav from "@/components/common/CategoryNav";
 
 import useAuthStore from "@/store/useAuthStore";
@@ -23,7 +23,7 @@ const Nav = ({ menu }: { menu: MenuItem[] }) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const openMenu = useMenuStore((state) => state.openMenu);
-  const { isLoggedIn } = useAuthStore();
+  const { isLoggedIn, isInitialized } = useAuthStore();
   const cartCount = useCartStore((state) => state.count);
   const router = useRouter();
 
@@ -43,7 +43,7 @@ const Nav = ({ menu }: { menu: MenuItem[] }) => {
         {/* 왼쪽: 햄버거(모바일) + 로고 + 카테고리(PC) */}
         <div className="flex items-center gap-6">
           <Tooltip label="메뉴" className="lg:hidden">
-            <MenuIcon
+            <Menu
               className="h-6 w-6 hover:cursor-pointer"
               onClick={openMenu}
             />
@@ -97,7 +97,7 @@ const Nav = ({ menu }: { menu: MenuItem[] }) => {
             </div>
           </div>
 
-          {isLoggedIn ? (
+          {isInitialized && isLoggedIn ? (
             <>
               <Tooltip label="장바구니">
                 <Link
