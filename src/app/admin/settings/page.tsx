@@ -11,11 +11,13 @@ export default function AdminSettingsPage() {
   const [bundleFreeThreshold, setBundleFreeThreshold] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     settingsService
       .getSettings()
       .then((s) => setBundleFreeThreshold(String(s.bundleFreeThreshold)))
+      .catch(() => setLoadError(true))
       .finally(() => setIsLoading(false));
   }, []);
 
@@ -44,6 +46,17 @@ export default function AdminSettingsPage() {
       {isLoading ? (
         <div className="flex items-center justify-center py-10">
           <div className="border-t-brand-blue h-6 w-6 animate-spin rounded-full border-2 border-gray-200" />
+        </div>
+      ) : loadError ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-6 py-10 text-center">
+          <p className="text-sm text-red-600">설정을 불러오는 데 실패했습니다.</p>
+          <Button
+            variant="outline"
+            onClick={() => window.location.reload()}
+            className="mt-3 border-red-300 text-red-600 hover:bg-red-100"
+          >
+            다시 시도
+          </Button>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
