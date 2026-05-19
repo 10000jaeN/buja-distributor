@@ -25,10 +25,7 @@ function buildPayload(f: ProductFormData) {
     freeShippingThreshold: isBundle ? Number(f.freeShippingThreshold) : 0,
     bundleShipping: isBundle,
     category: { parent: f.categoryParent, child: f.categoryChild },
-    thumbnail: f.thumbnail
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean),
+    thumbnail: f.thumbnail ? [f.thumbnail] : [],
     isAvailable: f.isAvailable,
     content: f.content,
   };
