@@ -72,7 +72,7 @@ export const productService = {
   deleteProductBySlug: async (slug: string): Promise<void> => {
     const decodedSlug = decodeURIComponent(slug);
 
-    const res = await axiosInstance.delete(`/products/${decodedSlug}`);
+    await axiosInstance.delete(`/products/${decodedSlug}`);
   },
 
   /**
@@ -84,6 +84,7 @@ export const productService = {
     price: number;
     shippingFee: number;
     freeShippingThreshold: number;
+    bundleShipping: boolean;
     category: { parent: string; child: string };
     thumbnail: string[];
     isAvailable?: boolean;
@@ -105,6 +106,7 @@ export const productService = {
       price: number;
       shippingFee: number;
       freeShippingThreshold: number;
+      bundleShipping: boolean;
       category: { parent: string; child: string };
       thumbnail: string[];
       isAvailable: boolean;

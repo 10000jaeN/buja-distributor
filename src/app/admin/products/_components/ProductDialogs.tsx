@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Product } from "@/types/product";
 import { Category } from "@/types/product";
-import { ContentBlock, ProductForm, ProductFormData } from "./ProductForm";
+import { ProductForm, ProductFormData } from "./ProductForm";
 
 type Props = {
   // 추가 다이얼로그
@@ -41,13 +41,6 @@ type Props = {
   // 공통
   form: ProductFormData;
   onChange: (field: keyof ProductFormData, value: string | boolean) => void;
-  onBlockChange: (
-    index: number,
-    field: keyof ContentBlock,
-    value: string,
-  ) => void;
-  onAddBlock: () => void;
-  onRemoveBlock: (index: number) => void;
   categories: Category[];
   isSubmitting: boolean;
 };
@@ -64,9 +57,6 @@ export function ProductDialogs({
   handleDelete,
   form,
   onChange,
-  onBlockChange,
-  onAddBlock,
-  onRemoveBlock,
   categories,
   isSubmitting,
 }: Props) {
@@ -86,11 +76,9 @@ export function ProductDialogs({
             </DialogHeader>
             <div className="max-h-[65vh] overflow-y-auto px-1 py-6">
               <ProductForm
+                key="create"
                 form={form}
                 onChange={onChange}
-                onBlockChange={onBlockChange}
-                onAddBlock={onAddBlock}
-                onRemoveBlock={onRemoveBlock}
                 categories={categories}
               />
             </div>
@@ -137,11 +125,9 @@ export function ProductDialogs({
             </DialogHeader>
             <div className="max-h-[65vh] overflow-y-auto px-1 py-6">
               <ProductForm
+                key={editTarget?._id}
                 form={form}
                 onChange={onChange}
-                onBlockChange={onBlockChange}
-                onAddBlock={onAddBlock}
-                onRemoveBlock={onRemoveBlock}
                 categories={categories}
               />
             </div>

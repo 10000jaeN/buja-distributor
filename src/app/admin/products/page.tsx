@@ -19,7 +19,6 @@ import { toast } from "sonner";
 import Image from "next/image";
 import noImage from "@/public/images/no-image.png";
 import {
-  ContentBlock,
   INITIAL_FORM,
   type ProductFormData,
   type ShippingType,
@@ -67,32 +66,6 @@ export default function AdminProductsPage() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleBlockChange = (
-    index: number,
-    field: keyof ContentBlock,
-    value: string,
-  ) => {
-    setForm((prev) => {
-      const blocks = [...prev.contentBlocks];
-      blocks[index] = { ...blocks[index], [field]: value };
-      return { ...prev, contentBlocks: blocks };
-    });
-  };
-
-  const handleAddBlock = () => {
-    setForm((prev) => ({
-      ...prev,
-      contentBlocks: [...prev.contentBlocks, { type: "text", value: "" }],
-    }));
-  };
-
-  const handleRemoveBlock = (index: number) => {
-    setForm((prev) => ({
-      ...prev,
-      contentBlocks: prev.contentBlocks.filter((_, i) => i !== index),
-    }));
-  };
-
   const buildPayload = (f: ProductFormData) => {
     const isFree = f.shippingType === "free";
     const isBundle = f.shippingType === "bundle";
@@ -108,7 +81,7 @@ export default function AdminProductsPage() {
         .map((s) => s.trim())
         .filter(Boolean),
       isAvailable: f.isAvailable,
-      contentBlock: f.contentBlocks,
+      contentBlock: [{ type: "text" as const, value: f.content }],
     };
   };
 
@@ -174,10 +147,7 @@ export default function AdminProductsPage() {
       categoryChild: product.category.child,
       thumbnail: product.thumbnail.join(", "),
       isAvailable: product.isAvailable,
-      contentBlocks: product.contentBlock.map((b) => ({
-        type: b.type,
-        value: b.value,
-      })),
+      content: product.content || "",
     });
     setEditTarget(product);
   };
@@ -586,9 +556,6 @@ export default function AdminProductsPage() {
         handleDelete={handleDelete}
         form={form}
         onChange={handleFormChange}
-        onBlockChange={handleBlockChange}
-        onAddBlock={handleAddBlock}
-        onRemoveBlock={handleRemoveBlock}
         categories={categories}
         isSubmitting={isSubmitting}
       />

@@ -117,6 +117,7 @@ const productsDetailPage = async ({ params }: Props) => {
       </div>
 
       <ProductTabs
+        content={product?.content}
         contentBlock={product?.contentBlock ?? []}
         shippingFee={product?.shippingFee ?? 3000}
         freeShippingThreshold={product?.freeShippingThreshold ?? 0}

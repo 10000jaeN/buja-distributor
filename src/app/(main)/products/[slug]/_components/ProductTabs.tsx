@@ -9,6 +9,7 @@ type ContentBlock = {
 };
 
 type Props = {
+  content?: string;
   contentBlock: ContentBlock[];
   shippingFee: number;
   freeShippingThreshold: number;
@@ -31,7 +32,7 @@ function EmptyState({ icon, title, description }: { icon: React.ReactNode; title
   );
 }
 
-export function ProductTabs({ contentBlock, shippingFee, freeShippingThreshold }: Props) {
+export function ProductTabs({ content, contentBlock, shippingFee, freeShippingThreshold }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("상세정보");
 
   return (
@@ -60,7 +61,36 @@ export function ProductTabs({ contentBlock, shippingFee, freeShippingThreshold }
       <div className="mx-auto max-w-200">
         {activeTab === "상세정보" && (
           <>
-            {!contentBlock?.length ? (
+            {content ? (
+              <div
+                className="product-content px-4 py-6"
+                dangerouslySetInnerHTML={{ __html: content }}
+              />
+            ) : contentBlock?.length ? (
+              /* 구형 데이터 폴백 렌더링 */
+              contentBlock.map((block, index) => {
+                if (block.type === "image") {
+                  return (
+                    <Image
+                      key={index}
+                      src={block.value}
+                      alt="상세페이지"
+                      width={800}
+                      height={800}
+                      className="w-full"
+                    />
+                  );
+                }
+                return (
+                  <div
+                    key={index}
+                    className="px-4 py-5 text-sm leading-relaxed text-gray-700"
+                  >
+                    {block.value}
+                  </div>
+                );
+              })
+            ) : (
               <EmptyState
                 icon={
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -70,31 +100,6 @@ export function ProductTabs({ contentBlock, shippingFee, freeShippingThreshold }
                 title="상세 정보가 아직 등록되지 않았습니다."
                 description="상품 문의는 Q&A를 이용해 주세요."
               />
-            ) : (
-              contentBlock.map((content, index) => {
-                if (content.type === "image") {
-                  return (
-                    <Image
-                      key={index}
-                      src={content.value}
-                      alt="상세페이지"
-                      width={800}
-                      height={800}
-                      className="w-full"
-                    />
-                  );
-                } else if (content.type === "text") {
-                  return (
-                    <div
-                      key={content.value}
-                      className="px-4 py-5 text-sm leading-relaxed text-gray-700"
-                    >
-                      {content.value}
-                    </div>
-                  );
-                }
-                return null;
-              })
             )}
           </>
         )}
