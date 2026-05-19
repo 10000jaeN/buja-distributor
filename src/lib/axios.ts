@@ -17,7 +17,7 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     if (typeof window !== "undefined") {
-      const token = localStorage.getItem("accessToken");
+      const token = localStorage.getItem("accessToken") ?? sessionStorage.getItem("accessToken");
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -32,8 +32,13 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse) => {
     const newToken = response.headers["x-new-access-token"];
-    if (newToken) {
-      localStorage.setItem("accessToken", newToken);
+    if (newToken && typeof window !== "undefined") {
+      const isAutoLogin = localStorage.getItem("autoLogin") !== "false";
+      if (isAutoLogin) {
+        localStorage.setItem("accessToken", newToken);
+      } else {
+        sessionStorage.setItem("accessToken", newToken);
+      }
     }
     return response;
   },
@@ -41,6 +46,7 @@ axiosInstance.interceptors.response.use(
     if (error.status === 401) {
       if (typeof window !== "undefined") {
         localStorage.removeItem("accessToken");
+        sessionStorage.removeItem("accessToken");
         const isAdmin = window.location.pathname.startsWith("/admin");
         window.location.href = isAdmin ? "/admin/login" : "/login";
       }

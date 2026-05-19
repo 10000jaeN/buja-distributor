@@ -3,12 +3,17 @@
 import { GoogleIcon, KakaoIcon, Logo, NIcon } from "@/assets";
 import useAuthStore from "@/store/useAuthStore";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const Login = () => {
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const router = useRouter();
+  const [autoLogin, setAutoLogin] = useState(
+    () => localStorage.getItem("autoLogin") !== "false"
+  );
+
   const handleClickSocialLogin = (social: "google" | "kakao" | "naver") => {
+    localStorage.setItem("autoLogin", String(autoLogin));
     window.location.replace(
       `${
         process.env.NODE_ENV === "production"
@@ -79,6 +84,17 @@ const Login = () => {
               </span>
             </button>
           </div>
+
+          {/* 자동 로그인 */}
+          <label className="mt-5 flex cursor-pointer items-center justify-end gap-2">
+            <input
+              type="checkbox"
+              checked={autoLogin}
+              onChange={(e) => setAutoLogin(e.target.checked)}
+              className="accent-brand-blue h-4 w-4 cursor-pointer rounded"
+            />
+            <span className="text-sm text-gray-600">자동 로그인</span>
+          </label>
 
           {/* 하단 안내 문구 */}
           <p className="mt-8 text-center text-xs leading-relaxed text-gray-400">

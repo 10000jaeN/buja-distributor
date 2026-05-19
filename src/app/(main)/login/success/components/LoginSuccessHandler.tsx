@@ -33,7 +33,12 @@ const LoginSuccessHandler = () => {
         const { accessToken, userId, nickName, roles } = res.data;
 
         if (res.data.accessToken) {
-          localStorage.setItem("accessToken", accessToken);
+          const isAutoLogin = localStorage.getItem("autoLogin") !== "false";
+          if (isAutoLogin) {
+            localStorage.setItem("accessToken", accessToken);
+          } else {
+            sessionStorage.setItem("accessToken", accessToken);
+          }
           axiosInstance.defaults.headers.common["Authorization"] =
             `Bearer ${accessToken}`;
         }

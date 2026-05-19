@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 
 import noImage from "@/public/images/no-image.png";
 import { productService } from "@/api/productService";
-import { StarIcon } from "@/assets";
+import { Star } from "lucide-react";
 import { ProductActions } from "./_components/ProductActions";
 import { ProductTabs } from "./_components/ProductTabs";
 
@@ -59,7 +59,7 @@ const productsDetailPage = async ({ params }: Props) => {
         <div className="px-4 pt-5 pb-4 md:flex md:flex-col md:justify-between md:px-0 md:pt-0 md:pb-0">
           {/* 별점 */}
           <div aria-label="별점" className="flex items-center gap-1.5">
-            <StarIcon className="h-4 w-4 text-amber-400" />
+            <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
             <span className="text-sm font-medium text-amber-500">
               {product?.stats.ratingAverage}
             </span>
@@ -117,6 +117,7 @@ const productsDetailPage = async ({ params }: Props) => {
       </div>
 
       <ProductTabs
+        content={product?.content}
         contentBlock={product?.contentBlock ?? []}
         shippingFee={product?.shippingFee ?? 3000}
         freeShippingThreshold={product?.freeShippingThreshold ?? 0}

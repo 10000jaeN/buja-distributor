@@ -13,15 +13,15 @@ export interface Product {
     ratingAverage: number;
     reviewCount: number;
   };
-  contentBlock: [
-    {
-      type: "text" | "image";
-      value: string;
-    },
-  ];
+  content?: string;
+  contentBlock: {
+    type: "text" | "image";
+    value: string;
+  }[];
   price: number;
   shippingFee: number;
   freeShippingThreshold: number;
+  bundleShipping: boolean;
   category: {
     parent: string;
     child: string;

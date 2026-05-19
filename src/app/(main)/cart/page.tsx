@@ -1,6 +1,7 @@
 "use client";
 
 import { cartService, CartItem } from "@/api/cartService";
+import { settingsService } from "@/api/settingsService";
 import useAuthStore from "@/store/useAuthStore";
 import useCartStore from "@/store/useCartStore";
 import Image from "next/image";
@@ -8,6 +9,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import noImage from "@/public/images/no-image.png";
+import ConfirmDialog from "@/components/shared/ConfirmDialog";
 
 export default function CartPage() {
   const { isLoggedIn, isInitialized } = useAuthStore();
@@ -16,6 +18,8 @@ export default function CartPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const setCartCount = useCartStore((state) => state.setCount);
+  const [removeTarget, setRemoveTarget] = useState<string[] | null>(null);
+  const [bundleFreeThreshold, setBundleFreeThreshold] = useState(50000);
 
   // items 변경 시 nav 뱃지 카운트 동기화
   useEffect(() => {
@@ -25,11 +29,14 @@ export default function CartPage() {
   }, [items, isLoading, setCartCount]);
 
   useEffect(() => {
-    cartService
-      .getCart()
-      .then((cart) => {
+    Promise.all([
+      cartService.getCart(),
+      settingsService.getSettings(),
+    ])
+      .then(([cart, settings]) => {
         setItems(cart.items);
         setSelected(new Set(cart.items.map((i) => i.productId._id)));
+        setBundleFreeThreshold(settings.bundleFreeThreshold);
       })
       .catch(() => setError("장바구니를 불러오지 못했습니다."))
       .finally(() => setIsLoading(false));
@@ -97,12 +104,24 @@ export default function CartPage() {
     (sum, i) => sum + i.productId.price * i.quantity,
     0,
   );
-  const totalShipping = selectedItems.reduce((sum, i) => {
-    const { price, shippingFee = 3000, freeShippingThreshold } = i.productId;
-    const subtotal = price * i.quantity;
-    const isFree = freeShippingThreshold && subtotal >= freeShippingThreshold;
-    return sum + (isFree ? 0 : shippingFee);
+
+  const bundleItems = selectedItems.filter((i) => i.productId.bundleShipping);
+  const nonBundleItems = selectedItems.filter((i) => !i.productId.bundleShipping);
+
+  const nonBundleShipping = nonBundleItems.reduce((sum, i) => {
+    return sum + (i.productId.shippingFee ?? 0);
   }, 0);
+
+  const bundleSubtotal = bundleItems.reduce(
+    (sum, i) => sum + i.productId.price * i.quantity,
+    0,
+  );
+  const bundleShipping =
+    bundleItems.length === 0 ? 0 :
+    bundleSubtotal >= bundleFreeThreshold ? 0 :
+    Math.max(...bundleItems.map((i) => i.productId.shippingFee ?? 0));
+
+  const totalShipping = nonBundleShipping + bundleShipping;
 
   if (!isInitialized) {
     return (
@@ -157,6 +176,21 @@ export default function CartPage() {
 
   return (
     <div className="mx-auto max-w-[1024px] px-5 py-10">
+      <ConfirmDialog
+        open={removeTarget !== null}
+        onOpenChange={(open) => { if (!open) setRemoveTarget(null); }}
+        title="장바구니에서 삭제"
+        description={
+          removeTarget && removeTarget.length > 1
+            ? `선택한 ${removeTarget.length}개 상품을 삭제하시겠습니까?`
+            : "상품을 삭제하시겠습니까?"
+        }
+        confirmLabel="삭제"
+        onConfirm={() => {
+          if (removeTarget) handleRemove(removeTarget);
+          setRemoveTarget(null);
+        }}
+      />
       <h1 className="mb-8 text-2xl font-bold text-gray-900">장바구니</h1>
 
       {items.length === 0 ? (
@@ -188,7 +222,7 @@ export default function CartPage() {
               </label>
               {selected.size > 0 && (
                 <button
-                  onClick={() => handleRemove([...selected])}
+                  onClick={() => setRemoveTarget([...selected])}
                   className="text-sm text-gray-400 hover:text-red-500"
                 >
                   선택 삭제
@@ -264,7 +298,7 @@ export default function CartPage() {
                           </button>
                         </div>
                         <button
-                          onClick={() => handleRemove([product._id])}
+                          onClick={() => setRemoveTarget([product._id])}
                           className="text-xs text-gray-400 hover:text-red-400"
                         >
                           삭제

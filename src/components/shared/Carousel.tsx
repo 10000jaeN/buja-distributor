@@ -1,13 +1,13 @@
 "use client";
 
-import { ArrowIcon } from "@/assets";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const items = [
-  { title: "광고 및 이벤트가 들어갈 자리입니다.", bg: "bg-[#7bf1b0]" },
-  { title: "소", bg: "bg-[#68aae2]" },
-  { title: "보", bg: "bg-[#ab68e2]" },
-  { title: "와", bg: "bg-[#e068e2]" },
+  { title: "광고 및 이벤트가 들어갈 자리입니다.1", bg: "bg-[#7bf1b0]" },
+  { title: "광고 및 이벤트가 들어갈 자리입니다.2", bg: "bg-[#68aae2]" },
+  { title: "광고 및 이벤트가 들어갈 자리입니다.3", bg: "bg-[#ab68e2]" },
+  { title: "광고 및 이벤트가 들어갈 자리입니다.4", bg: "bg-[#e068e2]" },
 ];
 
 const Carousel = () => {
@@ -50,10 +50,9 @@ const Carousel = () => {
       <div className="absolute bottom-2 left-1/2 flex -translate-1/2 items-center gap-2">
         <button
           type="button"
-          className="-scale-x-100"
           onClick={onClickPrevious}
         >
-          <ArrowIcon className="fill-white" />
+          <ChevronLeft className="h-5 w-5 text-white" />
         </button>
 
         {items &&
@@ -67,7 +66,7 @@ const Carousel = () => {
           ))}
 
         <button type="button" onClick={onClickNext}>
-          <ArrowIcon className="fill-white" />
+          <ChevronRight className="h-5 w-5 text-white" />
         </button>
       </div>
     </div>

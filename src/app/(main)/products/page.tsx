@@ -3,11 +3,11 @@
 import { productService } from "@/api/productService";
 import { categoryService } from "@/api/categoryService";
 import { Product } from "@/types/product";
-import Image from "next/image";
 import Link from "next/link";
+
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import noImage from "@/public/images/no-image.png";
+import ProductCard from "@/components/shared/ProductCard";
 import {
   Select,
   SelectContent,
@@ -38,25 +38,34 @@ export default function ProductsPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setIsLoading(true);
-    Promise.all([
-      productService.getProducts({
-        category: category || undefined,
-        sub: sub || undefined,
-        sort,
-      }),
-      category
-        ? categoryService.getCategories().then(
-            (cats) =>
-              cats.find((c) => c.parent === category)?.children ?? []
-          )
-        : Promise.resolve([]),
-    ])
-      .then(([products, children]) => {
-        setProducts(products);
-        setChildren(children);
-      })
-      .finally(() => setIsLoading(false));
+    let cancelled = false;
+
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const [products, children] = await Promise.all([
+          productService.getProducts({
+            category: category || undefined,
+            sub: sub || undefined,
+            sort,
+          }),
+          category
+            ? categoryService.getCategories().then(
+                (cats) => cats.find((c) => c.parent === category)?.children ?? []
+              )
+            : Promise.resolve([]),
+        ]);
+        if (!cancelled) {
+          setProducts(products);
+          setChildren(children);
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+
+    fetchData();
+    return () => { cancelled = true; };
   }, [category, sub, sort]);
 
   const updateParam = (key: string, value: string) => {
@@ -169,28 +178,7 @@ export default function ProductsPage() {
         <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-3 md:gap-5 lg:grid-cols-4">
           {products.map((product) => (
             <li key={product._id}>
-              <Link href={`/products/${product.slug}`} className="group block">
-                <div className="overflow-hidden rounded-xl border border-gray-100">
-                  <Image
-                    src={product.thumbnail[0] ?? noImage}
-                    alt={product.name}
-                    width={300}
-                    height={300}
-                    className="h-44 w-full object-cover transition-transform duration-300 group-hover:scale-105 sm:h-52 md:h-60 lg:h-56"
-                  />
-                </div>
-                <div className="mt-2.5 space-y-1 px-0.5">
-                  <p className="line-clamp-2 text-sm font-medium text-gray-800 group-hover:text-brand-blue">
-                    {product.name}
-                  </p>
-                  <p className="text-sm font-bold text-gray-900">
-                    {product.price.toLocaleString()}원
-                  </p>
-                  {!product.isAvailable && (
-                    <span className="text-xs text-gray-400">품절</span>
-                  )}
-                </div>
-              </Link>
+              <ProductCard product={product} size="lg" />
             </li>
           ))}
         </ul>

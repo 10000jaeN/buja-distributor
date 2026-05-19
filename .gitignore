@@ -43,4 +43,6 @@ next-env.d.ts
 # spellchecker
 .vscode
 
+.claude
+
 /의논사항.md
