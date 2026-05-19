@@ -96,7 +96,7 @@ export const patchUser = async (req, res) => {
  */
 export const deleteUser = async (req, res) => {
   // 미들웨어를 통해 인증된 사용자 ID
-  const userIdToDelete = req.user.id;
+  const userIdToDelete = req.user._id;
 
   // 1. DB에서 사용자 문서 삭제
   const result = await User.findByIdAndDelete(userIdToDelete);

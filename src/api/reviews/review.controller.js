@@ -3,7 +3,7 @@ import Review from "./review.model.js";
 export const createReview = async (req, res) => {
   const { productId, rating, content, images } = req.body;
   // userId는 보통 인증 미들웨어에서 넘겨받은 값을 사용합니다.
-  const userId = req.user?.id;
+  const userId = req.user?._id;
 
   if (!userId) {
     return res.status(401).json({
@@ -40,7 +40,7 @@ export const getProductReviews = async (req, res) => {
 
 export const deleteReview = async (req, res) => {
   const { reviewId } = req.params;
-  const userId = req.user.id; // 인증 미들웨어에서 넘어온 유저 정보
+  const userId = req.user._id; // 인증 미들웨어에서 넘어온 유저 정보
 
   // 본인의 리뷰인지 확인하며 삭제
   const review = await Review.findOneAndDelete({ _id: reviewId, userId });

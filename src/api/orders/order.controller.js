@@ -31,7 +31,7 @@ export const createOrder = async (req, res) => {
   // 1. 유효성 검사 및 데이터 추출
   const { items, shippingAddress } = req.body;
   // req.user는 인증 미들웨어를 통해 주입된 사용자 정보 (ID 포함)
-  const userId = req.user.id;
+  const userId = req.user._id;
 
   // 1. 유효성 검사 (CustomError 사용)
   if (!items || items.length === 0) {
@@ -133,7 +133,7 @@ export const createOrder = async (req, res) => {
 // 2. 내 주문 목록 조회 (GET /api/orders)
 // =================================================================
 export const getMyOrders = async (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user._id;
 
   const orders = await Order.find({ user: userId })
     .sort({ createdAt: -1 })
@@ -155,7 +155,7 @@ export const getMyOrders = async (req, res) => {
 // =================================================================
 export const getOrderById = async (req, res) => {
   const orderId = req.params.id;
-  const userId = req.user.id;
+  const userId = req.user._id;
 
   // 1. ID 유효성 검사
   if (!mongoose.Types.ObjectId.isValid(orderId)) {
@@ -198,7 +198,7 @@ export const getAllOrders = async (req, res) => {
 // =================================================================
 export const completePayment = async (req, res) => {
   const orderId = req.params.id;
-  const userId = req.user.id;
+  const userId = req.user._id;
 
   if (!mongoose.Types.ObjectId.isValid(orderId)) {
     throw new CustomError("유효하지 않은 주문 ID입니다.", 400);
@@ -257,7 +257,7 @@ export const completePayment = async (req, res) => {
 // =================================================================
 export const cancelOrder = async (req, res) => {
   const orderId = req.params.id;
-  const userId = req.user.id;
+  const userId = req.user._id;
   const isAdmin = req.user.roles && req.user.roles.includes("admin");
 
   if (!mongoose.Types.ObjectId.isValid(orderId)) {
