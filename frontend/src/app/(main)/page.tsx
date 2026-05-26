@@ -3,20 +3,11 @@ import ProductList from "@/components/shared/ProductList";
 import { productService } from "@/api/productService";
 
 export default async function Home() {
-  const BestProducts = await productService.getProducts({
-    sort: "populate",
-    limit: 10,
-  });
-
-  const otherProducts = await productService.getProducts({
-    sort: "price_desc",
-    limit: 10,
-  });
-
-  const otherProducts2 = await productService.getProducts({
-    sort: "recent",
-    limit: 10,
-  });
+  const [BestProducts, otherProducts, otherProducts2] = await Promise.all([
+    productService.getProducts({ sort: "populate", limit: 10 }).catch(() => []),
+    productService.getProducts({ sort: "price_desc", limit: 10 }).catch(() => []),
+    productService.getProducts({ sort: "recent", limit: 10 }).catch(() => []),
+  ]);
 
   return (
     <main className="mt-0">
