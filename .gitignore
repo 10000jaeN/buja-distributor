@@ -1,11 +1,10 @@
-# misc
+# ── 공통 ──
 .DS_Store
 *.pem
-node_modules
-.next
-
-# env files
+*.tsbuildinfo
 .env*
+.claude
+/의논사항.md
 
 # debug
 npm-debug.log*
@@ -13,30 +12,19 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# spellchecker
+# editor
 .vscode
-
-.claude
-
-/의논사항.md
 
 # ── frontend ──
 frontend/node_modules
-frontend/.pnp
-frontend/.pnp.*
-frontend/.yarn/*
-!frontend/.yarn/patches
-!frontend/.yarn/plugins
-!frontend/.yarn/releases
-!frontend/.yarn/versions
-frontend/coverage
 frontend/.next/
 frontend/out/
 frontend/build
 frontend/.vercel
-frontend/*.tsbuildinfo
-*.tsbuildinfo
+frontend/coverage
 frontend/next-env.d.ts
+frontend/.pnp
+frontend/.pnp.*
 
 # ── backend ──
 backend/node_modules
