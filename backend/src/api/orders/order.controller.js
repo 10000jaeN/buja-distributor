@@ -39,7 +39,7 @@ export const createOrder = async (req, res) => {
   }
   if (
     !shippingAddress ||
-    !shippingAddress.address1 ||
+    !shippingAddress.mainAddress ||
     !shippingAddress.recipientName
   ) {
     throw new CustomError("유효한 배송지 정보가 필요합니다.", 400);
