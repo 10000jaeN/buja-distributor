@@ -4,15 +4,19 @@ import { cartService, CartItem } from "@/api/cartService";
 import { settingsService } from "@/api/settingsService";
 import useAuthStore from "@/store/useAuthStore";
 import useCartStore from "@/store/useCartStore";
+import useCheckoutStore from "@/store/useCheckoutStore";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import noImage from "@/public/images/no-image.png";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 
 export default function CartPage() {
+  const router = useRouter();
   const { isLoggedIn, isInitialized } = useAuthStore();
+  const setCheckout = useCheckoutStore((s) => s.setCheckout);
   const [items, setItems] = useState<CartItem[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
@@ -122,6 +126,24 @@ export default function CartPage() {
     Math.max(...bundleItems.map((i) => i.productId.shippingFee ?? 0));
 
   const totalShipping = nonBundleShipping + bundleShipping;
+
+  const handleCheckout = () => {
+    if (selectedItems.length === 0) return;
+    setCheckout(
+      selectedItems.map((i) => ({
+        productId: i.productId._id,
+        name: i.productId.name,
+        price: i.productId.price,
+        quantity: i.quantity,
+        shippingFee: i.productId.shippingFee ?? 0,
+        bundleShipping: i.productId.bundleShipping ?? false,
+        thumbnail: i.productId.thumbnail?.[0] ?? "",
+      })),
+      totalShipping,
+      selectedTotal + totalShipping,
+    );
+    router.push("/checkout");
+  };
 
   if (!isInitialized) {
     return (
@@ -342,6 +364,7 @@ export default function CartPage() {
               </div>
               <button
                 disabled={selected.size === 0}
+                onClick={handleCheckout}
                 className="bg-brand-blue mt-5 w-full rounded-xl py-3.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {selected.size > 0
