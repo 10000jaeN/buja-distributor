@@ -2,6 +2,7 @@
 .DS_Store
 *.pem
 *.tsbuildinfo
+.next/
 .env*
 .claude
 /의논사항.md
