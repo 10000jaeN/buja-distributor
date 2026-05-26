@@ -73,6 +73,10 @@ const OrderSchema = new mongoose.Schema(
     cancelledAt: { type: Date },
     shippedAt: { type: Date },
     deliveredAt: { type: Date },
+    // 결제 정보
+    paymentKey: { type: String },
+    paymentMethod: { type: String },   // 카드, 가상계좌, 계좌이체, 간편결제
+    paymentProvider: { type: String }, // 카카오페이, 토스페이, 삼성페이, 네이버페이 등
     // 배송 정보
     trackingNumber: { type: String },
     courierName: { type: String },
