@@ -3,6 +3,7 @@
 *.pem
 *.tsbuildinfo
 .next/
+node_modules/
 .env*
 .claude
 /의논사항.md
@@ -31,3 +32,4 @@ frontend/.pnp.*
 backend/node_modules
 backend/dist
 backend/build
+backend/.env*
