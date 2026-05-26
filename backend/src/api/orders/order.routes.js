@@ -7,7 +7,6 @@ import {
   getAllOrders,
   getOrderStats,
   getMonthlyStats,
-  completePayment,
   cancelOrder,
   startPreparation,
   startShipping,
@@ -91,13 +90,6 @@ router.get("/", asyncHandler(getMyOrders));
  * @access Private (User, 자신의 주문만 조회 가능)
  */
 router.get("/:id", asyncHandler(getOrderById));
-
-/**
- * @route [PATCH] /orders/:id/pay
- * @desc 8. 주문 결제 완료 처리 (상태: pending -> paid)
- * @access Private (User)
- */
-router.patch("/:id/pay", asyncHandler(completePayment));
 
 /**
  * @route [PATCH] /api/orders/:id/cancel

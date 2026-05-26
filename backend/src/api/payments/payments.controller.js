@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Order from "../orders/order.model.js";
 import CustomError from "../../utils/customError.js";
 
@@ -12,8 +13,12 @@ export const confirmPayment = async (req, res) => {
     throw new CustomError("paymentKey, orderId, amount가 필요합니다.", 400);
   }
 
-  // 1. 주문 조회 및 검증
-  const order = await Order.findById(orderId);
+  if (!mongoose.Types.ObjectId.isValid(orderId)) {
+    throw new CustomError("유효하지 않은 주문 ID입니다.", 400);
+  }
+
+  // 1. 주문 조회 및 검증 (소유자 확인 포함)
+  const order = await Order.findOne({ _id: orderId, user: req.user._id });
   if (!order) {
     throw new CustomError("주문을 찾을 수 없습니다.", 404);
   }
