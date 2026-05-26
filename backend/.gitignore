@@ -1,0 +1,12 @@
+# spellCheck
+.vscode
+
+# Dependency directories
+node_modules/
+
+.env
+
+request.HTTP
+
+# Seed files
+seed*.mjs
