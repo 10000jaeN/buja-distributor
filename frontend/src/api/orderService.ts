@@ -61,9 +61,9 @@ export const orderService = {
     return res.data;
   },
 
-  cancelOrder: async (id: string): Promise<Order> => {
-    const res = await apiClient.patch<{ data: Order }>(`/orders/${id}/cancel`);
-    return res.data;
+  cancelOrder: async (id: string): Promise<{ orderId: string; status: string }> => {
+    const res = await apiClient.patch<{ orderId: string; status: string }>(`/orders/${id}/cancel`);
+    return res;
   },
 
   // Admin endpoints
