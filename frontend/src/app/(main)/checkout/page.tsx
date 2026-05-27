@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { loadTossPayments, type TossPaymentsWidgets } from "@tosspayments/tosspayments-sdk";
+import { loadTossPayments } from "@tosspayments/tosspayments-sdk";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,59 +10,79 @@ import { toast } from "sonner";
 import useCheckoutStore from "@/store/useCheckoutStore";
 import useAuthStore from "@/store/useAuthStore";
 import { checkoutService } from "@/api/checkoutService";
+import { userService, type Address } from "@/api/userService";
+
+const PAYMENT_METHODS = [
+  { key: "CARD", label: "신용/체크카드" },
+  { key: "TRANSFER", label: "계좌이체" },
+  { key: "VIRTUAL_ACCOUNT", label: "가상계좌" },
+  { key: "MOBILE_PHONE", label: "휴대폰" },
+] as const;
+
+type PaymentMethodKey = (typeof PAYMENT_METHODS)[number]["key"];
+
+const EMPTY_FORM = {
+  recipientName: "",
+  phoneNumber: "",
+  zipCode: "",
+  mainAddress: "",
+  detailAddress: "",
+};
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, shippingFee, totalAmount } = useCheckoutStore();
   const { user } = useAuthStore();
 
-  const [form, setForm] = useState({
-    recipientName: "",
-    phoneNumber: "",
-    zipCode: "",
-    mainAddress: "",
-    detailAddress: "",
-  });
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | "direct">("direct");
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodKey>("CARD");
   const [isLoading, setIsLoading] = useState(false);
-  const [widgetReady, setWidgetReady] = useState(false);
 
-  const widgetRef = useRef<TossPaymentsWidgets | null>(null);
-
-  // 장바구니에서 넘어오지 않은 경우 리다이렉트
   useEffect(() => {
     if (items.length === 0) {
       router.replace("/cart");
     }
   }, [items, router]);
 
-  // Toss 위젯 초기화
+  // 저장된 배송지 불러오기 + 기본 배송지 자동입력
   useEffect(() => {
-    if (items.length === 0 || !user) return;
-
-    const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY!;
-    const customerKey = user.userId;
-
-    (async () => {
-      try {
-        const tossPayments = await loadTossPayments(clientKey);
-        const widgets = tossPayments.widgets({ customerKey });
-        await widgets.setAmount({ currency: "KRW", value: totalAmount });
-        await widgets.renderPaymentMethods({
-          selector: "#payment-method",
-          variantKey: "DEFAULT",
+    if (!user) return;
+    userService.getProfile().then((profile) => {
+      const addrs = profile.address ?? [];
+      setAddresses(addrs);
+      const defaultAddr = addrs.find((a) => a.isDefault) ?? addrs[0];
+      if (defaultAddr) {
+        setSelectedAddressId(defaultAddr._id);
+        setForm({
+          recipientName: defaultAddr.recipientName,
+          phoneNumber: defaultAddr.phoneNumber,
+          zipCode: defaultAddr.zipCode,
+          mainAddress: defaultAddr.mainAddress,
+          detailAddress: defaultAddr.detailAddress ?? "",
         });
-        await widgets.renderAgreement({
-          selector: "#agreement",
-          variantKey: "AGREEMENT",
-        });
-
-        widgetRef.current = widgets;
-        setWidgetReady(true);
-      } catch {
-        toast.error("결제 위젯을 불러오지 못했습니다.");
       }
-    })();
-  }, [items, user, totalAmount]);
+    }).catch(() => {});
+  }, [user]);
+
+  const handleAddressSelect = (id: string | "direct") => {
+    setSelectedAddressId(id);
+    if (id === "direct") {
+      setForm(EMPTY_FORM);
+      return;
+    }
+    const addr = addresses.find((a) => a._id === id);
+    if (addr) {
+      setForm({
+        recipientName: addr.recipientName,
+        phoneNumber: addr.phoneNumber,
+        zipCode: addr.zipCode,
+        mainAddress: addr.mainAddress,
+        detailAddress: addr.detailAddress ?? "",
+      });
+    }
+  };
 
   const handleChange = (field: keyof typeof form, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -73,32 +93,33 @@ export default function CheckoutPage() {
       toast.error("배송지 정보를 모두 입력해주세요.");
       return;
     }
-    if (!widgetReady) {
-      toast.error("결제 위젯이 준비되지 않았습니다.");
-      return;
-    }
 
     setIsLoading(true);
     try {
-      // 1. 주문 생성
       const { orderId } = await checkoutService.createOrder({
         items: items.map(({ productId, quantity }) => ({ productId, quantity })),
         shippingAddress: form,
       });
 
-      // 2. Toss 결제 요청
-      await widgetRef.current!.requestPayment({
+      const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY!;
+      const tossPayments = await loadTossPayments(clientKey);
+      const payment = tossPayments.payment({ customerKey: user!.userId });
+
+      const orderName =
+        items.length === 1
+          ? items[0].name
+          : `${items[0].name} 외 ${items.length - 1}건`;
+
+      await payment.requestPayment({
+        method: selectedMethod,
+        amount: { currency: "KRW", value: totalAmount },
         orderId,
-        orderName:
-          items.length === 1
-            ? items[0].name
-            : `${items[0].name} 외 ${items.length - 1}건`,
+        orderName,
         successUrl: `${window.location.origin}/checkout/success`,
         failUrl: `${window.location.origin}/checkout/fail`,
         customerEmail: user?.email,
         customerName: user?.nickName,
       });
-
     } catch (err: unknown) {
       const message = (err as { message?: string })?.message;
       if (message !== "사용자가 결제를 취소하였습니다.") {
@@ -118,7 +139,6 @@ export default function CheckoutPage() {
       <h1 className="mb-8 text-xl font-bold text-foreground">주문서</h1>
 
       <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
-        {/* 왼쪽: 배송지 + 결제 위젯 */}
         <div className="space-y-6">
           {/* 주문 상품 */}
           <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -138,9 +158,65 @@ export default function CheckoutPage() {
             </ul>
           </div>
 
-          {/* 배송지 입력 */}
+          {/* 배송지 */}
           <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="mb-4 text-base font-bold text-foreground">배송지</h2>
+
+            {/* 저장된 배송지 선택 */}
+            {addresses.length > 0 && (
+              <div className="mb-5 space-y-2">
+                {addresses.map((addr) => (
+                  <label
+                    key={addr._id}
+                    className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
+                      selectedAddressId === addr._id
+                        ? "border-brand-blue bg-blue-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="address"
+                      checked={selectedAddressId === addr._id}
+                      onChange={() => handleAddressSelect(addr._id)}
+                      className="accent-brand-blue mt-0.5"
+                    />
+                    <div className="flex-1 text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-800">{addr.recipientName}</span>
+                        <span className="text-gray-400">{addr.phoneNumber}</span>
+                        {addr.isDefault && (
+                          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-medium text-brand-blue">
+                            기본
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-0.5 text-gray-500">
+                        {addr.mainAddress} {addr.detailAddress}
+                      </p>
+                    </div>
+                  </label>
+                ))}
+                <label
+                  className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors ${
+                    selectedAddressId === "direct"
+                      ? "border-brand-blue bg-blue-50"
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="address"
+                    checked={selectedAddressId === "direct"}
+                    onChange={() => handleAddressSelect("direct")}
+                    className="accent-brand-blue"
+                  />
+                  <span className="text-sm font-medium text-gray-700">직접 입력</span>
+                </label>
+              </div>
+            )}
+
+            {/* 폼 (선택된 배송지 수정 or 직접 입력) */}
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <Label>받는 분 이름 *</Label>
@@ -185,15 +261,29 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Toss 결제 위젯 */}
+          {/* 결제 수단 */}
           <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="mb-4 text-base font-bold text-foreground">결제 수단</h2>
-            <div id="payment-method" />
-            <div id="agreement" className="mt-4" />
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {PAYMENT_METHODS.map(({ key, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setSelectedMethod(key)}
+                  className={`rounded-lg border px-4 py-3 text-sm font-medium transition-colors ${
+                    selectedMethod === key
+                      ? "border-brand-blue bg-blue-50 text-brand-blue"
+                      : "border-gray-200 text-gray-600 hover:border-gray-300"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* 오른쪽: 주문 요약 */}
+        {/* 오른쪽: 결제 금액 */}
         <div className="h-fit rounded-xl border border-gray-200 bg-white p-6 shadow-sm lg:sticky lg:top-24">
           <h2 className="mb-4 text-base font-bold text-foreground">결제 금액</h2>
           <div className="space-y-2 text-sm">
@@ -215,7 +305,7 @@ export default function CheckoutPage() {
           <Button
             className="mt-6 w-full"
             onClick={handlePay}
-            disabled={isLoading || !widgetReady}
+            disabled={isLoading}
           >
             {isLoading ? "처리 중..." : `${totalAmount.toLocaleString()}원 결제하기`}
           </Button>
