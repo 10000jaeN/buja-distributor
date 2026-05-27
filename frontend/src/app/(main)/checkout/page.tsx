@@ -110,7 +110,9 @@ export default function CheckoutPage() {
           ? items[0].name
           : `${items[0].name} 외 ${items.length - 1}건`;
 
-      await payment.requestPayment({
+      // SDK가 메서드별 오버로드 타입을 사용하여 유니온 타입 직접 전달 불가 → 타입 단언 사용
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (payment.requestPayment as (req: any) => Promise<void>)({
         method: selectedMethod,
         amount: { currency: "KRW", value: totalAmount },
         orderId,
