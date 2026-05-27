@@ -1,6 +1,7 @@
+import mongoose from "mongoose";
 import Cart from "./cart.model.js";
-import Product from "../products/product.model.js"; // Product 모델이 있다고 가정
-import CustomError from "../../utils/customError.js"; // CustomError 임포트
+import Product from "../products/product.model.js";
+import CustomError from "../../utils/customError.js";
 
 // =================================================================
 // 1. 사용자 장바구니 조회 (GET /carts)
@@ -9,36 +10,72 @@ import CustomError from "../../utils/customError.js"; // CustomError 임포트
 export const getCart = async (req, res) => {
   const userId = req.user._id;
 
-  // 사용자 ID로 장바구니를 찾고 상품 세부 정보 채우기
-  const cart = await Cart.findOne({ user: userId })
-    .populate("items.productId", "name price slug thumbnail isAvailable shippingFee freeShippingThreshold")
-    .select("-__v"); // 불필요한 필드 제거
+  // lean()으로 원본 productId(ObjectId) 보존
+  const rawCart = await Cart.findOne({ user: userId }).lean().select("-__v");
 
-  if (!cart) {
-    // 장바구니를 찾을 수 없으면 빈 장바구니 구조 반환
+  if (!rawCart) {
     return res.status(200).json({
       message: "장바구니가 비어 있습니다.",
-      data: {
-        items: [],
-      },
+      data: { items: [] },
     });
   }
 
-  // 편의를 위해 총액 계산
-  const totalAmount = cart.items.reduce((total, item) => {
-    // 상품 세부 정보가 성공적으로 채워진 경우에만 계산
-    if (item.productId) {
-      return total + item.productId.price * item.quantity;
+  // 원본 ID로 상품 일괄 조회
+  const productIds = rawCart.items.map((item) => item.productId);
+  const products = await Product.find({ _id: { $in: productIds } })
+    .select("name price slug thumbnail isAvailable shippingFee freeShippingThreshold bundleShipping")
+    .lean();
+
+  const productMap = new Map(products.map((p) => [p._id.toString(), p]));
+
+  // 유효한 상품의 스냅샷을 최신 상태로 갱신 (fire-and-forget, 기존 아이템 소급 적용)
+  const snapshotUpdates = rawCart.items
+    .filter((item) => productMap.has(item.productId.toString()))
+    .map((item) => {
+      const product = productMap.get(item.productId.toString());
+      return {
+        updateOne: {
+          filter: { user: userId },
+          update: {
+            $set: {
+              "items.$[elem].snapshot": {
+                name: product.name,
+                thumbnail: product.thumbnail?.[0] ?? "",
+                price: product.price,
+              },
+            },
+          },
+          arrayFilters: [{ "elem.productId": item.productId }],
+        },
+      };
+    });
+
+  if (snapshotUpdates.length > 0) {
+    Cart.bulkWrite(snapshotUpdates).catch(() => {});
+  }
+
+  // 삭제된 상품은 저장된 스냅샷과 함께 반환
+  const items = rawCart.items.map((item) => {
+    const product = productMap.get(item.productId.toString());
+    if (!product) {
+      return {
+        productId: null,
+        deletedProductId: item.productId.toString(),
+        quantity: item.quantity,
+        isDeleted: true,
+        snapshot: item.snapshot ?? null,
+      };
     }
-    return total;
-  }, 0);
+    return { productId: product, quantity: item.quantity, isDeleted: false };
+  });
+
+  const totalAmount = items
+    .filter((item) => !item.isDeleted)
+    .reduce((total, item) => total + item.productId.price * item.quantity, 0);
 
   res.status(200).json({
     message: "장바구니 정보가 성공적으로 조회되었습니다.",
-    data: {
-      items: cart.items,
-      totalAmount,
-    },
+    data: { items, totalAmount },
   });
 };
 
@@ -67,12 +104,17 @@ export const addItemToCart = async (req, res) => {
 
   const cart = await Cart.findOne({ user: userId });
 
+  const snapshot = {
+    name: product.name,
+    thumbnail: product.thumbnail?.[0] ?? "",
+    price: product.price,
+  };
+
   // 2. 장바구니가 없는 경우 새로 생성
   if (!cart) {
-    // 재고확인 생략
     const newCart = await Cart.create({
       user: userId,
-      items: [{ productId, quantity }],
+      items: [{ productId, quantity, snapshot }],
     });
     return res.status(201).json({
       message: "새 장바구니에 상품이 성공적으로 추가되었습니다.",
@@ -90,9 +132,8 @@ export const addItemToCart = async (req, res) => {
     const currentQuantity = cart.items[existingItemIndex].quantity;
     const newQuantity = currentQuantity + quantity;
 
-    // 재고 한도 확인 생략
-
     cart.items[existingItemIndex].quantity = newQuantity;
+    cart.items[existingItemIndex].snapshot = snapshot;
     await cart.save();
     return res.status(200).json({
       message: "장바구니에 기존 상품 수량이 성공적으로 업데이트되었습니다.",
@@ -100,8 +141,7 @@ export const addItemToCart = async (req, res) => {
     });
   } else {
     // 5. 상품이 없는 경우 새로 추가
-    // 재고 확인 생략
-    cart.items.push({ productId, quantity });
+    cart.items.push({ productId, quantity, snapshot });
     await cart.save();
     return res.status(201).json({
       message: "장바구니에 새 상품이 성공적으로 추가되었습니다.",
@@ -160,25 +200,23 @@ export const removeCartItems = async (req, res) => {
   // 요청 본문에서 제거할 상품 ID 배열을 받습니다.
   const { productIds } = req.body;
 
-  // 1. 입력 유효성 검사
-  if (!Array.isArray(productIds) || productIds.length === 0) {
-    throw new CustomError(
-      "제거할 상품 ID 목록(productIds 배열)이 필요합니다.",
-      400
-    );
+  // 1. 유효한 ObjectId만 필터링 (null/undefined/invalid 방어)
+  const castIds = (Array.isArray(productIds) ? productIds : [])
+    .filter((id) => id && mongoose.Types.ObjectId.isValid(id))
+    .map((id) => new mongoose.Types.ObjectId(id));
+
+  if (castIds.length === 0) {
+    throw new CustomError("유효한 상품 ID가 없습니다.", 400);
   }
 
   const cart = await Cart.findOne({ user: userId });
   if (!cart) {
-    // 장바구니를 찾을 수 없으면 이미 비어있는 것으로 간주하여 성공 응답
     return res.status(200).json({ message: "장바구니가 이미 비어있습니다." });
   }
 
-  // 2. $pullAll 연산자를 사용하여 배열에서 해당 ID 목록에 포함된 모든 항목을 제거
-  // Mongoose/MongoDB에서 배열 내의 객체를 효율적으로 제거하는 방법입니다.
   const updateResult = await Cart.updateOne(
     { user: userId },
-    { $pull: { items: { productId: { $in: productIds } } } },
+    { $pull: { items: { productId: { $in: castIds } } } },
     { timestamps: false }
   );
 

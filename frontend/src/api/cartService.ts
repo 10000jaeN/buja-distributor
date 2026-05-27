@@ -1,9 +1,18 @@
 import { apiClient } from "@/lib/apiClient";
 import { Product } from "@/types/product";
 
+export type CartItemSnapshot = {
+  name: string;
+  thumbnail: string;
+  price: number;
+};
+
 export type CartItem = {
-  productId: Product;
+  productId: Product | null;
+  deletedProductId?: string;
   quantity: number;
+  isDeleted?: boolean;
+  snapshot?: CartItemSnapshot | null;
 };
 
 export type Cart = {

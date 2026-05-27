@@ -1,6 +1,7 @@
 "use client";
 
 import { cartService, CartItem } from "@/api/cartService";
+import { Product } from "@/types/product";
 import { settingsService } from "@/api/settingsService";
 import useAuthStore from "@/store/useAuthStore";
 import useCartStore from "@/store/useCartStore";
@@ -39,20 +40,23 @@ export default function CartPage() {
     ])
       .then(([cart, settings]) => {
         setItems(cart.items);
-        setSelected(new Set(cart.items.map((i) => i.productId._id)));
+        setSelected(new Set(cart.items.filter((i) => i.productId !== null).map((i) => i.productId!._id)));
         setBundleFreeThreshold(settings.bundleFreeThreshold);
       })
       .catch(() => setError("장바구니를 불러오지 못했습니다."))
       .finally(() => setIsLoading(false));
   }, []);
 
-  const isAllSelected = items.length > 0 && selected.size === items.length;
+  type ValidItem = Omit<CartItem, "productId"> & { productId: Product };
+  const validItems = items.filter((i): i is ValidItem => i.productId !== null);
+  const deletedItems = items.filter((i) => i.productId === null);
+  const isAllSelected = validItems.length > 0 && selected.size === validItems.length;
 
   const toggleAll = () => {
     if (isAllSelected) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(items.map((i) => i.productId._id)));
+      setSelected(new Set(validItems.map((i) => i.productId._id)));
     }
   };
 
@@ -70,7 +74,7 @@ export default function CartPage() {
 
     const prevItems = items;
     setItems((prev) =>
-      prev.map((i) => (i.productId._id === productId ? { ...i, quantity } : i)),
+      prev.map((i) => (i.productId?._id === productId ? { ...i, quantity } : i)),
     );
 
     try {
@@ -86,7 +90,13 @@ export default function CartPage() {
     const prevSelected = selected;
 
     setItems((prev) =>
-      prev.filter((i) => !productIds.includes(i.productId._id)),
+      prev.filter((i) => {
+        if (i.productId === null) {
+          // deletedProductId가 없으면 제거 불가 → 유지
+          return !i.deletedProductId || !productIds.includes(i.deletedProductId);
+        }
+        return !productIds.includes(i.productId._id);
+      }),
     );
     setSelected((prev) => {
       const next = new Set(prev);
@@ -103,7 +113,7 @@ export default function CartPage() {
     }
   };
 
-  const selectedItems = items.filter((i) => selected.has(i.productId._id));
+  const selectedItems = validItems.filter((i) => selected.has(i.productId._id));
   const selectedTotal = selectedItems.reduce(
     (sum, i) => sum + i.productId.price * i.quantity,
     0,
@@ -239,7 +249,7 @@ export default function CartPage() {
                   className="accent-brand-blue h-4 w-4 cursor-pointer rounded"
                 />
                 <span className="text-sm font-medium text-gray-700">
-                  전체 선택 ({selected.size}/{items.length})
+                  전체 선택 ({selected.size}/{validItems.length})
                 </span>
               </label>
               {selected.size > 0 && (
@@ -254,12 +264,12 @@ export default function CartPage() {
 
             {/* 아이템 */}
             <div className="space-y-3">
-              {items.map((item) => {
+              {validItems.map((item) => {
                 const product = item.productId;
                 const isSelected = selected.has(product._id);
                 return (
                   <div
-                    key={product._id}
+                    key={`valid-${product._id}`}
                     className={`flex items-center gap-4 rounded-xl border bg-white px-4 py-4 shadow-sm transition-colors ${isSelected ? "border-brand-blue/30" : "border-gray-100"}`}
                   >
                     <input
@@ -330,6 +340,39 @@ export default function CartPage() {
                   </div>
                 );
               })}
+
+              {/* 삭제된 상품 */}
+              {deletedItems.map((item) => (
+                <div
+                  key={`deleted-${item.deletedProductId}`}
+                  className="flex items-center gap-4 rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-4 shadow-sm"
+                >
+                  {item.snapshot?.thumbnail ? (
+                    <Image
+                      src={item.snapshot.thumbnail}
+                      alt={item.snapshot.name}
+                      width={96}
+                      height={96}
+                      className="h-24 w-24 shrink-0 rounded-lg border border-gray-100 object-cover grayscale"
+                    />
+                  ) : (
+                    <div className="h-24 w-24 shrink-0 rounded-lg bg-gray-100" />
+                  )}
+                  <div className="flex flex-1 flex-col gap-1.5">
+                    <p className="line-clamp-2 text-sm font-medium text-gray-400 line-through">
+                      {item.snapshot?.name ?? "삭제된 상품"}
+                    </p>
+                    <p className="text-xs text-gray-400">더 이상 판매하지 않는 상품입니다.</p>
+                  </div>
+                  <button
+                    onClick={() => item.deletedProductId && setRemoveTarget([item.deletedProductId])}
+                    disabled={!item.deletedProductId}
+                    className="text-xs text-gray-400 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    삭제
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
 
