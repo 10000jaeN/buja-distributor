@@ -4,12 +4,20 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 
+const isServer = typeof window === "undefined";
+const isProd = process.env.NODE_ENV === "production";
+
+const baseURL = isProd
+  ? isServer
+    ? process.env.API_URL
+    : process.env.NEXT_PUBLIC_API_URL
+  : isServer
+    ? process.env.API_TEST_URL
+    : process.env.NEXT_PUBLIC_API_TEST_URL;
+
 const axiosInstance = axios.create({
-  baseURL:
-    process.env.NODE_ENV === "production"
-      ? process.env.NEXT_PUBLIC_API_URL
-      : process.env.NEXT_PUBLIC_API_TEST_URL,
-  timeout: process.env.NODE_ENV === "production" ? 60000 : 10000,
+  baseURL,
+  timeout: isProd ? 60000 : 10000,
   withCredentials: true,
   headers: { "Content-Type": "application/json" },
 });
