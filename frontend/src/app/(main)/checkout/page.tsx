@@ -110,18 +110,24 @@ export default function CheckoutPage() {
           ? items[0].name
           : `${items[0].name} 외 ${items.length - 1}건`;
 
-      // SDK가 메서드별 오버로드 타입을 사용하여 유니온 타입 직접 전달 불가 → 타입 단언 사용
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (payment.requestPayment as (req: any) => Promise<void>)({
-        method: selectedMethod,
-        amount: { currency: "KRW", value: totalAmount },
+      const baseParams = {
+        amount: { currency: "KRW" as const, value: totalAmount },
         orderId,
         orderName,
         successUrl: `${window.location.origin}/checkout/success`,
         failUrl: `${window.location.origin}/checkout/fail`,
         customerEmail: user?.email,
         customerName: user?.nickName,
-      });
+      };
+      if (selectedMethod === "CARD") {
+        await payment.requestPayment({ method: "CARD", ...baseParams });
+      } else if (selectedMethod === "TRANSFER") {
+        await payment.requestPayment({ method: "TRANSFER", ...baseParams });
+      } else if (selectedMethod === "VIRTUAL_ACCOUNT") {
+        await payment.requestPayment({ method: "VIRTUAL_ACCOUNT", ...baseParams });
+      } else {
+        await payment.requestPayment({ method: "MOBILE_PHONE", ...baseParams });
+      }
     } catch (err: unknown) {
       const message = (err as { message?: string })?.message;
       if (message !== "사용자가 결제를 취소하였습니다.") {
