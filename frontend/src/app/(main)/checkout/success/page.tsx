@@ -40,9 +40,7 @@ export default function CheckoutSuccessPage() {
         clear();
       })
       .catch((err: unknown) => {
-        const message =
-          (err as { response?: { data?: { message?: string } } })?.response?.data
-            ?.message || "결제 승인에 실패했습니다.";
+        const message = (err as Error)?.message || "결제 승인에 실패했습니다.";
         setErrorMessage(message);
         setStatus("error");
       });
