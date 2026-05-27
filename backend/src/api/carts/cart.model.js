@@ -15,6 +15,12 @@ const CartItemSchema = new mongoose.Schema(
       required: true,
       min: 1,
     },
+    // 담을 당시 상품 스냅샷 (상품 삭제 후에도 표시용)
+    snapshot: {
+      name: { type: String },
+      thumbnail: { type: String },
+      price: { type: Number },
+    },
   },
   { _id: false }
 ); // 서브 도큐먼트(항목)에 별도의 _id 생성 방지

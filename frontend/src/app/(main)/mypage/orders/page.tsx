@@ -2,6 +2,17 @@
 
 import { orderService, Order, OrderStatus } from "@/api/orderService";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
   pending: "결제 대기",
@@ -25,6 +36,7 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
 
   useEffect(() => {
     orderService
@@ -34,13 +46,22 @@ export default function OrdersPage() {
       .finally(() => setIsLoading(false));
   }, []);
 
-  const handleCancel = async (orderId: string) => {
-    if (!confirm("주문을 취소할까요?")) return;
+  const handleCancelConfirm = async () => {
+    if (!cancelTargetId) return;
+    const orderId = cancelTargetId;
+    setCancelTargetId(null);
     try {
-      const updated = await orderService.cancelOrder(orderId);
-      setOrders((prev) => prev.map((o) => (o._id === updated._id ? updated : o)));
+      await orderService.cancelOrder(orderId);
+      setOrders((prev) =>
+        prev.map((o) =>
+          o._id === orderId
+            ? { ...o, status: "cancelled" as const, cancelledAt: new Date().toISOString() }
+            : o
+        )
+      );
+      toast.success("주문이 취소되었습니다.");
     } catch {
-      alert("주문 취소에 실패했습니다.");
+      toast.error("주문 취소에 실패했습니다.");
     }
   };
 
@@ -65,6 +86,23 @@ export default function OrdersPage() {
   }
 
   return (
+    <>
+    <AlertDialog open={cancelTargetId !== null} onOpenChange={(open) => { if (!open) setCancelTargetId(null); }}>
+      <AlertDialogContent size="sm">
+        <AlertDialogHeader>
+          <AlertDialogTitle>주문을 취소할까요?</AlertDialogTitle>
+          <AlertDialogDescription>
+            취소된 주문은 되돌릴 수 없습니다.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>아니요</AlertDialogCancel>
+          <AlertDialogAction variant="destructive" onClick={handleCancelConfirm}>
+            취소하기
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
     <div className="space-y-4">
       {orders.map((order) => (
         <div
@@ -120,7 +158,7 @@ export default function OrdersPage() {
             </p>
             {(order.status === "pending" || order.status === "paid") && (
               <button
-                onClick={() => handleCancel(order._id)}
+                onClick={() => setCancelTargetId(order._id)}
                 className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-500 hover:border-red-200 hover:text-red-500"
               >
                 주문 취소
@@ -130,5 +168,6 @@ export default function OrdersPage() {
         </div>
       ))}
     </div>
+    </>
   );
 }
