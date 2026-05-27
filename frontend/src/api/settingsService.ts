@@ -1,4 +1,4 @@
-import axiosInstance from "@/lib/axios";
+import { apiClient } from "@/lib/apiClient";
 
 export type SiteSettings = {
   bundleFreeThreshold: number;
@@ -6,12 +6,10 @@ export type SiteSettings = {
 
 export const settingsService = {
   getSettings: async (): Promise<SiteSettings> => {
-    const res = await axiosInstance.get<SiteSettings>("/settings");
-    return res.data;
+    return apiClient.get<SiteSettings>("/settings");
   },
 
   updateSettings: async (data: Partial<SiteSettings>): Promise<SiteSettings> => {
-    const res = await axiosInstance.patch<SiteSettings>("/settings", data);
-    return res.data;
+    return apiClient.patch<SiteSettings>("/settings", data);
   },
 };

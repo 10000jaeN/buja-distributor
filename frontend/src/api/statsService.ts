@@ -1,7 +1,7 @@
-import axiosInstance from "@/lib/axios";
+import { apiClient } from "@/lib/apiClient";
 
 export type MonthlySale = {
-  _id: number; // 월 (1~12)
+  _id: number;
   revenue: number;
   orders: number;
 };
@@ -47,16 +47,12 @@ export type MonthlyStats = {
 
 export const statsService = {
   getOrderStats: async (year: number): Promise<OrderStats> => {
-    const res = await axiosInstance.get<OrderStats>("/orders/stats", {
-      params: { year },
-    });
-    return res.data;
+    return apiClient.get<OrderStats>("/orders/stats", { params: { year } });
   },
 
   getMonthlyStats: async (year: number, month: number): Promise<MonthlyStats> => {
-    const res = await axiosInstance.get<MonthlyStats>("/orders/monthly-stats", {
+    return apiClient.get<MonthlyStats>("/orders/monthly-stats", {
       params: { year, month },
     });
-    return res.data;
   },
 };

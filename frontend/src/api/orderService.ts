@@ -1,4 +1,4 @@
-import axiosInstance from "@/lib/axios";
+import { apiClient } from "@/lib/apiClient";
 
 export type OrderStatus =
   | "pending"
@@ -52,35 +52,39 @@ export type Order = {
 
 export const orderService = {
   getOrders: async (): Promise<Order[]> => {
-    const res = await axiosInstance.get("/orders");
-    return Array.isArray(res.data) ? res.data : (res.data.orders ?? []);
+    const res = await apiClient.get<{ orders?: Order[] } | Order[]>("/orders");
+    return Array.isArray(res) ? res : (res.orders ?? []);
   },
 
   getOrder: async (id: string): Promise<Order> => {
-    const res = await axiosInstance.get<{ data: Order }>(`/orders/${id}`);
-    return res.data.data;
+    const res = await apiClient.get<{ data: Order }>(`/orders/${id}`);
+    return res.data;
   },
 
   cancelOrder: async (id: string): Promise<Order> => {
-    const res = await axiosInstance.patch<{ data: Order }>(`/orders/${id}/cancel`);
-    return res.data.data;
+    const res = await apiClient.patch<{ data: Order }>(`/orders/${id}/cancel`);
+    return res.data;
   },
 
   // Admin endpoints
   getAllOrders: async (): Promise<Order[]> => {
-    const res = await axiosInstance.get("/orders/all");
-    return Array.isArray(res.data) ? res.data : (res.data.orders ?? []);
+    const res = await apiClient.get<{ orders?: Order[] } | Order[]>("/orders/all");
+    return Array.isArray(res) ? res : (res.orders ?? []);
   },
 
   startPreparation: async (id: string): Promise<void> => {
-    await axiosInstance.patch(`/orders/${id}/prepare`);
+    await apiClient.patch(`/orders/${id}/prepare`);
   },
 
-  startShipping: async (id: string, courierName: string, trackingNumber: string): Promise<void> => {
-    await axiosInstance.patch(`/orders/${id}/shipping`, { courierName, trackingNumber });
+  startShipping: async (
+    id: string,
+    courierName: string,
+    trackingNumber: string,
+  ): Promise<void> => {
+    await apiClient.patch(`/orders/${id}/shipping`, { courierName, trackingNumber });
   },
 
   completeDelivery: async (id: string): Promise<void> => {
-    await axiosInstance.patch(`/orders/${id}/complete`);
+    await apiClient.patch(`/orders/${id}/complete`);
   },
 };

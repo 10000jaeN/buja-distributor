@@ -1,6 +1,6 @@
 "use client";
 
-import axiosInstance from "@/lib/axios";
+import { apiClient } from "@/lib/apiClient";
 import useAuthStore from "@/store/useAuthStore";
 import useCartStore from "@/store/useCartStore";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -26,27 +26,20 @@ const LoginSuccessHandler = () => {
 
     const exchange = async () => {
       try {
-        const res = await axiosInstance.post<ExchangeResponse>(
-          "/auth/exchange",
-          { ticket },
-        );
-        const { accessToken, userId, nickName, roles } = res.data;
+        const { accessToken, userId, nickName, roles } =
+          await apiClient.post<ExchangeResponse>("/auth/exchange", { ticket });
 
-        if (res.data.accessToken) {
-          const isAutoLogin = localStorage.getItem("autoLogin") !== "false";
-          if (isAutoLogin) {
-            localStorage.setItem("accessToken", accessToken);
-          } else {
-            sessionStorage.setItem("accessToken", accessToken);
-          }
-          axiosInstance.defaults.headers.common["Authorization"] =
-            `Bearer ${accessToken}`;
+        const isAutoLogin = localStorage.getItem("autoLogin") !== "false";
+        if (isAutoLogin) {
+          localStorage.setItem("accessToken", accessToken);
+        } else {
+          sessionStorage.setItem("accessToken", accessToken);
         }
 
         login({ userId, nickName, roles });
 
-        axiosInstance.get("/carts").then((res) => {
-          useCartStore.getState().setCount(res.data.data.items.length);
+        apiClient.get<{ data: { items: unknown[] } }>("/carts").then((res) => {
+          useCartStore.getState().setCount(res.data.items.length);
         }).catch(() => {});
 
         toast.success(`${nickName}님, 환영합니다!`);

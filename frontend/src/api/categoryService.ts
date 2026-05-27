@@ -1,55 +1,59 @@
-import axiosInstance from "@/lib/axios";
+import { apiClient } from "@/lib/apiClient";
 import { Category } from "@/types/product";
 
 export const categoryService = {
   getCategories: async (): Promise<Category[]> => {
-    const res = await axiosInstance.get<{ data: Category[] }>("/categories");
-    return res.data.data;
+    const res = await apiClient.get<{ data: Category[] }>("/categories");
+    return res.data;
   },
 
   createCategory: async (data: { parent: string; children?: string[] }): Promise<Category> => {
-    const res = await axiosInstance.post<{ data: Category }>("/categories", data);
-    return res.data.data;
+    const res = await apiClient.post<{ data: Category }>("/categories", data);
+    return res.data;
   },
 
   updateCategory: async (
     parent: string,
-    data: { newParent?: string; children?: string[] }
+    data: { newParent?: string; children?: string[] },
   ): Promise<Category> => {
-    const res = await axiosInstance.patch<{ data: Category }>(
+    const res = await apiClient.patch<{ data: Category }>(
       `/categories/${encodeURIComponent(parent)}`,
-      data
+      data,
     );
-    return res.data.data;
+    return res.data;
   },
 
   deleteCategory: async (parent: string): Promise<void> => {
-    await axiosInstance.delete(`/categories/${encodeURIComponent(parent)}`);
+    await apiClient.delete(`/categories/${encodeURIComponent(parent)}`);
   },
 
   addChild: async (parent: string, child: string): Promise<Category> => {
-    const res = await axiosInstance.post<{ data: Category }>(
+    const res = await apiClient.post<{ data: Category }>(
       `/categories/${encodeURIComponent(parent)}/children`,
-      { child }
+      { child },
     );
-    return res.data.data;
+    return res.data;
   },
 
-  updateChild: async (parent: string, child: string, newChild: string): Promise<Category> => {
-    const res = await axiosInstance.patch<{ data: Category }>(
+  updateChild: async (
+    parent: string,
+    child: string,
+    newChild: string,
+  ): Promise<Category> => {
+    const res = await apiClient.patch<{ data: Category }>(
       `/categories/${encodeURIComponent(parent)}/children/${encodeURIComponent(child)}`,
-      { newChild }
+      { newChild },
     );
-    return res.data.data;
+    return res.data;
   },
 
   removeChild: async (parent: string, child: string): Promise<void> => {
-    await axiosInstance.delete(
-      `/categories/${encodeURIComponent(parent)}/children/${encodeURIComponent(child)}`
+    await apiClient.delete(
+      `/categories/${encodeURIComponent(parent)}/children/${encodeURIComponent(child)}`,
     );
   },
 
   reorderCategories: async (orderedParents: string[]): Promise<void> => {
-    await axiosInstance.patch("/categories/reorder", { orderedParents });
+    await apiClient.patch("/categories/reorder", { orderedParents });
   },
 };
