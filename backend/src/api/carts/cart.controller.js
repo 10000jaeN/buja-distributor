@@ -51,7 +51,9 @@ export const getCart = async (req, res) => {
     });
 
   if (snapshotUpdates.length > 0) {
-    Cart.bulkWrite(snapshotUpdates).catch(() => {});
+    Cart.bulkWrite(snapshotUpdates).catch((err) => {
+      console.error("[Cart] 스냅샷 갱신 실패:", err.message);
+    });
   }
 
   // 삭제된 상품은 저장된 스냅샷과 함께 반환

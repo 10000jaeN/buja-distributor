@@ -288,11 +288,35 @@ export const cancelOrder = async (req, res) => {
       );
     }
 
-    // 3. 핵심 로직: 상태를 'cancelled'로 변경하고 취소 시간 기록
+    // 3. 결제된 주문은 토스 환불 API 호출
+    if (["paid", "processing"].includes(order.status) && order.paymentKey) {
+      const secretKey = process.env.TOSS_SECRET_KEY;
+      const encoded = Buffer.from(`${secretKey}:`).toString("base64");
+
+      const tossRes = await fetch(
+        `https://api.tosspayments.com/v1/payments/${order.paymentKey}/cancel`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Basic ${encoded}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ cancelReason: "고객 요청 취소" }),
+        }
+      );
+
+      if (!tossRes.ok) {
+        const tossError = await tossRes.json().catch(() => ({}));
+        throw new CustomError(
+          tossError.message || "결제 취소에 실패했습니다. 고객센터로 문의해주세요.",
+          502
+        );
+      }
+    }
+
+    // 4. 주문 상태를 'cancelled'로 변경하고 취소 시간 기록
     order.status = "cancelled";
     order.cancelledAt = new Date();
-
-    // TODO: 재고 복구 로직 구현 필요
 
     await order.save({ session });
 
