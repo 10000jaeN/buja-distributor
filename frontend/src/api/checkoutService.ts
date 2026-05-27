@@ -1,4 +1,4 @@
-import axiosInstance from "@/lib/axios";
+import { apiClient } from "@/lib/apiClient";
 
 export interface CreateOrderPayload {
   items: { productId: string; quantity: number }[];
@@ -25,17 +25,11 @@ export interface ConfirmPaymentResult {
 }
 
 export const checkoutService = {
-  createOrder: async (
-    data: CreateOrderPayload
-  ): Promise<{ orderId: string }> => {
-    const res = await axiosInstance.post("/orders", data);
-    return res.data;
+  createOrder: async (data: CreateOrderPayload): Promise<{ orderId: string }> => {
+    return apiClient.post<{ orderId: string }>("/orders", data);
   },
 
-  confirmPayment: async (
-    data: ConfirmPaymentPayload
-  ): Promise<ConfirmPaymentResult> => {
-    const res = await axiosInstance.post("/payments/confirm", data);
-    return res.data;
+  confirmPayment: async (data: ConfirmPaymentPayload): Promise<ConfirmPaymentResult> => {
+    return apiClient.post<ConfirmPaymentResult>("/payments/confirm", data);
   },
 };

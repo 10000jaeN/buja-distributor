@@ -1,6 +1,6 @@
 "use client";
 
-import axiosInstance from "@/lib/axios";
+import { apiClient } from "@/lib/apiClient";
 import useAuthStore from "@/store/useAuthStore";
 import useCartStore from "@/store/useCartStore";
 import { useEffect, useRef } from "react";
@@ -27,16 +27,12 @@ export default function AuthProvider({
       }
 
       try {
-        const { data } = await axiosInstance.get("/auth/me", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const data = await apiClient.get<{ user: Parameters<typeof setUser>[0] }>("/auth/me");
 
         setUser(data.user);
 
-        axiosInstance.get("/carts").then((res) => {
-          useCartStore.getState().setCount(res.data.data.items.length);
+        apiClient.get<{ data: { items: unknown[] } }>("/carts").then((res) => {
+          useCartStore.getState().setCount(res.data.items.length);
         }).catch(() => {});
       } catch (err) {
         console.error("세션 만료:", err);

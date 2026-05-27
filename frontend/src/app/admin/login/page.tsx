@@ -1,6 +1,6 @@
 "use client";
 
-import axiosInstance from "@/lib/axios";
+import { apiClient } from "@/lib/apiClient";
 import useAuthStore from "@/store/useAuthStore";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -29,10 +29,13 @@ export default function AdminLoginPage() {
     setError(null);
     setLoading(true);
     try {
-      const { data } = await axiosInstance.post("/auth/admin/login", {
-        email,
-        password,
-      });
+      const data = await apiClient.post<{
+        accessToken: string;
+        userId: string;
+        nickName: string;
+        email?: string;
+        roles: string;
+      }>("/auth/admin/login", { email, password });
       localStorage.setItem("accessToken", data.accessToken);
       login({
         userId: data.userId,
@@ -42,9 +45,7 @@ export default function AdminLoginPage() {
       });
       router.push("/admin/dashboard");
     } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message ?? "로그인에 실패했습니다.";
+      const msg = (err as Error)?.message ?? "로그인에 실패했습니다.";
       setError(msg);
     } finally {
       setLoading(false);

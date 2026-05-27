@@ -65,7 +65,7 @@ export default function AdminProductsPage() {
       await fetchProducts();
       toast.success("상품이 삭제됐습니다.");
     } catch (err: unknown) {
-      const status = (err as { response?: { status?: number } })?.response?.status;
+      const status = (err as Error & { status?: number })?.status;
       if (status === 403)
         toast.error("권한 오류", { description: "관리자 권한이 필요합니다." });
       else

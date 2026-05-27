@@ -1,4 +1,4 @@
-import axiosInstance from "@/lib/axios";
+import { apiClient } from "@/lib/apiClient";
 import { Product } from "@/types/product";
 
 export type CartItem = {
@@ -15,29 +15,29 @@ export type Cart = {
 
 export const cartService = {
   getCart: async (): Promise<Cart> => {
-    const res = await axiosInstance.get<{ data: Cart }>("/carts");
-    return res.data.data;
+    const res = await apiClient.get<{ data: Cart }>("/carts");
+    return res.data;
   },
 
   addToCart: async (productId: string, quantity: number = 1): Promise<Cart> => {
-    const res = await axiosInstance.post<{ data: Cart }>("/carts/item", {
+    const res = await apiClient.post<{ data: Cart }>("/carts/item", {
       productId,
       quantity,
     });
-    return res.data.data;
+    return res.data;
   },
 
   updateCartItem: async (productId: string, quantity: number): Promise<Cart> => {
-    const res = await axiosInstance.patch<{ data: Cart }>(`/carts/${productId}`, {
+    const res = await apiClient.patch<{ data: Cart }>(`/carts/${productId}`, {
       quantity,
     });
-    return res.data.data;
+    return res.data;
   },
 
   removeCartItems: async (productIds: string[]): Promise<Cart> => {
-    const res = await axiosInstance.post<{ data: Cart }>("/carts/item/remove-items", {
+    const res = await apiClient.post<{ data: Cart }>("/carts/item/remove-items", {
       productIds,
     });
-    return res.data.data;
+    return res.data;
   },
 };

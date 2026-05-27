@@ -1,6 +1,6 @@
 "use client";
 
-import axiosInstance from "@/lib/axios";
+import { apiClient } from "@/lib/apiClient";
 import useAuthStore from "@/store/useAuthStore";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
@@ -63,7 +63,7 @@ export default function AdminShell({
 
   const handleLogout = async () => {
     try {
-      await axiosInstance.post("/auth/logout");
+      await apiClient.post("/auth/logout");
     } finally {
       logout();
       router.push("/admin/login");

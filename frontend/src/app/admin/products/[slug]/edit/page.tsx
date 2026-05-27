@@ -107,10 +107,8 @@ export default function ProductEditPage() {
       toast.success("상품이 수정됐습니다.");
       router.push("/admin/products");
     } catch (err: unknown) {
-      const status = (err as { response?: { status?: number } })?.response
-        ?.status;
-      const serverMsg = (err as { response?: { data?: { message?: string } } })
-        ?.response?.data?.message;
+      const status = (err as Error & { status?: number })?.status;
+      const serverMsg = (err as Error)?.message;
       if (status === 401)
         toast.error("인증 오류", {
           description: "로그인이 만료됐습니다. 다시 로그인해 주세요.",
