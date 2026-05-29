@@ -99,7 +99,7 @@ export default function OrderDetailDialog({ order, onClose, onEdit }: Props) {
                     label="이름"
                     value={
                       <span className="font-medium">
-                        {order.user?.userName ?? "-"}
+                        {order.user?.nickName ?? "-"}
                       </span>
                     }
                   />

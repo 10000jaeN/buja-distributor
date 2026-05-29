@@ -103,7 +103,7 @@ export default function OrderEditDialog({
             {/* 주문 요약 */}
             <div className="rounded-lg bg-gray-50 px-4 py-3">
               <p className="text-sm font-medium text-gray-800">
-                {order.user?.userName ?? "-"}
+                {order.user?.nickName ?? "-"}
               </p>
               <div className="mt-1 flex flex-wrap gap-x-1 gap-y-0.5">
                 {order.items.map((item, i) => (

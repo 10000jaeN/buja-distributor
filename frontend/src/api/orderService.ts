@@ -22,7 +22,7 @@ export function getProductId(item: OrderItem): string {
 
 export type OrderUser = {
   _id: string;
-  userName: string;
+  nickName: string;
   email: string;
 };
 
