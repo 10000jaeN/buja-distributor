@@ -19,7 +19,10 @@ type FetchOptions = Omit<RequestInit, "body"> & {
   body?: unknown;
 };
 
-async function apiFetch<T>(path: string, options: FetchOptions = {}): Promise<T> {
+async function apiFetch<T>(
+  path: string,
+  options: FetchOptions = {},
+): Promise<T> {
   const { params, body, ...init } = options;
 
   const url = new URL(path, getBaseURL());
@@ -42,10 +45,7 @@ async function apiFetch<T>(path: string, options: FetchOptions = {}): Promise<T>
   }
 
   const controller = new AbortController();
-  const timeout = setTimeout(
-    () => controller.abort(),
-    isProd ? 60000 : 10000,
-  );
+  const timeout = setTimeout(() => controller.abort(), isProd ? 60000 : 10000);
 
   let res: Response;
   try {
@@ -95,11 +95,17 @@ export const apiClient = {
   get: <T>(path: string, options?: Omit<FetchOptions, "body">) =>
     apiFetch<T>(path, { ...options, method: "GET" }),
 
-  post: <T>(path: string, body?: unknown, options?: Omit<FetchOptions, "body">) =>
-    apiFetch<T>(path, { ...options, method: "POST", body }),
+  post: <T>(
+    path: string,
+    body?: unknown,
+    options?: Omit<FetchOptions, "body">,
+  ) => apiFetch<T>(path, { ...options, method: "POST", body }),
 
-  patch: <T>(path: string, body?: unknown, options?: Omit<FetchOptions, "body">) =>
-    apiFetch<T>(path, { ...options, method: "PATCH", body }),
+  patch: <T>(
+    path: string,
+    body?: unknown,
+    options?: Omit<FetchOptions, "body">,
+  ) => apiFetch<T>(path, { ...options, method: "PATCH", body }),
 
   delete: <T>(path: string, options?: Omit<FetchOptions, "body">) =>
     apiFetch<T>(path, { ...options, method: "DELETE" }),

@@ -10,13 +10,22 @@ description: 부자유통 커머스 프로젝트 전담 리뷰어. 코드 수정
 
 ---
 
+## 프로젝트 구조
+
+이 프로젝트는 **모노레포**입니다. 루트 기준으로 다음 두 디렉터리만 존재합니다:
+
+- `frontend/` — Next.js 16 (App Router), Tailwind CSS v4, Zustand, fetch 기반 apiClient
+- `backend/` — Express.js (ESM), Mongoose, Passport.js (Google/Kakao/Naver OAuth)
+
+> ⚠️ **주의**: `/buja-api` 또는 외부 `buja-api` 디렉터리는 더 이상 사용하지 않습니다. 모든 백엔드 코드는 `backend/`에 있습니다.
+
 ## 프로젝트 스택
 
-- **Frontend**: Next.js 16 (App Router), Tailwind CSS v4, Zustand, Axios
+- **Frontend**: Next.js 16 (App Router), Tailwind CSS v4, Zustand, fetch 기반 apiClient (`src/lib/apiClient.ts`)
 - **Backend**: Express.js (ESM), Mongoose, Passport.js (Google/Kakao/Naver OAuth)
 - **DB**: MongoDB Atlas
 - **인증**: JWT (Access Token + Refresh Token, httpOnly Cookie)
-- **예정**: PG 연동 (토스페이먼츠 또는 KG이니시스)
+- **PG**: 토스페이먼츠 개별 API (`backend/src/api/payments/`)
 
 ---
 

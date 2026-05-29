@@ -110,7 +110,7 @@ export default function CheckoutPage() {
           ? items[0].name
           : `${items[0].name} 외 ${items.length - 1}건`;
 
-      const baseParams = {
+      const paymentParams = {
         amount: { currency: "KRW" as const, value: totalAmount },
         orderId,
         orderName,
@@ -119,14 +119,15 @@ export default function CheckoutPage() {
         customerEmail: user?.email,
         customerName: user?.nickName,
       };
+
       if (selectedMethod === "CARD") {
-        await payment.requestPayment({ method: "CARD", ...baseParams });
+        await payment.requestPayment({ method: "CARD", ...paymentParams });
       } else if (selectedMethod === "TRANSFER") {
-        await payment.requestPayment({ method: "TRANSFER", ...baseParams });
+        await payment.requestPayment({ method: "TRANSFER", ...paymentParams });
       } else if (selectedMethod === "VIRTUAL_ACCOUNT") {
-        await payment.requestPayment({ method: "VIRTUAL_ACCOUNT", ...baseParams });
-      } else {
-        await payment.requestPayment({ method: "MOBILE_PHONE", ...baseParams });
+        await payment.requestPayment({ method: "VIRTUAL_ACCOUNT", ...paymentParams });
+      } else if (selectedMethod === "MOBILE_PHONE") {
+        await payment.requestPayment({ method: "MOBILE_PHONE", ...paymentParams });
       }
     } catch (err: unknown) {
       const message = (err as { message?: string })?.message;
