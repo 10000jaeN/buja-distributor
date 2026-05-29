@@ -20,6 +20,17 @@ interface Props {
 
 export default function DateRangePicker({ value, onChange }: Props) {
   const [open, setOpen] = useState(false);
+  const [pending, setPending] = useState<DateRange | undefined>(undefined);
+
+  const handleOpen = (next: boolean) => {
+    if (next) setPending(value);
+    setOpen(next);
+  };
+
+  const handleApply = () => {
+    onChange(pending);
+    setOpen(false);
+  };
 
   const label = value?.from
     ? value.to
@@ -30,7 +41,7 @@ export default function DateRangePicker({ value, onChange }: Props) {
   const hasValue = !!value?.from;
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpen}>
       <PopoverTrigger
         className={`inline-flex w-64 items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-normal shadow-xs hover:bg-gray-50 focus-visible:outline-none ${
           hasValue ? "text-foreground" : "text-gray-400"
@@ -51,24 +62,20 @@ export default function DateRangePicker({ value, onChange }: Props) {
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar
           mode="range"
-          selected={value}
-          onSelect={onChange}
+          selected={pending}
+          onSelect={setPending}
           locale={ko}
           numberOfMonths={2}
         />
         <div className="flex items-center justify-between border-t border-gray-100 px-3 py-2">
           <span className="text-xs text-gray-400">
-            {value?.from && value?.to
-              ? `${format(value.from, "yyyy.MM.dd")} ~ ${format(value.to, "yyyy.MM.dd")}`
-              : value?.from
-                ? `${format(value.from, "yyyy.MM.dd")} ~ 종료일 선택`
+            {pending?.from && pending?.to
+              ? `${format(pending.from, "yyyy.MM.dd")} ~ ${format(pending.to, "yyyy.MM.dd")}`
+              : pending?.from
+                ? `${format(pending.from, "yyyy.MM.dd")} ~ 종료일 선택`
                 : "시작일을 선택하세요"}
           </span>
-          <Button
-            size="sm"
-            disabled={!value?.from || !value?.to}
-            onClick={() => setOpen(false)}
-          >
+          <Button size="sm" disabled={!pending?.from || !pending?.to} onClick={handleApply}>
             적용
           </Button>
         </div>
