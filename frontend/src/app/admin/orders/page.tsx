@@ -118,10 +118,14 @@ export default function AdminOrdersPage() {
     setIsSubmitting(true);
     try {
       const results = await Promise.allSettled(selectedOrders.map((o) => fn(o._id)));
-      const succeeded = results.filter((r) => r.status === "fulfilled").length;
-      const failed = results.filter((r) => r.status === "rejected").length;
-      if (failed === 0) toast.success(`${succeeded}건 ${successMsg}.`);
-      else toast.error(`${succeeded}건 성공, ${failed}건 실패했습니다.`);
+      const failedOrders = selectedOrders.filter((_, i) => results[i].status === "rejected");
+      const succeeded = results.length - failedOrders.length;
+      if (failedOrders.length === 0) {
+        toast.success(`${succeeded}건 ${successMsg}.`);
+      } else {
+        const failedNums = failedOrders.map((o) => o.orderNumber).join(", ");
+        toast.error(`${succeeded}건 성공, ${failedOrders.length}건 실패 (${failedNums})`);
+      }
       await fetchOrders();
     } finally {
       setIsSubmitting(false);

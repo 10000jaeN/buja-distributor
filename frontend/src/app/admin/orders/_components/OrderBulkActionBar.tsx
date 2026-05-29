@@ -57,7 +57,7 @@ export default function OrderBulkActionBar({
             취소
           </Button>
         )}
-        <button onClick={onDeselect} className="text-xs text-gray-400 hover:text-gray-600">
+        <button type="button" onClick={onDeselect} className="text-xs text-gray-400 hover:text-gray-600">
           선택 해제
         </button>
       </div>

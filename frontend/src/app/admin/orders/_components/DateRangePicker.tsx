@@ -11,6 +11,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   value: DateRange | undefined;
@@ -51,13 +52,26 @@ export default function DateRangePicker({ value, onChange }: Props) {
         <Calendar
           mode="range"
           selected={value}
-          onSelect={(range) => {
-            onChange(range);
-            if (range?.from && range?.to && range.from < range.to) setOpen(false);
-          }}
+          onSelect={onChange}
           locale={ko}
           numberOfMonths={2}
         />
+        <div className="flex items-center justify-between border-t border-gray-100 px-3 py-2">
+          <span className="text-xs text-gray-400">
+            {value?.from && value?.to
+              ? `${format(value.from, "yyyy.MM.dd")} ~ ${format(value.to, "yyyy.MM.dd")}`
+              : value?.from
+                ? `${format(value.from, "yyyy.MM.dd")} ~ 종료일 선택`
+                : "시작일을 선택하세요"}
+          </span>
+          <Button
+            size="sm"
+            disabled={!value?.from || !value?.to}
+            onClick={() => setOpen(false)}
+          >
+            적용
+          </Button>
+        </div>
       </PopoverContent>
     </Popover>
   );

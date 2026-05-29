@@ -19,24 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-
-const STATUS_LABEL: Record<OrderStatus, string> = {
-  pending: "결제 대기",
-  paid: "결제 완료",
-  processing: "상품 준비 중",
-  shipped: "배송 중",
-  delivered: "배송 완료",
-  cancelled: "취소됨",
-};
-
-const STATUS_COLOR: Record<OrderStatus, string> = {
-  pending: "bg-yellow-50 text-yellow-600",
-  paid: "bg-blue-50 text-brand-blue",
-  processing: "bg-purple-50 text-purple-600",
-  shipped: "bg-indigo-50 text-indigo-600",
-  delivered: "bg-green-50 text-green-600",
-  cancelled: "bg-gray-100 text-gray-500",
-};
+import { STATUS_LABEL, STATUS_COLOR } from "../_utils/orderUtils";
 
 const NEXT_STATUSES: Partial<Record<OrderStatus, OrderStatus[]>> = {
   paid: ["processing", "cancelled"],
@@ -169,20 +152,28 @@ export default function OrderEditDialog({
                 </p>
                 <div className="space-y-3">
                   <div>
-                    <label className="mb-1.5 block text-xs text-gray-500">
+                    <label
+                      htmlFor="edit-courier"
+                      className="mb-1.5 block text-xs text-gray-500"
+                    >
                       택배사
                     </label>
                     <Input
+                      id="edit-courier"
                       placeholder="예: CJ대한통운, 우체국택배"
                       value={editCourier}
                       onChange={(e) => setEditCourier(e.target.value)}
                     />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-xs text-gray-500">
+                    <label
+                      htmlFor="edit-tracking"
+                      className="mb-1.5 block text-xs text-gray-500"
+                    >
                       운송장 번호
                     </label>
                     <Input
+                      id="edit-tracking"
                       placeholder="운송장 번호 입력"
                       value={editTracking}
                       onChange={(e) => setEditTracking(e.target.value)}
