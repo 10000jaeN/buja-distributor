@@ -1,55 +1,85 @@
 import Review from "./review.model.js";
+import CustomError from "../../utils/customError.js";
 
 export const createReview = async (req, res) => {
-  const { productId, rating, content, images } = req.body;
-  // userId는 보통 인증 미들웨어에서 넘겨받은 값을 사용합니다.
-  const userId = req.user?._id;
+  const { productId, orderId, rating, content, images } = req.body;
+  const userId = req.user._id;
 
-  if (!userId) {
-    return res.status(401).json({
-      success: false,
-      message: "인증 정보가 없습니다. 다시 로그인해주세요.",
-    });
+  if (!productId || !rating || !content) {
+    throw new CustomError("productId, rating, content는 필수입니다.", 400);
   }
 
-  const newReview = new Review({
+  // 같은 주문+상품 조합 중복 방지
+  if (orderId) {
+    const existing = await Review.findOne({ orderId, productId, userId });
+    if (existing) {
+      throw new CustomError("이미 해당 주문 상품에 리뷰를 작성하셨습니다.", 409);
+    }
+  }
+
+  const newReview = await Review.create({
     productId,
+    orderId: orderId || undefined,
     userId,
     rating,
     content,
     images: images || [],
   });
 
-  await newReview.save();
-
-  res.status(201).json({
-    success: true,
-    data: newReview,
-  });
+  res.status(201).json({ success: true, data: newReview });
 };
 
 export const getProductReviews = async (req, res) => {
-  try {
-    const { slug } = req.params;
-    const reviews = await Review.find({ slug }).sort({ createdAt: -1 });
-    res.status(200).json({ success: true, data: reviews });
-  } catch (error) {
-    res.status(500).json({ success: false, message: "리뷰 조회 실패" });
+  const { productId } = req.params;
+
+  const reviews = await Review.find({ productId })
+    .populate("userId", "userName")
+    .sort({ createdAt: -1 });
+
+  res.status(200).json({ success: true, data: reviews });
+};
+
+export const getMyReviews = async (req, res) => {
+  const userId = req.user._id;
+
+  const reviews = await Review.find({ userId })
+    .populate("productId", "name thumbnail")
+    .sort({ createdAt: -1 });
+
+  res.status(200).json({ success: true, data: reviews });
+};
+
+export const updateReview = async (req, res) => {
+  const { reviewId } = req.params;
+  const userId = req.user._id;
+  const { rating, content, images } = req.body;
+
+  const update = {};
+  if (rating !== undefined) update.rating = rating;
+  if (content !== undefined) update.content = content;
+  if (images !== undefined) update.images = images;
+
+  const review = await Review.findOneAndUpdate(
+    { _id: reviewId, userId },
+    update,
+    { new: true, runValidators: true }
+  ).populate("productId", "name thumbnail");
+
+  if (!review) {
+    throw new CustomError("리뷰를 찾을 수 없거나 수정 권한이 없습니다.", 404);
   }
+
+  res.status(200).json({ success: true, data: review });
 };
 
 export const deleteReview = async (req, res) => {
   const { reviewId } = req.params;
-  const userId = req.user._id; // 인증 미들웨어에서 넘어온 유저 정보
+  const userId = req.user._id;
 
-  // 본인의 리뷰인지 확인하며 삭제
   const review = await Review.findOneAndDelete({ _id: reviewId, userId });
 
   if (!review) {
-    return res.status(404).json({
-      success: false,
-      message: "리뷰를 찾을 수 없거나 삭제 권한이 없습니다.",
-    });
+    throw new CustomError("리뷰를 찾을 수 없거나 삭제 권한이 없습니다.", 404);
   }
 
   res.status(200).json({ success: true, message: "리뷰가 삭제되었습니다." });

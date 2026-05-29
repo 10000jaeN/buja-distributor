@@ -8,6 +8,7 @@ import useAuthStore from "@/store/useAuthStore";
 const NAV_ITEMS = [
   { label: "내 프로필", href: "/mypage" },
   { label: "주문내역", href: "/mypage/orders" },
+  { label: "내 리뷰", href: "/mypage/reviews" },
   { label: "배송지 관리", href: "/mypage/addresses" },
 ];
 

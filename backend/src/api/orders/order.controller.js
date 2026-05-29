@@ -137,7 +137,7 @@ export const getMyOrders = async (req, res) => {
 
   const orders = await Order.find({ user: userId })
     .sort({ createdAt: -1 })
-    .populate("items.productId", "name price")
+    .populate("items.productId", "name price thumbnail")
     .select("-__v");
 
   // 주문 내역이 없는 것은 성공적인 응답(200)입니다.
@@ -163,7 +163,7 @@ export const getOrderById = async (req, res) => {
   }
 
   const order = await Order.findOne({ _id: orderId, user: userId })
-    .populate("items.productId", "name price")
+    .populate("items.productId", "name price thumbnail")
     .select("-__v");
 
   if (!order) {
