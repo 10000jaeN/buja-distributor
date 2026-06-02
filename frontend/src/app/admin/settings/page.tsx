@@ -217,7 +217,7 @@ export default function AdminSettingsPage() {
           <Button
             type="submit"
             disabled={isSubmitting || !isDirty}
-            className="disabled:bg-gray-300 disabled:text-gray-600"
+            className="data-[disabled]:bg-gray-300 data-[disabled]:text-gray-600"
           >
             {isSubmitting ? "저장 중..." : "저장"}
           </Button>
