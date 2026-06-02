@@ -9,7 +9,7 @@ export type OrderStatus =
   | "cancelled";
 
 export type OrderItem = {
-  productId: string | { _id: string; slug?: string };
+  productId: string | { _id: string; slug?: string; thumbnail?: string[] };
   name: string;
   quantity: number;
   price: number;
@@ -22,7 +22,7 @@ export function getProductId(item: OrderItem): string {
 
 export type OrderUser = {
   _id: string;
-  userName: string;
+  nickName: string;
   email: string;
 };
 

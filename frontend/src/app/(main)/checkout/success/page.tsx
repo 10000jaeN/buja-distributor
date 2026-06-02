@@ -5,12 +5,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { checkoutService } from "@/api/checkoutService";
+import { cartService } from "@/api/cartService";
 import useCheckoutStore from "@/store/useCheckoutStore";
+import useCartStore from "@/store/useCartStore";
 
 export default function CheckoutSuccessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { clear } = useCheckoutStore();
+  const cartReset = useCartStore((s) => s.reset);
 
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [orderNumber, setOrderNumber] = useState("");
@@ -32,11 +35,17 @@ export default function CheckoutSuccessPage() {
       return;
     }
 
+    const purchasedProductIds = useCheckoutStore
+      .getState()
+      .items.map((i) => i.productId);
+
     checkoutService
       .confirmPayment({ paymentKey, orderId, amount: Number(amount) })
       .then((result) => {
         setOrderNumber(result.orderNumber);
         setStatus("success");
+        cartService.removeCartItems(purchasedProductIds).catch(() => {});
+        cartReset();
         clear();
       })
       .catch((err: unknown) => {
@@ -44,7 +53,7 @@ export default function CheckoutSuccessPage() {
         setErrorMessage(message);
         setStatus("error");
       });
-  }, [searchParams, clear]);
+  }, [searchParams, clear, cartReset]);
 
   if (status === "loading") {
     return (
