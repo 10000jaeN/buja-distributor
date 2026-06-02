@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { ImagePlus, Trash2, GripVertical } from "lucide-react";
+import { ImagePlus, Trash2 } from "lucide-react";
 
 export default function AdminSettingsPage() {
   const [bundleFreeThreshold, setBundleFreeThreshold] = useState("");
@@ -163,7 +163,7 @@ export default function AdminSettingsPage() {
                     key={i}
                     className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3"
                   >
-                    <GripVertical className="size-4 shrink-0 text-gray-300" />
+
                     <img
                       src={banner.imageUrl}
                       alt={`배너 ${i + 1}`}

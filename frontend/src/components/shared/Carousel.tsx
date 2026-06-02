@@ -11,10 +11,11 @@ const Carousel = () => {
   const [currentIdx, setCurrentIdx] = useState(0);
 
   useEffect(() => {
-    settingsService.getSettings().then((s) => {
-      setBanners(s.banners ?? []);
-      setLoaded(true);
-    });
+    settingsService
+      .getSettings()
+      .then((s) => setBanners(s.banners ?? []))
+      .catch(() => {})
+      .finally(() => setLoaded(true));
   }, []);
 
   const onClickPrevious = () => {
@@ -27,9 +28,11 @@ const Carousel = () => {
 
   useEffect(() => {
     if (banners.length < 2) return;
-    const timer = setInterval(onClickNext, 7000);
+    const timer = setInterval(() => {
+      setCurrentIdx((prev) => (prev === banners.length - 1 ? 0 : prev + 1));
+    }, 7000);
     return () => clearInterval(timer);
-  }, [currentIdx, banners.length]);
+  }, [banners.length]);
 
   if (!loaded)
     return <div className="mx-auto h-[400px] max-w-320 bg-gray-100" />;

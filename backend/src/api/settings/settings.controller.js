@@ -22,6 +22,9 @@ export const updateSettings = async (req, res) => {
     if (!Array.isArray(banners)) {
       return res.status(400).json({ message: "banners는 배열이어야 합니다." });
     }
+    if (banners.length > 10) {
+      return res.status(400).json({ message: "배너는 최대 10개까지 등록할 수 있습니다." });
+    }
     for (const b of banners) {
       if (!b.imageUrl || typeof b.imageUrl !== "string") {
         return res.status(400).json({ message: "각 배너에 imageUrl이 필요합니다." });
