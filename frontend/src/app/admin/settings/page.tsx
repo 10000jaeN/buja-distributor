@@ -11,17 +11,27 @@ import { ImagePlus, Trash2 } from "lucide-react";
 export default function AdminSettingsPage() {
   const [bundleFreeThreshold, setBundleFreeThreshold] = useState("");
   const [banners, setBanners] = useState<Banner[]>([]);
+  const [savedThreshold, setSavedThreshold] = useState("");
+  const [savedBanners, setSavedBanners] = useState<Banner[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isBannerUploading, setIsBannerUploading] = useState(false);
   const [loadError, setLoadError] = useState(false);
 
+  const isDirty =
+    bundleFreeThreshold !== savedThreshold ||
+    JSON.stringify(banners) !== JSON.stringify(savedBanners);
+
   useEffect(() => {
     settingsService
       .getSettings()
       .then((s) => {
-        setBundleFreeThreshold(String(s.bundleFreeThreshold));
-        setBanners(s.banners ?? []);
+        const threshold = String(s.bundleFreeThreshold);
+        const bannerList = s.banners ?? [];
+        setBundleFreeThreshold(threshold);
+        setBanners(bannerList);
+        setSavedThreshold(threshold);
+        setSavedBanners(bannerList);
       })
       .catch(() => setLoadError(true))
       .finally(() => setIsLoading(false));
@@ -56,7 +66,7 @@ export default function AdminSettingsPage() {
 
   const updateBannerLink = (index: number, linkUrl: string) => {
     setBanners((prev) =>
-      prev.map((b, i) => (i === index ? { ...b, linkUrl } : b))
+      prev.map((b, i) => (i === index ? { ...b, linkUrl } : b)),
     );
   };
 
@@ -77,6 +87,8 @@ export default function AdminSettingsPage() {
         bundleFreeThreshold: value,
         banners,
       });
+      setSavedThreshold(String(value));
+      setSavedBanners(banners);
       toast.success("설정이 저장됐습니다.");
     } catch {
       toast.error("저장에 실패했습니다.");
@@ -87,7 +99,7 @@ export default function AdminSettingsPage() {
 
   return (
     <div className="max-w-lg">
-      <h1 className="mb-6 text-xl font-bold text-foreground">사이트 설정</h1>
+      <h1 className="text-foreground mb-6 text-xl font-bold">사이트 설정</h1>
 
       {isLoading ? (
         <div className="flex items-center justify-center py-10">
@@ -95,7 +107,9 @@ export default function AdminSettingsPage() {
         </div>
       ) : loadError ? (
         <div className="rounded-lg border border-red-200 bg-red-50 px-6 py-10 text-center">
-          <p className="text-sm text-red-600">설정을 불러오는 데 실패했습니다.</p>
+          <p className="text-sm text-red-600">
+            설정을 불러오는 데 실패했습니다.
+          </p>
           <Button
             variant="outline"
             onClick={() => window.location.reload()}
@@ -121,7 +135,8 @@ export default function AdminSettingsPage() {
                 placeholder="50000"
               />
               <p className="text-xs text-gray-400">
-                묶음배송 가능 상품의 합계가 이 금액 이상이면 배송비가 무료로 처리됩니다.
+                묶음배송 가능 상품의 합계가 이 금액 이상이면 배송비가 무료로
+                처리됩니다.
               </p>
             </div>
           </div>
@@ -170,7 +185,9 @@ export default function AdminSettingsPage() {
                       className="h-14 w-24 shrink-0 rounded-md border border-gray-200 object-cover"
                     />
                     <div className="flex flex-1 flex-col gap-1.5">
-                      <Label className="text-xs text-gray-500">링크 URL (선택)</Label>
+                      <Label className="text-xs text-gray-500">
+                        링크 URL (선택)
+                      </Label>
                       <Input
                         type="url"
                         value={banner.linkUrl ?? ""}
@@ -192,11 +209,16 @@ export default function AdminSettingsPage() {
               </div>
             )}
             <p className="text-xs text-gray-400">
-              배너는 등록된 순서대로 캐러셀에 표시됩니다. 권장 이미지 사이즈: <span className="font-medium text-gray-500">1280 × 400px</span>
+              배너는 등록된 순서대로 캐러셀에 표시됩니다. 권장 이미지 사이즈:{" "}
+              <span className="font-medium text-gray-500">1280 × 400px</span>
             </p>
           </div>
 
-          <Button type="submit" disabled={isSubmitting}>
+          <Button
+            type="submit"
+            disabled={isSubmitting || !isDirty}
+            className="data-[disabled]:bg-gray-300 data-[disabled]:text-gray-600"
+          >
             {isSubmitting ? "저장 중..." : "저장"}
           </Button>
         </form>
