@@ -1,6 +1,6 @@
 "use client";
 
-import { Order, OrderStatus, getProductId } from "@/api/orderService";
+import { Order, getProductId } from "@/api/orderService";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import {
@@ -10,24 +10,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-
-const STATUS_LABEL: Record<OrderStatus, string> = {
-  pending: "결제 대기",
-  paid: "결제 완료",
-  processing: "상품 준비 중",
-  shipped: "배송 중",
-  delivered: "배송 완료",
-  cancelled: "취소됨",
-};
-
-const STATUS_COLOR: Record<OrderStatus, string> = {
-  pending: "bg-yellow-50 text-yellow-600",
-  paid: "bg-blue-50 text-brand-blue",
-  processing: "bg-purple-50 text-purple-600",
-  shipped: "bg-indigo-50 text-indigo-600",
-  delivered: "bg-green-50 text-green-600",
-  cancelled: "bg-gray-100 text-gray-500",
-};
+import { STATUS_LABEL, STATUS_COLOR } from "../_utils/orderUtils";
 
 function fmt(iso?: string) {
   if (!iso) return null;
@@ -99,7 +82,7 @@ export default function OrderDetailDialog({ order, onClose, onEdit }: Props) {
                     label="이름"
                     value={
                       <span className="font-medium">
-                        {order.user?.userName ?? "-"}
+                        {order.user?.nickName ?? "-"}
                       </span>
                     }
                   />

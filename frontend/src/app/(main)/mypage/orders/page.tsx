@@ -1,6 +1,7 @@
 "use client";
 
 import { orderService, Order, OrderStatus } from "@/api/orderService";
+import { reviewService, Review } from "@/api/reviewService";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -13,6 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import ReviewWriteDialog from "@/components/shared/ReviewWriteDialog";
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
   pending: "결제 대기",
@@ -32,19 +34,44 @@ const STATUS_COLOR: Record<OrderStatus, string> = {
   cancelled: "bg-gray-100 text-gray-500",
 };
 
+type ReviewTarget = {
+  orderId: string;
+  productId: string;
+  productName: string;
+  existingReview?: Review;
+};
+
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewTarget, setReviewTarget] = useState<ReviewTarget | null>(null);
 
   useEffect(() => {
-    orderService
-      .getOrders()
-      .then(setOrders)
-      .catch(() => setError("주문 내역을 불러오지 못했습니다."))
+    Promise.allSettled([orderService.getOrders(), reviewService.getMyReviews()])
+      .then(([ordersResult, reviewsResult]) => {
+        if (ordersResult.status === "fulfilled") {
+          setOrders(ordersResult.value);
+        } else {
+          setError("주문 내역을 불러오지 못했습니다.");
+        }
+        if (reviewsResult.status === "fulfilled") {
+          setReviews(reviewsResult.value);
+        }
+      })
       .finally(() => setIsLoading(false));
   }, []);
+
+  const findReview = (orderId: string, productId: string): Review | undefined =>
+    reviews.find(
+      (r) =>
+        r.orderId === orderId &&
+        (typeof r.productId === "string"
+          ? r.productId === productId
+          : r.productId._id === productId)
+    );
 
   const handleCancelConfirm = async () => {
     if (!cancelTargetId) return;
@@ -103,6 +130,30 @@ export default function OrdersPage() {
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+
+    {reviewTarget && (
+      <ReviewWriteDialog
+        open={reviewTarget !== null}
+        onOpenChange={(open) => { if (!open) setReviewTarget(null); }}
+        productId={reviewTarget.productId}
+        productName={reviewTarget.productName}
+        orderId={reviewTarget.orderId}
+        existingReview={reviewTarget.existingReview}
+        onSuccess={(review) => {
+          setReviews((prev) => {
+            const idx = prev.findIndex((r) => r._id === review._id);
+            if (idx >= 0) {
+              const next = [...prev];
+              next[idx] = review;
+              return next;
+            }
+            return [review, ...prev];
+          });
+          setReviewTarget(null);
+        }}
+      />
+    )}
+
     <div className="space-y-4">
       {orders.map((order) => (
         <div
@@ -128,17 +179,64 @@ export default function OrdersPage() {
 
           {/* 주문 아이템 */}
           <div className="divide-y divide-gray-50">
-            {order.items.map((item, i) => (
-              <div key={i} className="flex items-center justify-between py-2.5">
-                <p className="text-sm text-gray-700">
-                  {item.name}
-                  <span className="ml-1 text-gray-400">× {item.quantity}</span>
-                </p>
-                <p className="text-sm font-medium text-gray-800">
-                  {(item.price * item.quantity).toLocaleString()}원
-                </p>
-              </div>
-            ))}
+            {order.items.map((item, i) => {
+              const thumbnail =
+                item.productId && typeof item.productId !== "string"
+                  ? item.productId.thumbnail?.[0]
+                  : undefined;
+              const productId =
+                !item.productId || typeof item.productId === "string"
+                  ? (item.productId as string)
+                  : item.productId._id;
+              const existingReview =
+                order.status === "delivered"
+                  ? findReview(order._id, productId)
+                  : undefined;
+
+              return (
+                <div key={i} className="flex items-center gap-3 py-2.5">
+                  {thumbnail ? (
+                    <img
+                      src={thumbnail}
+                      alt={item.name}
+                      className="h-12 w-12 shrink-0 rounded-lg border border-gray-100 object-cover"
+                    />
+                  ) : (
+                    <div className="h-12 w-12 shrink-0 rounded-lg border border-gray-100 bg-gray-50" />
+                  )}
+                  <div className="flex flex-1 items-center justify-between">
+                    <p className="text-sm text-gray-700">
+                      {item.name}
+                      <span className="ml-1 text-gray-400">× {item.quantity}</span>
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-gray-800">
+                        {(item.price * item.quantity).toLocaleString()}원
+                      </p>
+                      {order.status === "delivered" && (
+                        <button
+                          onClick={() =>
+                            setReviewTarget({
+                              orderId: order._id,
+                              productId,
+                              productName: item.name,
+                              existingReview,
+                            })
+                          }
+                          className={`rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                            existingReview
+                              ? "border-brand-blue/30 text-brand-blue hover:bg-brand-blue/5"
+                              : "border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                          }`}
+                        >
+                          {existingReview ? "리뷰 수정" : "리뷰 작성"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           {/* 배송 정보 */}
