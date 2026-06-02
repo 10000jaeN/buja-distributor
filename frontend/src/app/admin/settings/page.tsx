@@ -132,12 +132,12 @@ export default function AdminSettingsPage() {
               <h2 className="text-sm font-semibold text-gray-700">
                 메인 배너
                 <span className="ml-1.5 text-xs font-normal text-gray-400">
-                  ({banners.length}개)
+                  ({banners.length} / 10개)
                 </span>
               </h2>
               <label
                 className={`flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-50 ${
-                  isBannerUploading ? "pointer-events-none opacity-50" : ""
+                  isBannerUploading || banners.length >= 10 ? "pointer-events-none opacity-50" : ""
                 }`}
               >
                 <ImagePlus className="size-3.5" />
@@ -147,7 +147,7 @@ export default function AdminSettingsPage() {
                   accept="image/*"
                   className="hidden"
                   onChange={handleBannerUpload}
-                  disabled={isBannerUploading}
+                  disabled={isBannerUploading || banners.length >= 10}
                 />
               </label>
             </div>
