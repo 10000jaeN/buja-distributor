@@ -23,9 +23,14 @@ const Nav = ({ menu }: { menu: MenuItem[] }) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const openMenu = useMenuStore((state) => state.openMenu);
-  const { isLoggedIn, isInitialized } = useAuthStore();
+  const { isLoggedIn, isInitialized, logout } = useAuthStore();
   const cartCount = useCartStore((state) => state.count);
   const router = useRouter();
+
+  const userMenuItems = [
+    ...USER_MENU,
+    { label: "로그아웃", onClick: () => { logout(); router.push("/"); }, variant: "danger" as const, separator: true },
+  ];
 
   const onSearchSubmit = () => {
     const q = inputRef.current?.value.trim();
@@ -116,7 +121,7 @@ const Nav = ({ menu }: { menu: MenuItem[] }) => {
               <DropdownMenu
                 trigger={<UserCircle className="h-6 w-6" />}
                 tooltipLabel="내 계정"
-                items={USER_MENU}
+                items={userMenuItems}
               />
             </>
           ) : (
