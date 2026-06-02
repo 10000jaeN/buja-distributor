@@ -12,7 +12,7 @@ import useCartStore from "@/store/useCartStore";
 export default function CheckoutSuccessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { items, clear } = useCheckoutStore();
+  const { clear } = useCheckoutStore();
   const cartReset = useCartStore((s) => s.reset);
 
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
@@ -35,7 +35,9 @@ export default function CheckoutSuccessPage() {
       return;
     }
 
-    const purchasedProductIds = items.map((i) => i.productId);
+    const purchasedProductIds = useCheckoutStore
+      .getState()
+      .items.map((i) => i.productId);
 
     checkoutService
       .confirmPayment({ paymentKey, orderId, amount: Number(amount) })
@@ -51,7 +53,7 @@ export default function CheckoutSuccessPage() {
         setErrorMessage(message);
         setStatus("error");
       });
-  }, [searchParams, items, clear, cartReset]);
+  }, [searchParams, clear, cartReset]);
 
   if (status === "loading") {
     return (
