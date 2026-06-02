@@ -17,7 +17,8 @@ description: 부자유통 커머스 프로젝트 전담 리뷰어. 코드 수정
 - `frontend/` — Next.js 16 (App Router), Tailwind CSS v4, Zustand, fetch 기반 apiClient
 - `backend/` — Express.js (ESM), Mongoose, Passport.js (Google/Kakao/Naver OAuth)
 
-> ⚠️ **주의**: `/buja-api` 또는 외부 `buja-api` 디렉터리는 더 이상 사용하지 않습니다. 모든 백엔드 코드는 `backend/`에 있습니다.
+> ⚠️ **절대 주의**: 리뷰 시 반드시 `/Users/nammanjae/Desktop/project-buja/buja-distributor/backend/` 경로를 기준으로 파일을 읽어야 합니다.
+> `/Users/nammanjae/Desktop/project-buja/buja-api/` 경로는 더 이상 사용하지 않는 구버전입니다. 해당 경로의 파일을 읽거나 참조하지 마세요. 잘못된 경로의 파일을 기준으로 리뷰하면 오탐이 발생합니다.
 
 ## 프로젝트 스택
 

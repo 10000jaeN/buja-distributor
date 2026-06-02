@@ -32,27 +32,35 @@ const Carousel = () => {
   }, [currentIdx, banners.length]);
 
   if (!loaded)
-    return <div className="mx-auto mb-4 h-[400px] max-w-320 bg-gray-100" />;
+    return <div className="mx-auto h-[400px] max-w-320 bg-gray-100" />;
 
   if (banners.length === 0) {
     return (
-      <div className="mx-auto mb-4 flex h-[400px] max-w-320 items-center justify-center bg-gray-100">
+      <div className="mx-auto flex h-[400px] max-w-320 items-center justify-center bg-gray-100">
         <p className="text-sm text-gray-400">광고 및 이벤트가 없습니다.</p>
       </div>
     );
   }
 
   return (
-    <div className="relative mx-auto mb-4 max-w-320 overflow-hidden">
-      <div className="flex">
+    <div className="relative mx-auto max-w-320 overflow-hidden">
+      <div className="z-0 flex">
         {banners.map((banner, idx) => (
           <div
             key={idx}
             className="relative w-full shrink-0 duration-300"
-            style={{ height: "400px", transform: `translateX(-${currentIdx * 100}%)` }}
+            style={{
+              height: "400px",
+              transform: `translateX(-${currentIdx * 100}%)`,
+            }}
           >
             {banner.linkUrl ? (
-              <a href={banner.linkUrl} target="_blank" rel="noopener noreferrer" className="block h-full">
+              <a
+                href={banner.linkUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block h-full"
+              >
                 <Image
                   src={banner.imageUrl}
                   alt={`배너 ${idx + 1}`}
@@ -76,7 +84,8 @@ const Carousel = () => {
         ))}
       </div>
 
-      <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center gap-2">
+      <div className="absolute bottom-0 left-0 z-10 h-16 w-full bg-gradient-to-t from-black/40 to-transparent" />
+      <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2">
         <button type="button" onClick={onClickPrevious}>
           <ChevronLeft className="h-5 w-5 text-white" />
         </button>
