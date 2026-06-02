@@ -14,6 +14,16 @@ const SettingsSchema = new mongoose.Schema(
       default: 50000,
       min: [0, "기준금액은 0 이상이어야 합니다."],
     },
+    // 메인 배너 이미지 목록
+    banners: {
+      type: [
+        {
+          imageUrl: { type: String, required: true },
+          linkUrl: { type: String, default: "" },
+        },
+      ],
+      default: [],
+    },
   },
   { timestamps: true }
 );
