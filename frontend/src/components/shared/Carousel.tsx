@@ -2,69 +2,104 @@
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
-
-const items = [
-  { title: "광고 및 이벤트가 들어갈 자리입니다.1", bg: "bg-[#7bf1b0]" },
-  { title: "광고 및 이벤트가 들어갈 자리입니다.2", bg: "bg-[#68aae2]" },
-  { title: "광고 및 이벤트가 들어갈 자리입니다.3", bg: "bg-[#ab68e2]" },
-  { title: "광고 및 이벤트가 들어갈 자리입니다.4", bg: "bg-[#e068e2]" },
-];
+import Image from "next/image";
+import { settingsService, Banner } from "@/api/settingsService";
 
 const Carousel = () => {
-  const [currentIdx, setCurrentIdx] = useState<number>(0);
+  const [banners, setBanners] = useState<Banner[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [currentIdx, setCurrentIdx] = useState(0);
+
+  useEffect(() => {
+    settingsService
+      .getSettings()
+      .then((s) => setBanners(s.banners ?? []))
+      .catch(() => {})
+      .finally(() => setLoaded(true));
+  }, []);
 
   const onClickPrevious = () => {
-    setCurrentIdx((prev) => (prev === 0 ? items.length - 1 : prev - 1));
+    setCurrentIdx((prev) => (prev === 0 ? banners.length - 1 : prev - 1));
   };
 
   const onClickNext = () => {
-    setCurrentIdx((prev) => (prev === items.length - 1 ? 0 : prev + 1));
-  };
-
-  const onClickPagination = (idx: number) => {
-    setCurrentIdx(idx);
+    setCurrentIdx((prev) => (prev === banners.length - 1 ? 0 : prev + 1));
   };
 
   useEffect(() => {
-    const timer = setInterval(onClickNext, 7000);
-
+    if (banners.length < 2) return;
+    const timer = setInterval(() => {
+      setCurrentIdx((prev) => (prev === banners.length - 1 ? 0 : prev + 1));
+    }, 7000);
     return () => clearInterval(timer);
-  }, [currentIdx]);
+  }, [banners.length]);
+
+  if (!loaded)
+    return <div className="mx-auto h-[400px] max-w-320 bg-gray-100" />;
+
+  if (banners.length === 0) {
+    return (
+      <div className="mx-auto flex h-[400px] max-w-320 items-center justify-center bg-gray-100">
+        <p className="text-sm text-gray-400">광고 및 이벤트가 없습니다.</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="relative mx-auto mb-4 max-w-320">
-      <div className="overflow-hidden">
-        <div className="flex">
-          {items.map((item) => (
-            <div
-              key={item.title}
-              className={`flex h-80 w-full shrink-0 items-center justify-center text-2xl font-bold text-white duration-300 ${item.bg}`}
-              style={{ transform: `translateX(-${currentIdx * 100}%)` }}
-            >
-              {item.title}
-            </div>
-          ))}
-        </div>
+    <div className="relative mx-auto max-w-320 overflow-hidden">
+      <div className="z-0 flex">
+        {banners.map((banner, idx) => (
+          <div
+            key={idx}
+            className="relative w-full shrink-0 duration-300"
+            style={{
+              height: "400px",
+              transform: `translateX(-${currentIdx * 100}%)`,
+            }}
+          >
+            {banner.linkUrl ? (
+              <a
+                href={banner.linkUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block h-full"
+              >
+                <Image
+                  src={banner.imageUrl}
+                  alt={`배너 ${idx + 1}`}
+                  fill
+                  sizes="100vw"
+                  className="object-cover"
+                  priority={idx === 0}
+                />
+              </a>
+            ) : (
+              <Image
+                src={banner.imageUrl}
+                alt={`배너 ${idx + 1}`}
+                fill
+                sizes="100vw"
+                className="object-cover"
+                priority={idx === 0}
+              />
+            )}
+          </div>
+        ))}
       </div>
 
-      <div className="absolute bottom-2 left-1/2 flex -translate-1/2 items-center gap-2">
-        <button
-          type="button"
-          onClick={onClickPrevious}
-        >
+      <div className="absolute bottom-0 left-0 z-10 h-16 w-full bg-gradient-to-t from-black/40 to-transparent" />
+      <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2">
+        <button type="button" onClick={onClickPrevious}>
           <ChevronLeft className="h-5 w-5 text-white" />
         </button>
-
-        {items &&
-          items.map((item, idx) => (
-            <button
-              key={item.title}
-              type="button"
-              className={`${currentIdx === idx ? "w-7" : "w-3"} h-3 rounded-full bg-white duration-300`}
-              onClick={() => onClickPagination(idx)}
-            ></button>
-          ))}
-
+        {banners.map((_, idx) => (
+          <button
+            key={idx}
+            type="button"
+            className={`${currentIdx === idx ? "w-7" : "w-3"} h-3 rounded-full bg-white duration-300`}
+            onClick={() => setCurrentIdx(idx)}
+          />
+        ))}
         <button type="button" onClick={onClickNext}>
           <ChevronRight className="h-5 w-5 text-white" />
         </button>
