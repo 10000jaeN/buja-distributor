@@ -44,10 +44,14 @@ export default function AdminSettingsPage() {
 
     setIsBannerUploading(true);
     try {
+      const token =
+        localStorage.getItem("accessToken") ??
+        sessionStorage.getItem("accessToken");
       const formData = new FormData();
       formData.append("file", file);
       const res = await fetch("/api/upload", {
         method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
       });
       if (!res.ok) throw new Error();
