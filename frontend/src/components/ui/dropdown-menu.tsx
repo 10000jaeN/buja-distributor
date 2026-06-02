@@ -7,7 +7,10 @@ import { Tooltip } from "@/components/ui/tooltip";
 
 export interface DropdownMenuItem {
   label: string;
-  href: string;
+  href?: string;
+  onClick?: () => void;
+  variant?: "danger";
+  separator?: boolean;
 }
 
 interface DropdownMenuProps {
@@ -34,14 +37,20 @@ export function DropdownMenu({ trigger, tooltipLabel, items }: DropdownMenuProps
       <Menu.Portal>
         <Menu.Positioner align="end" sideOffset={12} className="z-[60]">
           <Menu.Popup className="min-w-36 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg outline-none">
-            {items.map(({ label, href }) => (
-              <Menu.Item
-                key={href}
-                render={<Link href={href} />}
-                className="block px-4 py-2.5 text-sm text-gray-700 outline-none hover:bg-gray-50 data-highlighted:bg-gray-50"
-              >
-                {label}
-              </Menu.Item>
+            {items.map((item) => (
+              <div key={item.href ?? item.label}>
+                {item.separator && <div className="my-1 border-t border-gray-100" />}
+                <Menu.Item
+                  render={item.href ? <Link href={item.href} /> : <button type="button" onClick={item.onClick} className="w-full text-left" />}
+                  className={`block px-4 py-2.5 text-sm outline-none data-highlighted:bg-gray-50 ${
+                    item.variant === "danger"
+                      ? "text-red-500 hover:bg-red-50 data-highlighted:bg-red-50"
+                      : "text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  {item.label}
+                </Menu.Item>
+              </div>
             ))}
           </Menu.Popup>
         </Menu.Positioner>
