@@ -26,6 +26,16 @@ export const updateSettings = async (req, res) => {
       if (!b.imageUrl || typeof b.imageUrl !== "string") {
         return res.status(400).json({ message: "각 배너에 imageUrl이 필요합니다." });
       }
+      if (b.linkUrl !== undefined && b.linkUrl !== "") {
+        try {
+          const parsed = new URL(b.linkUrl);
+          if (!["http:", "https:"].includes(parsed.protocol)) {
+            return res.status(400).json({ message: "linkUrl은 http 또는 https URL이어야 합니다." });
+          }
+        } catch {
+          return res.status(400).json({ message: "linkUrl 형식이 올바르지 않습니다." });
+        }
+      }
     }
   }
 
