@@ -42,10 +42,10 @@ export function DropdownMenu({ trigger, tooltipLabel, items }: DropdownMenuProps
                 {item.separator && <div className="my-1 border-t border-gray-100" />}
                 <Menu.Item
                   render={item.href ? <Link href={item.href} /> : <button type="button" onClick={item.onClick} className="w-full text-left" />}
-                  className={`block px-4 py-2.5 text-sm outline-none data-highlighted:bg-gray-50 ${
+                  className={`block px-4 py-2.5 text-sm outline-none ${
                     item.variant === "danger"
                       ? "text-red-500 hover:bg-red-50 data-highlighted:bg-red-50"
-                      : "text-gray-700 hover:bg-gray-50"
+                      : "text-gray-700 hover:bg-gray-50 data-highlighted:bg-gray-50"
                   }`}
                 >
                   {item.label}

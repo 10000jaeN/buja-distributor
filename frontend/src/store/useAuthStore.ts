@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import useCartStore from "./useCartStore";
+import { apiClient } from "@/lib/apiClient";
 
 // autoLogin 플래그에 따라 localStorage / sessionStorage를 동적으로 선택
 const adaptiveStorage = createJSONStorage(() => ({
@@ -49,6 +50,7 @@ const useAuthStore = create<AuthState>()(
       login: (userData) => set({ user: userData, isLoggedIn: true }),
 
       logout: () => {
+        apiClient.post("/auth/logout").catch(() => {});
         localStorage.removeItem("accessToken");
         sessionStorage.removeItem("accessToken");
         useCartStore.getState().reset();

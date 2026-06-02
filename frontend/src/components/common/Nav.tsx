@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -27,10 +27,13 @@ const Nav = ({ menu }: { menu: MenuItem[] }) => {
   const cartCount = useCartStore((state) => state.count);
   const router = useRouter();
 
-  const userMenuItems = [
-    ...USER_MENU,
-    { label: "로그아웃", onClick: () => { logout(); router.push("/"); }, variant: "danger" as const, separator: true },
-  ];
+  const userMenuItems = useMemo(
+    () => [
+      ...USER_MENU,
+      { label: "로그아웃", onClick: () => { logout(); router.push("/"); }, variant: "danger" as const, separator: true },
+    ],
+    [logout, router],
+  );
 
   const onSearchSubmit = () => {
     const q = inputRef.current?.value.trim();
