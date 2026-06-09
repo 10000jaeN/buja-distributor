@@ -11,6 +11,7 @@ const OrderItemSchema = new mongoose.Schema({
   name: { type: String, required: true },
   quantity: { type: Number, required: true, min: 1 },
   price: { type: Number, required: true, min: 0 }, // 주문 당시의 가격
+  categoryParent: { type: String }, // 주문 당시의 상위 카테고리 스냅샷
 });
 
 // 주문 전체 스키마

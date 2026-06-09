@@ -93,6 +93,7 @@ export const createOrder = async (req, res) => {
         name: product.name, // 스냅샷: 주문 당시 상품 이름
         price: product.price, // 스냅샷: 주문 당시 상품 가격
         quantity: item.quantity,
+        categoryParent: product.category?.parent, // 스냅샷: 주문 당시 상위 카테고리
       });
     }
 
@@ -524,22 +525,14 @@ export const getOrderStats = async (req, res) => {
       { $limit: 10 },
     ]),
 
-    // 3. 카테고리별 매출 비율 (해당 연도)
+    // 3. 카테고리별 매출 비율 (해당 연도) — items.categoryParent 스냅샷 사용 (삭제된 상품도 집계)
     Order.aggregate([
       { $match: { status: { $in: validStatuses }, createdAt: { $gte: startDate, $lt: endDate } } },
       { $unwind: "$items" },
-      {
-        $lookup: {
-          from: "products",
-          localField: "items.productId",
-          foreignField: "_id",
-          as: "product",
-        },
-      },
-      { $unwind: "$product" },
+      { $match: { "items.categoryParent": { $exists: true, $ne: null } } },
       {
         $group: {
-          _id: "$product.category.parent",
+          _id: "$items.categoryParent",
           revenue: { $sum: { $multiply: ["$items.price", "$items.quantity"] } },
         },
       },
