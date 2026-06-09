@@ -41,22 +41,23 @@ export default function ProductsClient({
   const [isPending, startTransition] = useTransition();
 
   const updateParam = (key: string, value: string) => {
-    const params = new URLSearchParams();
-    if (category) params.set("category", category);
-    if (sub) params.set("sub", sub);
-    if (sort) params.set("sort", sort);
+    const next: Record<string, string> = {
+      ...(category && { category }),
+      ...(sub && { sub }),
+      sort,
+      [key]: value,
+    };
+    if (!next[key]) delete next[key];
+    if (key === "category") delete next.sub;
 
-    if (value) params.set(key, value);
-    else params.delete(key);
-    if (key === "category") params.delete("sub");
-
+    const params = new URLSearchParams(next);
     startTransition(() => {
       router.push(`/products?${params.toString()}`);
     });
   };
 
   return (
-    <div className="mx-auto max-w-[1024px] px-5 py-10">
+    <div className={`mx-auto max-w-[1024px] px-5 py-10 transition-opacity ${isPending ? "opacity-50" : ""}`}>
       {/* 헤더 */}
       <div className="mb-6">
         <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-400">
@@ -139,11 +140,7 @@ export default function ProductsClient({
       </div>
 
       {/* 상품 그리드 */}
-      {isPending ? (
-        <div className="flex min-h-60 items-center justify-center">
-          <div className="border-t-brand-blue h-8 w-8 animate-spin rounded-full border-3 border-gray-200" />
-        </div>
-      ) : initialProducts.length === 0 ? (
+      {initialProducts.length === 0 && !isPending ? (
         <div className="flex min-h-60 flex-col items-center justify-center gap-2">
           <p className="text-gray-400">상품이 없습니다.</p>
           <button

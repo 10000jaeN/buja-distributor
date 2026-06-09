@@ -6,6 +6,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import noImage from "@/public/images/no-image.png";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const SORT_OPTIONS = [
   { label: "최신순", value: "recent" },
@@ -56,26 +63,25 @@ export default function SearchClient({ initialProducts, q, sort }: Props) {
         <div className="flex min-h-60 flex-col items-center justify-center gap-2">
           <p className="text-gray-400">검색어를 입력해주세요.</p>
         </div>
-      ) : isPending ? (
-        <div className="flex min-h-60 items-center justify-center">
-          <div className="border-t-brand-blue h-8 w-8 animate-spin rounded-full border-3 border-gray-200" />
-        </div>
       ) : (
-        <>
+        <div className={`transition-opacity ${isPending ? "opacity-50" : ""}`}>
           {/* 상단 바 */}
           <div className="mb-4 flex items-center justify-between">
             <p className="text-sm text-gray-500">총 {initialProducts.length}개</p>
-            <select
-              value={sort}
-              onChange={(e) => updateSort(e.target.value)}
-              className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700 outline-none focus:border-brand-blue"
-            >
-              {SORT_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+            <Select value={sort} onValueChange={(value) => value && updateSort(value)}>
+              <SelectTrigger>
+                <SelectValue>
+                  {SORT_OPTIONS.find((opt) => opt.value === sort)?.label}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {SORT_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {initialProducts.length === 0 ? (
@@ -117,7 +123,7 @@ export default function SearchClient({ initialProducts, q, sort }: Props) {
               ))}
             </ul>
           )}
-        </>
+        </div>
       )}
     </div>
   );

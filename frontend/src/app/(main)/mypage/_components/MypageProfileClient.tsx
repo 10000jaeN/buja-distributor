@@ -49,7 +49,7 @@ export default function MypageProfileClient() {
       setUser({ ...user!, nickName: updated.nickName });
       setIsEditing(false);
     } catch {
-      alert("닉네임 변경에 실패했습니다.");
+      toast.error("닉네임 변경에 실패했습니다.");
     } finally {
       setIsSaving(false);
     }
