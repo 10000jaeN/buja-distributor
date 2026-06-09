@@ -93,7 +93,7 @@ export const createOrder = async (req, res) => {
         name: product.name, // 스냅샷: 주문 당시 상품 이름
         price: product.price, // 스냅샷: 주문 당시 상품 가격
         quantity: item.quantity,
-        categoryParent: product.category?.parent, // 스냅샷: 주문 당시 상위 카테고리
+        categoryParent: product.category.parent, // 스냅샷: 주문 당시 상위 카테고리
       });
     }
 
