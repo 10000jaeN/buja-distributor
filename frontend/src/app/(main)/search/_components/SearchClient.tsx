@@ -67,7 +67,9 @@ export default function SearchClient({ initialProducts, q, sort }: Props) {
         <div className={`transition-opacity ${isPending ? "opacity-50" : ""}`}>
           {/* 상단 바 */}
           <div className="mb-4 flex items-center justify-between">
-            <p className="text-sm text-gray-500">총 {initialProducts.length}개</p>
+            <p className="text-sm text-gray-500">
+              {isPending ? "불러오는 중..." : `총 ${initialProducts.length}개`}
+            </p>
             <Select value={sort} onValueChange={(value) => value && updateSort(value)}>
               <SelectTrigger>
                 <SelectValue>
