@@ -56,34 +56,42 @@ export const createProduct = async (req, res) => {
  * GET /products - 상품 목록 전체 조회
  */
 export const getProducts = async (req, res) => {
-  const { sort, limit, category, sub, q } = req.query;
+  try {
+    const { sort, limit, category, sub, q, freeShipping } = req.query;
 
-  const query = {};
-  if (category) query["category.parent"] = category;
-  if (sub) query["category.child"] = sub;
-  if (q) query["name"] = { $regex: q, $options: "i" };
+    const query = {};
+    if (category) query["category.parent"] = category;
+    if (sub) query["category.child"] = sub;
+    if (q) query["name"] = { $regex: q, $options: "i" };
+    if (freeShipping === "true") query["shippingFee"] = 0;
 
-  const sortMap = {
-    // 최신 순?
-    recent: { createdAt: -1 },
+    const sortMap = {
+      // 최신 순
+      recent: { createdAt: -1 },
 
-    // 인기순
-    populate: { "stats.reviewCount": -1, "stats.averageRating": -1 },
+      // 인기순
+      populate: { "stats.reviewCount": -1, "stats.ratingAverage": -1 },
 
-    // 가격순
-    price_asc: { price: 1 },
-    price_desc: { price: -1 },
-  };
+      // 베스트 상품 (별점 → 판매량 → 리뷰수)
+      best: { "stats.ratingAverage": -1, "stats.orderCount": -1, "stats.reviewCount": -1 },
 
-  const sortOption = sortMap[sort] || { createdAt: -1 };
+      // 가격순
+      price_asc: { price: 1 },
+      price_desc: { price: -1 },
+    };
 
-  const products = await Product.find(query)
-    .sort(sortOption)
-    .limit(Number(limit));
-  return res.json({
-    message: "성공적으로 상품을 조회하였습니다.",
-    data: products,
-  });
+    const sortOption = sortMap[sort] || { createdAt: -1 };
+
+    const products = await Product.find(query)
+      .sort(sortOption)
+      .limit(Number(limit));
+    return res.json({
+      message: "성공적으로 상품을 조회하였습니다.",
+      data: products,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "서버 에러", error: error.message });
+  }
 };
 
 /**

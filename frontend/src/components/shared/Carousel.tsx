@@ -90,18 +90,18 @@ const Carousel = () => {
       <div className="absolute bottom-0 left-0 z-10 h-16 w-full bg-gradient-to-t from-black/40 to-transparent" />
       <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2">
         <button type="button" onClick={onClickPrevious}>
-          <ChevronLeft className="h-5 w-5 text-white" />
+          <ChevronLeft className="h-5 w-5 text-white lg:h-7 lg:w-7" />
         </button>
         {banners.map((_, idx) => (
           <button
             key={idx}
             type="button"
-            className={`${currentIdx === idx ? "w-7" : "w-3"} h-3 rounded-full bg-white duration-300`}
+            className={`${currentIdx === idx ? "w-7 lg:w-9" : "w-3 lg:w-4"} h-3 rounded-full bg-white duration-300 lg:h-4`}
             onClick={() => setCurrentIdx(idx)}
           />
         ))}
         <button type="button" onClick={onClickNext}>
-          <ChevronRight className="h-5 w-5 text-white" />
+          <ChevronRight className="h-5 w-5 text-white lg:h-7 lg:w-7" />
         </button>
       </div>
     </div>

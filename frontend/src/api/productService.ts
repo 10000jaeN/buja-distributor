@@ -8,15 +8,17 @@ export const productService = {
     category,
     sub,
     q,
+    freeShipping,
   }: {
-    sort?: "recent" | "populate" | "price_asc" | "price_desc";
+    sort?: "recent" | "populate" | "price_asc" | "price_desc" | "best";
     limit?: number;
     category?: string;
     sub?: string;
     q?: string;
+    freeShipping?: boolean;
   }): Promise<Product[]> => {
     const res = await apiClient.get<{ data: Product[] }>("/products", {
-      params: { sort, limit, category, sub, q },
+      params: { sort, limit, category, sub, q, freeShipping },
     });
     return res.data;
   },
