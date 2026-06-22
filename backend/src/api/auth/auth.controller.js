@@ -1,6 +1,6 @@
 import User from "../user/user.model.js";
 import asyncHandler from "../../utils/asyncHandler.js"; // 에러 처리를 위한 asyncHandler 추가
-import { generateAccessToken, generateRefreshToken } from "../../utils/jwt.js";
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "../../utils/jwt.js";
 import setRefreshTokenCookie from "../../utils/auth.utils.js";
 
 /**
@@ -180,13 +180,19 @@ export const refreshTokens = asyncHandler(async (req, res) => {
  * @desc 5. 로그아웃
  */
 export const logoutUser = asyncHandler(async (req, res) => {
-  const user = req.user;
+  const refreshToken = req.cookies.refreshToken;
 
-  // DB에서 리프레시 토큰 제거
-  user.refreshToken = null;
-  await user.save();
+  if (refreshToken) {
+    const decoded = verifyRefreshToken(refreshToken);
+    if (decoded) {
+      const user = await User.findById(decoded.id);
+      if (user) {
+        user.refreshToken = null;
+        await user.save();
+      }
+    }
+  }
 
-  // 브라우저 쿠키 삭제
   res.clearCookie("refreshToken", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
