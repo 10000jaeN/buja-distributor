@@ -17,8 +17,10 @@ export const refreshMiddleware = async (req, res, next) => {
 
     // 여기서만 DB의 refreshToken과 대조합니다 (보안의 핵심)
     if (!user || user.refreshToken !== incomingRefreshToken) {
-      user.refreshToken = null; // 탈취 의심 시 무효화
-      await user.save();
+      if (user) {
+        user.refreshToken = null; // 탈취 의심 시 무효화
+        await user.save();
+      }
       return res.status(403).json({ message: "유효하지 않은 접근입니다." });
     }
 
