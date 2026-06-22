@@ -10,7 +10,7 @@ export default function AuthProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const { logout, setUser, setInitialized } = useAuthStore();
+  const { clearSession, setUser, setInitialized } = useAuthStore();
   const hasCalled = useRef(false);
 
   useEffect(() => {
@@ -21,7 +21,7 @@ export default function AuthProvider({
       const token = localStorage.getItem("accessToken") ?? sessionStorage.getItem("accessToken");
 
       if (!token) {
-        logout();
+        clearSession();
         setInitialized(true);
         return;
       }
@@ -36,15 +36,14 @@ export default function AuthProvider({
         }).catch(() => {});
       } catch (err) {
         console.error("세션 만료:", err);
-        localStorage.removeItem("accessToken");
-        logout();
+        clearSession();
       } finally {
         setInitialized(true);
       }
     };
 
     initAuth();
-  }, []);
+  }, [clearSession, setUser, setInitialized]);
 
   return <>{children}</>;
 }

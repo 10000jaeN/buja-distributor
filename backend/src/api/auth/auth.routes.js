@@ -107,6 +107,6 @@ router.post("/token/refresh", refreshMiddleware, asyncHandler(refreshTokens));
  * @decs 로그아웃 (DB에서 Refresh Token 무효화 및 쿠키 삭제)
  * @access Public (Cookie-based Refresh Token is expected)
  */
-router.post("/logout", refreshMiddleware, asyncHandler(logoutUser));
+router.post("/logout", asyncHandler(logoutUser));
 
 export default router;
