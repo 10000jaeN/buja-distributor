@@ -43,7 +43,7 @@ export default function AuthProvider({
     };
 
     initAuth();
-  }, []);
+  }, [clearSession, setUser, setInitialized]);
 
   return <>{children}</>;
 }
