@@ -48,7 +48,7 @@ export default function FreeShippingClient({ initialProducts, sort }: Props) {
       </div>
 
       <div className="mb-4 flex items-center justify-between">
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-subtle">
           {isPending ? "불러오는 중..." : `총 ${initialProducts.length}개`}
         </p>
         <Select value={sort} onValueChange={(value) => value && handleSortChange(value)}>
@@ -69,7 +69,7 @@ export default function FreeShippingClient({ initialProducts, sort }: Props) {
 
       {initialProducts.length === 0 && !isPending ? (
         <div className="flex min-h-60 flex-col items-center justify-center gap-2">
-          <p className="text-gray-400">무료배송 상품이 없습니다.</p>
+          <p className="text-muted">무료배송 상품이 없습니다.</p>
         </div>
       ) : (
         <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-5 lg:grid-cols-4">
