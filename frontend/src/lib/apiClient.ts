@@ -75,7 +75,7 @@ async function apiFetch<T>(
   if (res.status === 401 && !isServer) {
     localStorage.removeItem("accessToken");
     sessionStorage.removeItem("accessToken");
-    const isAdmin = window.location.pathname.startsWith("/admin");
+    const isAdmin = window.location.pathname.startsWith("/admin/") || window.location.pathname === "/admin";
     const loginPath = isAdmin ? "/admin/login" : "/login";
     if (window.location.pathname !== loginPath) {
       window.location.href = loginPath;
