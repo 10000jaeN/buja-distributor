@@ -36,6 +36,7 @@ interface AuthState {
   isInitialized: boolean;
   login: (userData: User) => void;
   logout: () => void;
+  clearSession: () => void;
   setUser: (userData: User | null) => void;
   setInitialized: (v: boolean) => void;
 }
@@ -51,6 +52,14 @@ const useAuthStore = create<AuthState>()(
 
       logout: () => {
         apiClient.post("/auth/logout").catch(() => {});
+        localStorage.removeItem("accessToken");
+        sessionStorage.removeItem("accessToken");
+        useCartStore.getState().reset();
+        set({ user: null, isLoggedIn: false });
+      },
+
+      // 세션 만료 시 API 호출 없이 클라이언트 상태만 초기화
+      clearSession: () => {
         localStorage.removeItem("accessToken");
         sessionStorage.removeItem("accessToken");
         useCartStore.getState().reset();
