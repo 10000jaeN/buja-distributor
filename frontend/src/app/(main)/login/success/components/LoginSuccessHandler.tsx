@@ -52,7 +52,7 @@ const LoginSuccessHandler = () => {
     };
 
     exchange();
-  }, [ticket, router, isLoggedIn]);
+  }, [ticket, router, isLoggedIn, login]);
 
   return null;
 };

@@ -10,7 +10,7 @@ export default function AuthProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const { logout, clearSession, setUser, setInitialized } = useAuthStore();
+  const { clearSession, setUser, setInitialized } = useAuthStore();
   const hasCalled = useRef(false);
 
   useEffect(() => {

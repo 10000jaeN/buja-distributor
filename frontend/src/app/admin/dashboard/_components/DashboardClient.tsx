@@ -60,7 +60,7 @@ export default function DashboardClient() {
         toast.error("통계 데이터를 불러오는 데 실패했습니다.");
       })
       .finally(() => setLoading(false));
-  }, [retry]);
+  }, [retry, year]);
 
   useEffect(() => {
     setMonthlyStats(null);
