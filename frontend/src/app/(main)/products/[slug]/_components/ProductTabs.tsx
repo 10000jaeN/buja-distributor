@@ -29,7 +29,7 @@ export function ProductTabs({ content, contentBlock, shippingFee, freeShippingTh
       {/* 탭 툴바 */}
       <div
         aria-label="ToolBar"
-        className="sticky top-17.25 z-40 flex justify-around border-b border-gray-200 bg-white"
+        className="sticky top-[var(--nav-height)] z-40 flex justify-around border-b border-gray-200 bg-white"
       >
         {TABS.map((tab) => (
           <button

@@ -209,6 +209,7 @@
 }
 
 :root {
+  --nav-height: 4.3125rem; /* h-17.25 (Nav 높이) */
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);

@@ -30,7 +30,7 @@ export function ProductDetailTab({ content, contentBlock }: Props) {
               <Image
                 key={index}
                 src={block.value}
-                alt="상세페이지"
+                alt={`상세페이지 이미지 ${index + 1}`}
                 width={800}
                 height={800}
                 className="w-full"
