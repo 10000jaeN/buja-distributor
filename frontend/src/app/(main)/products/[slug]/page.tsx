@@ -92,7 +92,7 @@ const productsDetailPage = async ({ params }: Props) => {
         </div>
 
         {/* 오른쪽: 플로팅 상품 정보 사이드바 (lg 이상에서만 표시) */}
-        <aside className="lg:sticky lg:top-[var(--nav-height)] lg:block lg:w-[360px] lg:shrink-0">
+        <aside className="lg:sticky lg:top-[calc(var(--nav-height)+2.5rem)] lg:block lg:w-[360px] lg:shrink-0">
           <ProductInfoSection {...infoProps} className={"hidden lg:block"} />
           <ProductActions {...actionsProps} />
         </aside>
