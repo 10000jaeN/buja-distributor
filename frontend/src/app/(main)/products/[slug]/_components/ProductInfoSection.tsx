@@ -24,7 +24,7 @@ export function ProductInfoSection({
       <div aria-label="별점" className="flex items-center gap-1.5">
         <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
         <span className="text-sm font-medium text-amber-500">
-          {ratingAverage}
+          {ratingAverage.toFixed(1)}
         </span>
         <span className="text-muted text-sm">｜ 후기 {reviewCount}개</span>
       </div>
