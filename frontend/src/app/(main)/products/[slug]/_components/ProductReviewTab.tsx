@@ -91,7 +91,7 @@ export function ProductReviewTab({ productId }: Props) {
       <div className="px-4 py-6 lg:px-0">
         <div className="mb-4 flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2.5 text-xs text-blue-600">
           <Info className="size-3.5 shrink-0" />
-          배송 완료 후 마이페이지 > 주문내역에서 리뷰를 작성하실 수 있습니다.
+          배송 완료 후 마이페이지 {'>'} 주문내역에서 리뷰를 작성하실 수 있습니다.
         </div>
         <EmptyState
           icon={<Star className="h-8 w-8 text-gray-300" />}
@@ -113,7 +113,7 @@ export function ProductReviewTab({ productId }: Props) {
       {/* 리뷰 작성 안내 */}
       <div className="mt-4 flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2.5 text-xs text-blue-600">
         <Info className="size-3.5 shrink-0" />
-        배송 완료 후 마이페이지 > 주문내역에서 리뷰를 작성하실 수 있습니다.
+        배송 완료 후 마이페이지 {'>'} 주문내역에서 리뷰를 작성하실 수 있습니다.
       </div>
 
       {/* 정렬 */}

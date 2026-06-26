@@ -5,7 +5,7 @@ export function EmptyState({
 }: {
   icon: React.ReactNode;
   title: string;
-  description: string;
+  description?: string;
 }) {
   return (
     <div className="flex flex-col items-center gap-4 px-4 py-20 text-center">
@@ -14,7 +14,7 @@ export function EmptyState({
       </div>
       <div className="space-y-1">
         <p className="text-sm font-medium text-gray-500">{title}</p>
-        <p className="text-xs text-gray-400">{description}</p>
+        {description && <p className="text-xs text-gray-400">{description}</p>}
       </div>
     </div>
   );
