@@ -2,6 +2,8 @@ import { productService } from "@/api/productService";
 import { categoryService } from "@/api/categoryService";
 import ProductsClient from "./_components/ProductsClient";
 
+export const revalidate = 60;
+
 type SortValue = "recent" | "populate" | "price_asc" | "price_desc";
 const VALID_SORTS: SortValue[] = ["recent", "populate", "price_asc", "price_desc"];
 

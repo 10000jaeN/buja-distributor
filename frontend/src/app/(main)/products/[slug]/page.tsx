@@ -8,6 +8,17 @@ import { ProductActions } from "./_components/ProductActions";
 import { ProductInfoSection } from "./_components/ProductInfoSection";
 import { ProductTabs } from "./_components/ProductTabs";
 
+export const revalidate = 60;
+
+export async function generateStaticParams() {
+  try {
+    const products = await productService.getProducts({});
+    return products.map((p) => ({ slug: p.slug }));
+  } catch {
+    return [];
+  }
+}
+
 interface Props {
   params: Promise<{ slug: string }>;
 }
