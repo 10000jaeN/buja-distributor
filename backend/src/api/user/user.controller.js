@@ -256,11 +256,15 @@ export const setDefaultAddress = async (req, res) => {
 export const getAllUsers = async (req, res) => {
   const { search } = req.query;
 
-  const filter = search
+  const escapedSearch = search
+    ? search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    : null;
+
+  const filter = escapedSearch
     ? {
         $or: [
-          { nickName: { $regex: search, $options: "i" } },
-          { email: { $regex: search, $options: "i" } },
+          { nickName: { $regex: escapedSearch, $options: "i" } },
+          { email: { $regex: escapedSearch, $options: "i" } },
         ],
       }
     : {};

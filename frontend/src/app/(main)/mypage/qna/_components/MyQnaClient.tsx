@@ -27,11 +27,12 @@ export default function MyQnaClient() {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    localStorage.setItem(QNA_LAST_READ_KEY, new Date().toISOString());
-
     qnaService
       .getMyQnaList()
-      .then(setQnaList)
+      .then((data) => {
+        setQnaList(data);
+        localStorage.setItem(QNA_LAST_READ_KEY, new Date().toISOString());
+      })
       .catch(() => setLoadError(true))
       .finally(() => setIsLoading(false));
   }, []);
@@ -136,7 +137,7 @@ export default function MyQnaClient() {
                       {new Date(qna.createdAt).toLocaleDateString("ko-KR")}
                     </span>
                     <span
-                      className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                         hasAnswer
                           ? "bg-blue-50 text-brand-blue"
                           : "bg-gray-100 text-gray-500"

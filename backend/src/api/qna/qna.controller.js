@@ -109,7 +109,13 @@ export const getMyUnreadAnswerCount = async (req, res) => {
   const { since } = req.query;
 
   const filter = { userId, answer: { $ne: null } };
-  if (since) filter.answeredAt = { $gt: new Date(since) };
+  if (since) {
+    const sinceDate = new Date(since);
+    if (isNaN(sinceDate.getTime())) {
+      throw new CustomError("since 파라미터가 유효한 날짜 형식이 아닙니다.", 400);
+    }
+    filter.answeredAt = { $gt: sinceDate };
+  }
 
   const count = await Qna.countDocuments(filter);
   res.status(200).json({ count });
