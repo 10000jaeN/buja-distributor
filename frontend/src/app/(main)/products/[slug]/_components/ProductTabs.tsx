@@ -50,7 +50,7 @@ export function ProductTabs({ productId, productName, content, contentBlock, shi
       </div>
 
       {/* 탭 콘텐츠 */}
-      <div className="mx-auto max-w-200">
+      <div className="mx-auto max-w-200 lg:min-h-[480px]">
         {activeTab === "상세정보" && (
           <ProductDetailTab content={content} contentBlock={contentBlock} />
         )}
