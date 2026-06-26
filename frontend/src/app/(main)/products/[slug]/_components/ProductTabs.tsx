@@ -57,7 +57,7 @@ export function ProductTabs({ productId, productName, content, contentBlock, shi
         {activeTab === "Q&A" && (
           <ProductQnATab productId={productId} productName={productName} />
         )}
-        {activeTab === "상품 리뷰" && <ProductReviewTab />}
+        {activeTab === "상품 리뷰" && <ProductReviewTab productId={productId} />}
         {activeTab === "배송정보" && (
           <ProductShippingTab
             shippingFee={shippingFee}
