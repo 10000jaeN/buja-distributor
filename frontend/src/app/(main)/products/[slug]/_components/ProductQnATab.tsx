@@ -80,6 +80,14 @@ export function ProductQnATab({ productId, productName }: Props) {
     return false;
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-16">
+        <Spinner size="md" />
+      </div>
+    );
+  }
+
   if (loadError) {
     return (
       <div className="px-4 py-6 lg:px-0">
@@ -129,11 +137,7 @@ export function ProductQnATab({ productId, productName }: Props) {
       </div>
 
       {/* 목록 */}
-      {isLoading ? (
-        <div className="flex justify-center py-16">
-          <Spinner size="md" />
-        </div>
-      ) : qnaList.length === 0 ? (
+      {qnaList.length === 0 ? (
         <EmptyState
           icon={<MessageCircleQuestion className="h-8 w-8 text-gray-300" />}
           title="등록된 문의가 없습니다."
