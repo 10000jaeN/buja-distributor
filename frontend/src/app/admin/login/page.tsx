@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Loader2 } from "lucide-react";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -116,6 +117,7 @@ export default function AdminLoginPage() {
                 placeholder="example@email.com"
                 required
                 autoComplete="email"
+                disabled={loading}
                 className="focus-visible:border-brand-blue focus-visible:ring-brand-blue/20 h-11 rounded-lg border-gray-200 bg-white px-4 text-sm"
               />
             </div>
@@ -134,6 +136,7 @@ export default function AdminLoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
+                disabled={loading}
                 className="focus-visible:border-brand-blue focus-visible:ring-brand-blue/20 h-11 rounded-lg border-gray-200 bg-white px-4 text-sm"
               />
             </div>
@@ -149,7 +152,14 @@ export default function AdminLoginPage() {
               disabled={loading}
               className="bg-brand-blue hover:bg-brand-blue-dark h-11 w-full rounded-lg text-sm font-semibold text-white transition-colors duration-200 disabled:opacity-60"
             >
-              {loading ? "로그인 중..." : "로그인"}
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  로그인 중...
+                </>
+              ) : (
+                "로그인"
+              )}
             </Button>
           </form>
         </div>

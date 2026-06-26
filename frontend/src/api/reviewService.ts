@@ -31,6 +31,11 @@ export const reviewService = {
     return res.data;
   },
 
+  getProductReviews: async (productId: string): Promise<Review[]> => {
+    const res = await apiClient.get<{ success: boolean; data: Review[] }>(`/reviews/${productId}`);
+    return res.data;
+  },
+
   getMyReviews: async (): Promise<Review[]> => {
     const res = await apiClient.get<{ success: boolean; data: Review[] }>("/reviews/my");
     return res.data;

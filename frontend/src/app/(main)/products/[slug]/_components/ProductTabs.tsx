@@ -12,6 +12,8 @@ type ContentBlock = {
 };
 
 type Props = {
+  productId: string;
+  productName: string;
   content?: string;
   contentBlock: ContentBlock[];
   shippingFee: number;
@@ -21,7 +23,7 @@ type Props = {
 const TABS = ["상세정보", "Q&A", "상품 리뷰", "배송정보"] as const;
 type Tab = (typeof TABS)[number];
 
-export function ProductTabs({ content, contentBlock, shippingFee, freeShippingThreshold }: Props) {
+export function ProductTabs({ productId, productName, content, contentBlock, shippingFee, freeShippingThreshold }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("상세정보");
 
   return (
@@ -52,8 +54,10 @@ export function ProductTabs({ content, contentBlock, shippingFee, freeShippingTh
         {activeTab === "상세정보" && (
           <ProductDetailTab content={content} contentBlock={contentBlock} />
         )}
-        {activeTab === "Q&A" && <ProductQnATab />}
-        {activeTab === "상품 리뷰" && <ProductReviewTab />}
+        {activeTab === "Q&A" && (
+          <ProductQnATab productId={productId} productName={productName} />
+        )}
+        {activeTab === "상품 리뷰" && <ProductReviewTab productId={productId} />}
         {activeTab === "배송정보" && (
           <ProductShippingTab
             shippingFee={shippingFee}

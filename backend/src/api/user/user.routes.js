@@ -5,6 +5,7 @@ import {
   getUserProfile,
   patchUser,
   getAllUsers,
+  adminDeleteUser,
   addAddress,
   updateAddress,
   deleteAddress,
@@ -48,7 +49,7 @@ router.delete("/address/:addressId", authMiddleware, asyncHandler(deleteAddress)
 
 /**
  * @route GET /admin/all
- * @decs 관리자용: 전체 사용자 목록 조회
+ * @decs 관리자용: 전체 사용자 목록 조회 (search 쿼리로 닉네임/이메일 검색 가능)
  * @access Private (Admin Only)
  */
 router.get(
@@ -56,6 +57,18 @@ router.get(
   authMiddleware,
   adminAuthMiddleware,
   asyncHandler(getAllUsers)
+);
+
+/**
+ * @route DELETE /admin/delete/:userId
+ * @decs 관리자용: 특정 회원 삭제 (관리자 계정 삭제 불가)
+ * @access Private (Admin Only)
+ */
+router.delete(
+  "/admin/delete/:userId",
+  authMiddleware,
+  adminAuthMiddleware,
+  asyncHandler(adminDeleteUser)
 );
 
 export default router;

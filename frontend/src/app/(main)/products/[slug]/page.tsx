@@ -84,6 +84,8 @@ const productsDetailPage = async ({ params }: Props) => {
 
           {/* 탭 */}
           <ProductTabs
+            productId={product._id}
+            productName={product.name}
             content={product?.content}
             contentBlock={product?.contentBlock ?? []}
             shippingFee={product?.shippingFee ?? 3000}

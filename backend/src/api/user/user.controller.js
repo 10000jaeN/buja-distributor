@@ -251,23 +251,44 @@ export const setDefaultAddress = async (req, res) => {
  * 💡 전체 사용자 목록 조회 (GET /api/user/admin/all)
  * adminAuthMiddleware의 보호 하에 실행되며, 관리자만 접근 가능합니다.
  * @access Private (Admin Only)
+ * @query search - 닉네임 또는 이메일 검색 (선택)
  */
 export const getAllUsers = async (req, res) => {
-  // 1. (미들웨어에서 관리자 권한 확인이 완료되었다고 가정합니다.)
+  const { search } = req.query;
 
-  // 2. DB에서 모든 사용자 문서 조회
-  // 민감 정보(refreshToken, __v)는 응답에서 제외합니다.
-  const users = await User.find().select("-refreshToken -__v");
+  const filter = search
+    ? {
+        $or: [
+          { nickName: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+        ],
+      }
+    : {};
 
-  if (!users || users.length === 0) {
-    // 사용자가 한 명도 없는 경우 (초기 설정 또는 오류)
-    throw new CustomError("등록된 사용자 계정이 없습니다.", 404);
-  }
+  const users = await User.find(filter).select("-refreshToken -__v").sort({ createdAt: -1 });
 
-  // 3. 조회 성공 시 응답
   return res.status(200).json({
     message: "전체 사용자 목록이 성공적으로 조회되었습니다.",
     count: users.length,
     data: users,
   });
+};
+
+/**
+ * 💡 관리자: 특정 회원 삭제 (DELETE /api/user/admin/delete/:userId)
+ * @access Private (Admin Only)
+ */
+export const adminDeleteUser = async (req, res) => {
+  const { userId } = req.params;
+
+  const target = await User.findById(userId);
+  if (!target) throw new CustomError("삭제할 사용자를 찾을 수 없습니다.", 404);
+
+  if (target.roles.includes("admin")) {
+    throw new CustomError("관리자 계정은 삭제할 수 없습니다.", 403);
+  }
+
+  await User.findByIdAndDelete(userId);
+
+  return res.status(200).json({ message: "회원이 삭제되었습니다." });
 };
