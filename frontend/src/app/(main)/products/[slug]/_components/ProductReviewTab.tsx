@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Info, X } from "lucide-react";
 import { reviewService, Review } from "@/api/reviewService";
+import { Spinner } from "@/components/shared/Spinner";
 import { EmptyState } from "./EmptyState";
 import { ReviewRatingSummary } from "./ReviewRatingSummary";
 import { ReviewCard } from "./ReviewCard";
@@ -79,8 +80,8 @@ export function ProductReviewTab({ productId }: Props) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-blue border-t-transparent" />
+      <div className="flex justify-center py-20">
+        <Spinner size="md" />
       </div>
     );
   }
@@ -105,7 +106,7 @@ export function ProductReviewTab({ productId }: Props) {
           </svg>
         }
         title="아직 작성된 리뷰가 없습니다."
-        description="구매 후 첫 번째 리뷰를 남겨보세요."
+        description="배송 완료 후 마이페이지 > 주문내역에서 리뷰를 작성하실 수 있습니다."
       />
     );
   }
@@ -118,6 +119,12 @@ export function ProductReviewTab({ productId }: Props) {
         totalCount={reviews.length}
         distribution={distribution}
       />
+
+      {/* 리뷰 작성 안내 */}
+      <div className="mt-4 flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2.5 text-xs text-blue-600">
+        <Info className="size-3.5 shrink-0" />
+        배송 완료 후 마이페이지 &gt; 주문내역에서 리뷰를 작성하실 수 있습니다.
+      </div>
 
       {/* 정렬 */}
       <div className="mt-5 flex gap-2">
