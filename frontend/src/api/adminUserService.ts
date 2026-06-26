@@ -12,11 +12,11 @@ export type AdminUser = {
 export const adminUserService = {
   getUsers: async (search?: string): Promise<AdminUser[]> => {
     const params = search ? `?search=${encodeURIComponent(search)}` : "";
-    const res = await apiClient.get<{ data: AdminUser[] }>(`/admin/users${params}`);
+    const res = await apiClient.get<{ data: AdminUser[] }>(`/user/admin/all${params}`);
     return res.data;
   },
 
   deleteUser: async (userId: string): Promise<void> => {
-    await apiClient.delete(`/admin/users/${userId}`);
+    await apiClient.delete(`/user/admin/delete/${userId}`);
   },
 };
