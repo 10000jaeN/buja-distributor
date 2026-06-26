@@ -7,33 +7,34 @@ import { qnaService } from "@/api/qnaService";
 import { Qna } from "@/types/qna";
 import useAuthStore from "@/store/useAuthStore";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { EmptyState } from "./EmptyState";
 import { QnAWriteDialog } from "./QnAWriteDialog";
+import { isAdminRole } from "@/lib/authUtils";
+import { formatDate } from "@/lib/dateUtils";
+import { Spinner } from "@/components/shared/Spinner";
 
 type Props = {
   productId: string;
   productName: string;
 };
 
-const isAdminRole = (roles?: unknown) => {
-  if (!roles) return false;
-  if (Array.isArray(roles)) return (roles as string[]).includes("admin");
-  return roles === "admin";
-};
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-}
-
 export function ProductQnATab({ productId, productName }: Props) {
   const { user, isLoggedIn } = useAuthStore();
   const [qnaList, setQnaList] = useState<Qna[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const isAdmin = isAdminRole(user?.roles);
@@ -42,7 +43,7 @@ export function ProductQnATab({ productId, productName }: Props) {
     qnaService
       .getQnaList(productId)
       .then(setQnaList)
-      .catch(() => {})
+      .catch(() => setLoadError(true))
       .finally(() => setIsLoading(false));
   }, [productId]);
 
@@ -50,11 +51,14 @@ export function ProductQnATab({ productId, productName }: Props) {
     setQnaList((prev) => [newQna, ...prev]);
   };
 
-  const handleDelete = async (qnaId: string) => {
-    setDeletingId(qnaId);
+  const handleDeleteConfirm = async () => {
+    if (!deleteTargetId) return;
+    const id = deleteTargetId;
+    setDeleteTargetId(null);
+    setDeletingId(id);
     try {
-      await qnaService.deleteQna(qnaId);
-      setQnaList((prev) => prev.filter((q) => q._id !== qnaId));
+      await qnaService.deleteQna(id);
+      setQnaList((prev) => prev.filter((q) => q._id !== id));
       toast.success("문의가 삭제되었습니다.");
     } catch {
       toast.error("삭제에 실패했습니다.");
@@ -76,8 +80,48 @@ export function ProductQnATab({ productId, productName }: Props) {
     return false;
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-16">
+        <Spinner size="md" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="px-4 py-6 lg:px-0">
+        <EmptyState
+          icon={<MessageCircleQuestion className="h-8 w-8 text-gray-300" />}
+          title="문의를 불러오지 못했습니다."
+          description="잠시 후 다시 시도해 주세요."
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="px-4 py-6 lg:px-0">
+      <AlertDialog
+        open={deleteTargetId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteTargetId(null); }}
+      >
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>문의를 삭제할까요?</AlertDialogTitle>
+            <AlertDialogDescription>
+              삭제된 문의는 복구할 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>아니요</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={handleDeleteConfirm}>
+              삭제하기
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* 헤더 */}
       <div className="mb-5 flex items-center justify-between">
         <p className="text-sm text-gray-500">
@@ -93,11 +137,7 @@ export function ProductQnATab({ productId, productName }: Props) {
       </div>
 
       {/* 목록 */}
-      {isLoading ? (
-        <div className="flex justify-center py-16">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-200 border-t-brand-blue" />
-        </div>
-      ) : qnaList.length === 0 ? (
+      {qnaList.length === 0 ? (
         <EmptyState
           icon={<MessageCircleQuestion className="h-8 w-8 text-gray-300" />}
           title="등록된 문의가 없습니다."
@@ -131,7 +171,7 @@ export function ProductQnATab({ productId, productName }: Props) {
                   {canDelete(qna) && (
                     <button
                       type="button"
-                      onClick={() => handleDelete(qna._id)}
+                      onClick={() => setDeleteTargetId(qna._id)}
                       disabled={deletingId === qna._id}
                       className="shrink-0 rounded-md p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500 disabled:opacity-50"
                       aria-label="문의 삭제"

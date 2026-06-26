@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { RotateCcw, Search, Trash2 } from "lucide-react";
 import { adminUserService, AdminUser } from "@/api/adminUserService";
+import { formatDate } from "@/lib/dateUtils";
+import { Spinner } from "@/components/shared/Spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -24,14 +26,6 @@ const PROVIDER_LABEL: Record<string, string> = {
   kakao: "카카오",
   naver: "네이버",
 };
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-}
 
 export default function AdminUsersClient() {
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -150,11 +144,8 @@ export default function AdminUsersClient() {
             <tbody className="divide-y divide-gray-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="py-16 text-center text-sm text-gray-400">
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-200 border-t-brand-blue" />
-                      불러오는 중...
-                    </div>
+                  <td colSpan={6} className="py-16 text-center">
+                    <Spinner size="sm" label="불러오는 중..." className="inline-flex" />
                   </td>
                 </tr>
               ) : error ? (
@@ -212,9 +203,8 @@ export default function AdminUsersClient() {
         {/* 모바일 카드 */}
         <div className="divide-y divide-gray-100 lg:hidden">
           {isLoading ? (
-            <div className="flex items-center justify-center gap-2 py-16 text-sm text-gray-400">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-200 border-t-brand-blue" />
-              불러오는 중...
+            <div className="flex justify-center py-16">
+              <Spinner size="sm" label="불러오는 중..." />
             </div>
           ) : error ? (
             <p className="py-16 text-center text-sm text-red-500">{error}</p>

@@ -85,6 +85,43 @@ export const deleteQna = async (req, res) => {
 };
 
 /**
+ * GET /qna/my
+ * 내 문의 목록 조회
+ * @access Private
+ */
+export const getMyQnaList = async (req, res) => {
+  const userId = req.user._id;
+
+  const qnaList = await Qna.find({ userId })
+    .populate("productId", "name slug")
+    .sort({ createdAt: -1 });
+
+  res.status(200).json({ data: qnaList });
+};
+
+/**
+ * GET /qna/my/unread-count?since=ISO_DATE
+ * 마지막 확인 이후 새 답변 수 (마이페이지 뱃지용)
+ * @access Private
+ */
+export const getMyUnreadAnswerCount = async (req, res) => {
+  const userId = req.user._id;
+  const { since } = req.query;
+
+  const filter = { userId, answer: { $ne: null } };
+  if (since) {
+    const sinceDate = new Date(since);
+    if (isNaN(sinceDate.getTime())) {
+      throw new CustomError("since 파라미터가 유효한 날짜 형식이 아닙니다.", 400);
+    }
+    filter.answeredAt = { $gt: sinceDate };
+  }
+
+  const count = await Qna.countDocuments(filter);
+  res.status(200).json({ count });
+};
+
+/**
  * GET /qna/admin/all?answered=true|false
  * 어드민: 전체 Q&A 목록 조회 (비밀글 내용 포함)
  * @access Private (Admin Only)

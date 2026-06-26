@@ -1,11 +1,11 @@
 export type Qna = {
   _id: string;
-  productId: string;
+  productId: string | { _id: string; name: string; slug: string };
   userId: { _id: string; nickName: string };
-  content: string;
+  content: string | null;
   isSecret: boolean;
-  answer?: string;
-  answeredAt?: string;
+  answer?: string | null;
+  answeredAt?: string | null;
   createdAt: string;
 };
 

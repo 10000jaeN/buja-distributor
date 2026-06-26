@@ -3,7 +3,7 @@ import asyncHandler from "../../utils/asyncHandler.js";
 import { authMiddleware } from "../../middleware/auth.middleware.js";
 import { adminAuthMiddleware } from "../../middleware/admin.middleware.js";
 import { optionalAuthMiddleware } from "../../middleware/optionalAuth.middleware.js";
-import { getQnaList, createQna, deleteQna, answerQna, getAdminQnaList, getUnansweredCount } from "./qna.controller.js";
+import { getQnaList, createQna, deleteQna, answerQna, getAdminQnaList, getUnansweredCount, getMyQnaList, getMyUnreadAnswerCount } from "./qna.controller.js";
 
 const router = express.Router();
 
@@ -27,6 +27,20 @@ router.post("/", authMiddleware, asyncHandler(createQna));
  * @access Private
  */
 router.delete("/:qnaId", authMiddleware, asyncHandler(deleteQna));
+
+/**
+ * @route GET /qna/my
+ * @desc  내 문의 목록 조회
+ * @access Private
+ */
+router.get("/my", authMiddleware, asyncHandler(getMyQnaList));
+
+/**
+ * @route GET /qna/my/unread-count?since=ISO_DATE
+ * @desc  마지막 확인 이후 새 답변 수 (마이페이지 뱃지용)
+ * @access Private
+ */
+router.get("/my/unread-count", authMiddleware, asyncHandler(getMyUnreadAnswerCount));
 
 /**
  * @route GET /qna/admin/all?answered=true|false

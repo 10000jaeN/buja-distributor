@@ -15,4 +15,15 @@ export const qnaService = {
   deleteQna: async (qnaId: string): Promise<void> => {
     await apiClient.delete(`/qna/${qnaId}`);
   },
+
+  getMyQnaList: async (): Promise<Qna[]> => {
+    const res = await apiClient.get<{ data: Qna[] }>("/qna/my");
+    return res.data;
+  },
+
+  getMyUnreadAnswerCount: async (since?: string): Promise<number> => {
+    const params = since ? `?since=${encodeURIComponent(since)}` : "";
+    const res = await apiClient.get<{ count: number }>(`/qna/my/unread-count${params}`);
+    return res.count;
+  },
 };

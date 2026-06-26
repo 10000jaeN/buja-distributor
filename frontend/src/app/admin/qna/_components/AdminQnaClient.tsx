@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Lock, MessageCircleQuestion, RotateCcw, Trash2 } from "lucide-react";
 import { adminQnaService, AdminQna } from "@/api/adminQnaService";
+import { formatDate } from "@/lib/dateUtils";
+import { Spinner } from "@/components/shared/Spinner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -25,14 +27,6 @@ const FILTER_TABS: { value: Filter; label: string }[] = [
   { value: "unanswered", label: "미답변" },
   { value: "answered", label: "답변완료" },
 ];
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-}
 
 export default function AdminQnaClient() {
   const [qnaList, setQnaList] = useState<AdminQna[]>([]);
@@ -128,9 +122,8 @@ export default function AdminQnaClient() {
       {/* 목록 */}
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
         {isLoading ? (
-          <div className="flex items-center justify-center gap-2 py-20 text-sm text-gray-400">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-200 border-t-brand-blue" />
-            불러오는 중...
+          <div className="flex justify-center py-20">
+            <Spinner size="sm" label="불러오는 중..." />
           </div>
         ) : qnaList.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-20 text-gray-400">

@@ -18,6 +18,9 @@ import { toast } from "sonner";
 import Image from "next/image";
 import noImage from "@/public/images/no-image.png";
 import { useRouter } from "next/navigation";
+import { formatDateDot } from "@/lib/dateUtils";
+import { Spinner } from "@/components/shared/Spinner";
+import { useAdminFetch } from "@/hooks/useAdminFetch";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,28 +34,17 @@ import {
 
 export default function AdminProductsClient() {
   const router = useRouter();
-  const [products, setProducts] = useState<Product[]>([]);
+  const { data, isLoading, error, refetch: fetchProducts } = useAdminFetch(
+    () => productService.getProducts({}),
+    "상품 목록을 불러오는 데 실패했습니다.",
+  );
+  const products = data ?? [];
+
   const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const fetchProducts = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await productService.getProducts({});
-      setProducts(data);
-    } catch {
-      setError("상품 목록을 불러오는 데 실패했습니다.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchProducts();
     categoryService.getCategories().then(setCategories).catch(() => {});
   }, []);
 
@@ -75,11 +67,6 @@ export default function AdminProductsClient() {
     } finally {
       setIsDeleting(false);
     }
-  };
-
-  const formatDate = (iso: string) => {
-    const d = new Date(iso);
-    return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
   };
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -227,10 +214,7 @@ export default function AdminProductsClient() {
       {/* 상품 목록 */}
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
-          <div className="flex flex-col items-center gap-3">
-            <div className="border-t-brand-blue h-8 w-8 animate-spin rounded-full border-3 border-gray-200" />
-            <span className="text-sm text-gray-500">불러오는 중...</span>
-          </div>
+          <Spinner size="lg" label="불러오는 중..." />
         </div>
       ) : error ? (
         <div className="rounded-lg border border-red-200 bg-red-50 px-6 py-10 text-center">
@@ -281,7 +265,7 @@ export default function AdminProductsClient() {
                       {product.isAvailable ? "재고 있음" : "품절"}
                     </span>
                     <span className="text-xs text-gray-400">
-                      {formatDate(product.createdAt)}
+                      {formatDateDot(product.createdAt)}
                     </span>
                   </div>
                 </div>
@@ -357,7 +341,7 @@ export default function AdminProductsClient() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm whitespace-nowrap text-gray-500">
-                      {formatDate(product.createdAt)}
+                      {formatDateDot(product.createdAt)}
                     </td>
                     <td className="w-28 px-4 py-3 pr-2">
                       <div className="flex items-center gap-2">

@@ -2,7 +2,7 @@ import { apiClient } from "@/lib/apiClient";
 
 export type Review = {
   _id: string;
-  productId: { _id: string; name: string; thumbnail: string[] } | string;
+  productId: { _id: string; name: string; thumbnail: string[]; slug: string } | string;
   orderId?: string;
   rating: number;
   content: string;

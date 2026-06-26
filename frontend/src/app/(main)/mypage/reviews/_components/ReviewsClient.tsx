@@ -2,6 +2,7 @@
 
 import { reviewService, Review } from "@/api/reviewService";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { StarIcon, Pencil, Trash2 } from "lucide-react";
 import {
@@ -125,9 +126,18 @@ export default function ReviewsClient() {
                     />
                   )}
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-gray-800">
-                      {product?.name ?? "상품"}
-                    </p>
+                    {product?.slug ? (
+                      <Link
+                        href={`/products/${product.slug}`}
+                        className="block truncate text-sm font-semibold text-gray-800 hover:text-brand-blue transition-colors"
+                      >
+                        {product.name}
+                      </Link>
+                    ) : (
+                      <p className="truncate text-sm font-semibold text-gray-800">
+                        {product?.name ?? "상품"}
+                      </p>
+                    )}
                     <p className="mt-0.5 text-xs text-gray-400">
                       {new Date(review.createdAt).toLocaleDateString("ko-KR")}
                     </p>
