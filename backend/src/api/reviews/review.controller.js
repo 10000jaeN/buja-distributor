@@ -43,7 +43,7 @@ export const getMyReviews = async (req, res) => {
   const userId = req.user._id;
 
   const reviews = await Review.find({ userId })
-    .populate("productId", "name thumbnail")
+    .populate("productId", "name thumbnail slug")
     .sort({ createdAt: -1 });
 
   res.status(200).json({ success: true, data: reviews });
