@@ -4,6 +4,7 @@ import { orderService, Order, OrderStatus } from "@/api/orderService";
 import { reviewService, Review } from "@/api/reviewService";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Spinner } from "@/components/shared/Spinner";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -96,7 +97,7 @@ export default function OrdersClient() {
   if (isLoading) {
     return (
       <div className="flex min-h-40 items-center justify-center">
-        <div className="border-t-brand-blue h-7 w-7 animate-spin rounded-full border-3 border-gray-200" />
+        <Spinner size="md" />
       </div>
     );
   }

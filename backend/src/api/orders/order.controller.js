@@ -164,7 +164,7 @@ export const getOrderById = async (req, res) => {
   }
 
   const order = await Order.findOne({ _id: orderId, user: userId })
-    .populate("items.productId", "name price thumbnail")
+    .populate("items.productId", "name price thumbnail slug")
     .select("-__v");
 
   if (!order) {

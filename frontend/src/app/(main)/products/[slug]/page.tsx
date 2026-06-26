@@ -14,7 +14,8 @@ export async function generateStaticParams() {
   try {
     const products = await productService.getProducts({});
     return products.map((p) => ({ slug: p.slug }));
-  } catch {
+  } catch (err) {
+    console.warn("[generateStaticParams] 상품 목록 fetch 실패:", err);
     return [];
   }
 }
