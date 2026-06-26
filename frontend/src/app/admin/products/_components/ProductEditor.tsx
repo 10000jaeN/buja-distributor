@@ -1,6 +1,6 @@
 "use client";
 
-import { useEditor, EditorContent } from "@tiptap/react";
+import { useEditor, useEditorState, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import TiptapImage from "@tiptap/extension-image";
 import TiptapLink from "@tiptap/extension-link";
@@ -163,7 +163,32 @@ export function ProductEditor({ value, onChange }: Props) {
     setLinkInput(null);
   };
 
-  const currentColor = editor?.getAttributes("textStyle").color ?? "#000000";
+  const editorState = useEditorState({
+    editor,
+    selector: (ctx) => {
+      const e = ctx.editor;
+      return {
+        isBold: e?.isActive("bold") ?? false,
+        isItalic: e?.isActive("italic") ?? false,
+        isUnderline: e?.isActive("underline") ?? false,
+        isStrike: e?.isActive("strike") ?? false,
+        isH2: (e?.isActive("heading") && e.getAttributes("heading").level === 2) ?? false,
+        isH3: (e?.isActive("heading") && e.getAttributes("heading").level === 3) ?? false,
+        isAlignLeft: e?.isActive({ textAlign: "left" }) ?? false,
+        isAlignCenter: e?.isActive({ textAlign: "center" }) ?? false,
+        isAlignRight: e?.isActive({ textAlign: "right" }) ?? false,
+        isBulletList: e?.isActive("bulletList") ?? false,
+        isOrderedList: e?.isActive("orderedList") ?? false,
+        isBlockquote: e?.isActive("blockquote") ?? false,
+        isLink: e?.isActive("link") ?? false,
+        canUndo: e?.can().undo() ?? false,
+        canRedo: e?.can().redo() ?? false,
+        currentColor: e?.getAttributes("textStyle").color ?? "#000000",
+      };
+    },
+  });
+
+  const currentColor = editorState?.currentColor ?? "#000000";
 
   return (
     <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
@@ -173,14 +198,14 @@ export function ProductEditor({ value, onChange }: Props) {
         <ToolbarButton
           onClick={() => editor?.chain().focus().undo().run()}
           title="실행 취소"
-          disabled={!editor?.can().undo()}
+          disabled={!editorState?.canUndo}
         >
           <Undo2 className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor?.chain().focus().redo().run()}
           title="다시 실행"
-          disabled={!editor?.can().redo()}
+          disabled={!editorState?.canRedo}
         >
           <Redo2 className="h-4 w-4" />
         </ToolbarButton>
@@ -190,28 +215,28 @@ export function ProductEditor({ value, onChange }: Props) {
         {/* 텍스트 스타일 */}
         <ToolbarButton
           onClick={() => editor?.chain().focus().toggleBold().run()}
-          active={editor?.isActive("bold")}
+          active={editorState?.isBold}
           title="굵게"
         >
           <Bold className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor?.chain().focus().toggleItalic().run()}
-          active={editor?.isActive("italic")}
+          active={editorState?.isItalic}
           title="기울임"
         >
           <Italic className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor?.chain().focus().toggleUnderline().run()}
-          active={editor?.isActive("underline")}
+          active={editorState?.isUnderline}
           title="밑줄"
         >
           <UnderlineIcon className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor?.chain().focus().toggleStrike().run()}
-          active={editor?.isActive("strike")}
+          active={editorState?.isStrike}
           title="취소선"
         >
           <Strikethrough className="h-4 w-4" />
@@ -222,14 +247,14 @@ export function ProductEditor({ value, onChange }: Props) {
         {/* 제목 */}
         <ToolbarButton
           onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
-          active={editor?.isActive("heading", { level: 2 })}
+          active={editorState?.isH2}
           title="제목 2"
         >
           <Heading2 className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}
-          active={editor?.isActive("heading", { level: 3 })}
+          active={editorState?.isH3}
           title="제목 3"
         >
           <Heading3 className="h-4 w-4" />
@@ -240,21 +265,21 @@ export function ProductEditor({ value, onChange }: Props) {
         {/* 텍스트 정렬 */}
         <ToolbarButton
           onClick={() => editor?.chain().focus().setTextAlign("left").run()}
-          active={editor?.isActive({ textAlign: "left" })}
+          active={editorState?.isAlignLeft}
           title="왼쪽 정렬"
         >
           <AlignLeft className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor?.chain().focus().setTextAlign("center").run()}
-          active={editor?.isActive({ textAlign: "center" })}
+          active={editorState?.isAlignCenter}
           title="가운데 정렬"
         >
           <AlignCenter className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor?.chain().focus().setTextAlign("right").run()}
-          active={editor?.isActive({ textAlign: "right" })}
+          active={editorState?.isAlignRight}
           title="오른쪽 정렬"
         >
           <AlignRight className="h-4 w-4" />
@@ -265,14 +290,14 @@ export function ProductEditor({ value, onChange }: Props) {
         {/* 목록 */}
         <ToolbarButton
           onClick={() => editor?.chain().focus().toggleBulletList().run()}
-          active={editor?.isActive("bulletList")}
+          active={editorState?.isBulletList}
           title="순서 없는 목록"
         >
           <List className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor?.chain().focus().toggleOrderedList().run()}
-          active={editor?.isActive("orderedList")}
+          active={editorState?.isOrderedList}
           title="번호 목록"
         >
           <ListOrdered className="h-4 w-4" />
@@ -283,7 +308,7 @@ export function ProductEditor({ value, onChange }: Props) {
         {/* 인용구 / 구분선 */}
         <ToolbarButton
           onClick={() => editor?.chain().focus().toggleBlockquote().run()}
-          active={editor?.isActive("blockquote")}
+          active={editorState?.isBlockquote}
           title="인용구"
         >
           <Quote className="h-4 w-4" />
@@ -300,7 +325,7 @@ export function ProductEditor({ value, onChange }: Props) {
         {/* 링크 */}
         <ToolbarButton
           onClick={handleLinkButtonClick}
-          active={editor?.isActive("link")}
+          active={editorState?.isLink}
           title="링크 삽입"
         >
           <LinkIcon className="h-4 w-4" />

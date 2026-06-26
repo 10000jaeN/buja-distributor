@@ -3,6 +3,8 @@
 import { orderService, Order, OrderStatus } from "@/api/orderService";
 import { reviewService, Review } from "@/api/reviewService";
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Spinner } from "@/components/shared/Spinner";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -95,7 +97,7 @@ export default function OrdersClient() {
   if (isLoading) {
     return (
       <div className="flex min-h-40 items-center justify-center">
-        <div className="border-t-brand-blue h-7 w-7 animate-spin rounded-full border-3 border-gray-200" />
+        <Spinner size="md" />
       </div>
     );
   }
@@ -184,6 +186,10 @@ export default function OrdersClient() {
                   item.productId && typeof item.productId !== "string"
                     ? item.productId.thumbnail?.[0]
                     : undefined;
+                const slug =
+                  item.productId && typeof item.productId !== "string"
+                    ? item.productId.slug
+                    : undefined;
                 const productId =
                   !item.productId || typeof item.productId === "string"
                     ? (item.productId as string)
@@ -206,7 +212,16 @@ export default function OrdersClient() {
                     )}
                     <div className="flex flex-1 items-center justify-between">
                       <p className="text-sm text-gray-700">
-                        {item.name}
+                        {slug ? (
+                          <Link
+                            href={`/products/${slug}`}
+                            className="hover:text-brand-blue hover:underline"
+                          >
+                            {item.name}
+                          </Link>
+                        ) : (
+                          item.name
+                        )}
                         <span className="ml-1 text-gray-400">× {item.quantity}</span>
                       </p>
                       <div className="flex items-center gap-2">

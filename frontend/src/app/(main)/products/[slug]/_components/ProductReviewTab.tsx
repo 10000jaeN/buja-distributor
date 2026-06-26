@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Info, Star, X } from "lucide-react";
 import { reviewService, Review } from "@/api/reviewService";
+import { Spinner } from "@/components/shared/Spinner";
 import { EmptyState } from "./EmptyState";
 import { ReviewRatingSummary } from "./ReviewRatingSummary";
 import { ReviewCard } from "./ReviewCard";
@@ -79,34 +80,24 @@ export function ProductReviewTab({ productId }: Props) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-blue border-t-transparent" />
+      <div className="flex justify-center py-20">
+        <Spinner size="md" />
       </div>
     );
   }
 
   if (reviews.length === 0) {
     return (
-      <EmptyState
-        icon={
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-8 w-8 text-gray-300"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-            />
-          </svg>
-        }
-        title="아직 작성된 리뷰가 없습니다."
-        description="구매 후 첫 번째 리뷰를 남겨보세요."
-      />
+      <div className="px-4 py-6 lg:px-0">
+        <div className="mb-4 flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2.5 text-xs text-blue-600">
+          <Info className="size-3.5 shrink-0" />
+          배송 완료 후 마이페이지 > 주문내역에서 리뷰를 작성하실 수 있습니다.
+        </div>
+        <EmptyState
+          icon={<Star className="h-8 w-8 text-gray-300" />}
+          title="아직 작성된 리뷰가 없습니다."
+        />
+      </div>
     );
   }
 
@@ -118,6 +109,12 @@ export function ProductReviewTab({ productId }: Props) {
         totalCount={reviews.length}
         distribution={distribution}
       />
+
+      {/* 리뷰 작성 안내 */}
+      <div className="mt-4 flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2.5 text-xs text-blue-600">
+        <Info className="size-3.5 shrink-0" />
+        배송 완료 후 마이페이지 > 주문내역에서 리뷰를 작성하실 수 있습니다.
+      </div>
 
       {/* 정렬 */}
       <div className="mt-5 flex gap-2">
