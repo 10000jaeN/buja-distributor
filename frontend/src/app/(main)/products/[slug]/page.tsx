@@ -4,8 +4,8 @@ import type { Metadata } from "next";
 
 import noImage from "@/public/images/no-image.png";
 import { productService } from "@/api/productService";
-import { Star } from "lucide-react";
 import { ProductActions } from "./_components/ProductActions";
+import { ProductInfoSection } from "./_components/ProductInfoSection";
 import { ProductTabs } from "./_components/ProductTabs";
 
 interface Props {
@@ -33,96 +33,70 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 const productsDetailPage = async ({ params }: Props) => {
   const { slug } = await params;
 
-  const product = await productService.getProductBySlug(slug);
-
+  // slug 유효성 검사를 API 호출 전에 수행
   if (!slug || slug === "undefined") {
     redirect("/error404");
   }
 
-  return (
-    <main className="pb-24 md:pb-0">
-      {/* 태블릿+PC: 2열 레이아웃 / 모바일: 1열 */}
-      <div className="mx-auto max-w-[1024px] md:grid md:grid-cols-[320px_1fr] md:items-stretch md:gap-8 md:px-5 md:py-8 lg:grid-cols-[460px_1fr] lg:gap-12 lg:py-10">
-        {/* 썸네일 이미지 */}
-        <div className="w-full overflow-hidden bg-gray-50 md:shrink-0 md:rounded-2xl lg:w-[460px]">
-          <Image
-            src={product?.thumbnail[0] || noImage}
-            alt="thumbnail"
-            className="mx-auto w-full object-cover"
-            width={800}
-            height={800}
-            priority
-          />
-        </div>
+  const product = await productService.getProductBySlug(slug).catch(() => null);
 
-        {/* 상품 정보 섹션 */}
-        <div className="px-4 pt-5 pb-4 md:flex md:flex-col md:justify-between md:px-0 md:pt-0 md:pb-0">
-          {/* 별점 */}
-          <div aria-label="별점" className="flex items-center gap-1.5">
-            <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-            <span className="text-sm font-medium text-amber-500">
-              {product?.stats.ratingAverage}
-            </span>
-            <span className="text-sm text-gray-400">
-              ｜ 후기 {product?.stats.reviewCount}개
-            </span>
+  if (!product) {
+    redirect("/error404");
+  }
+
+  const infoProps = {
+    name: product?.name ?? "",
+    price: product?.price ?? 0,
+    shippingFee: product?.shippingFee ?? 3000,
+    freeShippingThreshold: product?.freeShippingThreshold ?? 0,
+    ratingAverage: product?.stats.ratingAverage ?? 0,
+    reviewCount: product?.stats.reviewCount ?? 0,
+  };
+
+  const actionsProps = {
+    productId: product?._id ?? "",
+    price: product?.price ?? 0,
+    shippingFee: product?.shippingFee ?? 3000,
+    freeShippingThreshold: product?.freeShippingThreshold ?? 0,
+    thumbnail: product?.thumbnail[0] || noImage.src,
+    name: product?.name ?? "",
+  };
+
+  return (
+    <main className="pb-24 lg:pb-0">
+      <div className="mx-auto max-w-[1100px] lg:flex lg:items-start lg:gap-10 lg:px-6 lg:py-10">
+        {/* 왼쪽: 썸네일 + 탭 */}
+        <div className="lg:min-w-0 lg:flex-1">
+          {/* 썸네일 */}
+          <div className="overflow-hidden bg-gray-50 lg:rounded-2xl">
+            <Image
+              src={product?.thumbnail[0] || noImage}
+              alt={product?.name ?? "상품 이미지"}
+              className="mx-auto w-full object-cover"
+              width={800}
+              height={800}
+              priority
+            />
           </div>
 
-          {/* 상품명 */}
-          <h1 className="mt-3 text-xl leading-snug font-bold text-gray-900 md:text-xl lg:text-2xl">
-            {product?.name}
-          </h1>
+          {/* 모바일 상품 정보 (lg 미만에서만 표시) */}
+          <ProductInfoSection {...infoProps} className="px-4 pt-5 pb-4 lg:hidden" />
 
-          {/* 구분선 */}
-          <hr className="mt-5 border-gray-200" />
-
-          {/* 가격 정보 */}
-          <dl className="mt-5 flex-1 space-y-4">
-            <div className="flex items-center justify-between">
-              <dt className="text-sm text-gray-500">판매가</dt>
-              <dd className="text-brand-blue text-2xl font-bold md:text-2xl lg:text-3xl">
-                {product?.price.toLocaleString()}원
-              </dd>
-            </div>
-            <div className="flex items-center justify-between">
-              <dt className="text-sm text-gray-500">배송비</dt>
-              <dd className="text-sm font-medium text-gray-700">
-                {product?.shippingFee === 0 ? (
-                  <span className="text-brand-blue">무료</span>
-                ) : (
-                  <>
-                    {(product?.shippingFee ?? 3000).toLocaleString()}원
-                    {(product?.freeShippingThreshold ?? 0) > 0 && (
-                      <span className="ml-1.5 text-xs text-gray-400">
-                        ({(product?.freeShippingThreshold ?? 0).toLocaleString()}원 이상 무료)
-                      </span>
-                    )}
-                  </>
-                )}
-              </dd>
-            </div>
-          </dl>
-
-          <hr className="mt-5 border-gray-100" />
-
-          <ProductActions
-            productId={product?._id ?? ""}
-            price={product?.price ?? 0}
+          {/* 탭 */}
+          <ProductTabs
+            content={product?.content}
+            contentBlock={product?.contentBlock ?? []}
             shippingFee={product?.shippingFee ?? 3000}
             freeShippingThreshold={product?.freeShippingThreshold ?? 0}
-            thumbnail={product?.thumbnail[0] || noImage.src}
-            name={product?.name ?? ""}
           />
         </div>
+
+        {/* 오른쪽: 플로팅 상품 정보 사이드바 (lg 이상에서만 표시) */}
+        <aside className="lg:sticky lg:top-[calc(var(--nav-height)+2.5rem)] lg:block lg:w-[360px] lg:shrink-0">
+          <ProductInfoSection {...infoProps} className={"hidden lg:block"} />
+          <ProductActions {...actionsProps} />
+        </aside>
       </div>
-
-      <ProductTabs
-        content={product?.content}
-        contentBlock={product?.contentBlock ?? []}
-        shippingFee={product?.shippingFee ?? 3000}
-        freeShippingThreshold={product?.freeShippingThreshold ?? 0}
-      />
-
     </main>
   );
 };

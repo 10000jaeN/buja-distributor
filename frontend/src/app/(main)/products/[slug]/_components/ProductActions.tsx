@@ -3,6 +3,7 @@
 import { cartService } from "@/api/cartService";
 import useAuthStore from "@/store/useAuthStore";
 import useCartStore from "@/store/useCartStore";
+import useCheckoutStore from "@/store/useCheckoutStore";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -27,8 +28,10 @@ export function ProductActions({
 }: Props) {
   const [quantity, setQuantity] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [isBuying, setIsBuying] = useState(false);
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const incrementCart = useCartStore((state) => state.increment);
+  const setCheckout = useCheckoutStore((state) => state.setCheckout);
   const router = useRouter();
 
   const subtotal = price * quantity;
@@ -36,6 +39,21 @@ export function ProductActions({
     freeShippingThreshold > 0 && subtotal >= freeShippingThreshold;
   const appliedShippingFee = isFreeShipping ? 0 : shippingFee;
   const totalPrice = subtotal + appliedShippingFee;
+
+  const handleBuyNow = () => {
+    if (!isLoggedIn) {
+      router.push("/login");
+      return;
+    }
+    if (isBuying) return;
+    setIsBuying(true);
+    setCheckout(
+      [{ productId, name, price, quantity, shippingFee: appliedShippingFee, bundleShipping: false, thumbnail }],
+      appliedShippingFee,
+      totalPrice
+    );
+    router.push("/checkout");
+  };
 
   const handleAddToCart = async () => {
     if (!isLoggedIn) {
@@ -116,7 +134,11 @@ export function ProductActions({
           >
             장바구니
           </button>
-          <button className="bg-brand-blue flex-1 rounded-xl py-4 text-sm font-semibold text-white transition-colors hover:opacity-90">
+          <button
+            onClick={handleBuyNow}
+            disabled={isBuying}
+            className="bg-brand-blue flex-1 rounded-xl py-4 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"
+          >
             구매하기
           </button>
         </div>
@@ -125,7 +147,7 @@ export function ProductActions({
       {/* 모바일 하단 고정 바 */}
       <nav
         aria-label="구매 바"
-        className="fixed bottom-0 left-0 z-50 flex h-auto w-full items-center justify-between gap-2 border-t border-gray-200 bg-white px-3 py-2 shadow-[0_-2px_8px_rgba(0,0,0,0.06)] lg:hidden"
+        className="fixed bottom-0 left-0 z-50 flex h-auto w-full items-center justify-between gap-2 border-t border-gray-200 bg-white px-3 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-[0_-2px_8px_rgba(0,0,0,0.06)] lg:hidden"
       >
         <div
           aria-label="상품 정보"
@@ -149,7 +171,7 @@ export function ProductActions({
                   aria-label="수량 감소"
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                   disabled={quantity <= 1}
-                  className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-base text-gray-600 hover:bg-gray-100 disabled:opacity-30"
+                  className="flex h-10 w-10 items-center justify-center rounded-md border border-gray-300 text-base text-gray-600 hover:bg-gray-100 disabled:opacity-30"
                 >
                   -
                 </button>
@@ -159,7 +181,7 @@ export function ProductActions({
                 <button
                   aria-label="수량 증가"
                   onClick={() => setQuantity((q) => q + 1)}
-                  className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-base text-gray-600 hover:bg-gray-100"
+                  className="flex h-10 w-10 items-center justify-center rounded-md border border-gray-300 text-base text-gray-600 hover:bg-gray-100"
                 >
                   +
                 </button>
@@ -175,7 +197,11 @@ export function ProductActions({
           >
             장바구니
           </button>
-          <button className="bg-brand-blue rounded-xl px-4 py-2 text-xs font-semibold text-white transition-colors hover:opacity-90">
+          <button
+            onClick={handleBuyNow}
+            disabled={isBuying}
+            className="bg-brand-blue rounded-xl px-4 py-2 text-xs font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"
+          >
             구매하기
           </button>
         </div>
