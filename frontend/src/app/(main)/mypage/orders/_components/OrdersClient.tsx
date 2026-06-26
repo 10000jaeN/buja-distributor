@@ -3,6 +3,7 @@
 import { orderService, Order, OrderStatus } from "@/api/orderService";
 import { reviewService, Review } from "@/api/reviewService";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -184,6 +185,10 @@ export default function OrdersClient() {
                   item.productId && typeof item.productId !== "string"
                     ? item.productId.thumbnail?.[0]
                     : undefined;
+                const slug =
+                  item.productId && typeof item.productId !== "string"
+                    ? item.productId.slug
+                    : undefined;
                 const productId =
                   !item.productId || typeof item.productId === "string"
                     ? (item.productId as string)
@@ -206,7 +211,16 @@ export default function OrdersClient() {
                     )}
                     <div className="flex flex-1 items-center justify-between">
                       <p className="text-sm text-gray-700">
-                        {item.name}
+                        {slug ? (
+                          <Link
+                            href={`/products/${slug}`}
+                            className="hover:text-brand-blue hover:underline"
+                          >
+                            {item.name}
+                          </Link>
+                        ) : (
+                          item.name
+                        )}
                         <span className="ml-1 text-gray-400">× {item.quantity}</span>
                       </p>
                       <div className="flex items-center gap-2">
