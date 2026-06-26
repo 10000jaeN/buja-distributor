@@ -6,6 +6,7 @@ import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { adminQnaService } from "@/api/adminQnaService";
 
 const isAdminRole = (roles?: unknown) => {
   if (!roles) return false;
@@ -18,6 +19,7 @@ const NAV_ITEMS = [
   { href: "/admin/products", label: "상품 관리" },
   { href: "/admin/categories", label: "카테고리 관리" },
   { href: "/admin/orders", label: "주문 관리" },
+  { href: "/admin/qna", label: "Q&A 관리" },
   { href: "/admin/users", label: "회원 관리" },
   { href: "/admin/settings", label: "사이트 설정" },
 ];
@@ -34,12 +36,18 @@ export default function AdminShell({
 
   const isLoginPage = pathname === "/admin/login";
   const isAdmin = isAdminRole(user?.roles);
+  const [unansweredCount, setUnansweredCount] = useState(0);
 
   useEffect(() => {
     if (isLoginPage) return;
     if (!isInitialized) return;
     if (!isAdmin) router.replace("/admin/login");
   }, [isInitialized, isAdmin, router, isLoginPage]);
+
+  useEffect(() => {
+    if (!isAdmin || isLoginPage) return;
+    adminQnaService.getUnansweredCount().then(setUnansweredCount).catch(() => {});
+  }, [isAdmin, isLoginPage, pathname]);
 
   // 페이지 이동 시 사이드바 닫기
   useEffect(() => {
@@ -80,17 +88,23 @@ export default function AdminShell({
       <nav className="flex-1 space-y-0.5 px-3 py-4">
         {NAV_ITEMS.map((item) => {
           const active = pathname.startsWith(item.href);
+          const isQna = item.href === "/admin/qna";
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              className={`flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                 active
                   ? "bg-brand-blue text-white"
                   : "text-gray-300 hover:bg-gray-800 hover:text-white"
               }`}
             >
               {item.label}
+              {isQna && unansweredCount > 0 && (
+                <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-bold text-white">
+                  {unansweredCount > 99 ? "99+" : unansweredCount}
+                </span>
+              )}
             </Link>
           );
         })}

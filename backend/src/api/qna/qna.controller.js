@@ -85,6 +85,36 @@ export const deleteQna = async (req, res) => {
 };
 
 /**
+ * GET /qna/admin/all?answered=true|false
+ * 어드민: 전체 Q&A 목록 조회 (비밀글 내용 포함)
+ * @access Private (Admin Only)
+ */
+export const getAdminQnaList = async (req, res) => {
+  const { answered } = req.query;
+
+  const filter = {};
+  if (answered === "true") filter.answer = { $ne: null };
+  if (answered === "false") filter.answer = null;
+
+  const qnaList = await Qna.find(filter)
+    .populate("userId", "_id nickName")
+    .populate("productId", "name slug")
+    .sort({ createdAt: -1 });
+
+  res.status(200).json({ data: qnaList });
+};
+
+/**
+ * GET /qna/admin/unanswered-count
+ * 어드민: 미답변 Q&A 수 조회 (사이드바 뱃지용)
+ * @access Private (Admin Only)
+ */
+export const getUnansweredCount = async (req, res) => {
+  const count = await Qna.countDocuments({ answer: null });
+  res.status(200).json({ count });
+};
+
+/**
  * POST /qna/:qnaId/answer
  * 관리자 답변 등록/수정
  * @access Private (Admin Only)
