@@ -85,6 +85,7 @@ export function ProductEditor({ value, onChange }: Props) {
 
   const [linkInput, setLinkInput] = useState<string | null>(null);
   const [showColorPicker, setShowColorPicker] = useState(false);
+  const [, forceUpdate] = useState(0);
 
   const editor = useEditor({
     extensions: [
@@ -103,6 +104,9 @@ export function ProductEditor({ value, onChange }: Props) {
       Color,
     ],
     content: value,
+    onTransaction: () => {
+      forceUpdate((v) => v + 1);
+    },
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
       prevValueRef.current = html;
