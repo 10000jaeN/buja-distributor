@@ -15,6 +15,7 @@ import cartRouter from "./src/api/carts/cart.route.js";
 import reviewRouter from "./src/api/reviews/review.route.js";
 import settingsRouter from "./src/api/settings/settings.routes.js";
 import paymentsRouter from "./src/api/payments/payments.routes.js";
+import qnaRouter from "./src/api/qna/qna.routes.js";
 import { setupPassport } from "./src/config/passport.config.js";
 
 import "./src/api/user/user.model.js"; // 모델을 Mongoose에 등록하여 스키마 사용 가능하도록 함
@@ -64,6 +65,7 @@ app.use("/carts", cartRouter);
 app.use("/reviews", reviewRouter);
 app.use("/settings", settingsRouter);
 app.use("/payments", paymentsRouter);
+app.use("/qna", qnaRouter);
 
 // 전역 에러 핸들러 (asyncHandler를 쓸 때 필수!)
 app.use((err, req, res, next) => {
