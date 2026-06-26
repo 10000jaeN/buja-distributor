@@ -2,13 +2,17 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import useAuthStore from "@/store/useAuthStore";
+import { qnaService } from "@/api/qnaService";
+
+const QNA_LAST_READ_KEY = "qna_last_read";
 
 const NAV_ITEMS = [
   { label: "내 프로필", href: "/mypage" },
   { label: "주문내역", href: "/mypage/orders" },
   { label: "내 리뷰", href: "/mypage/reviews" },
+  { label: "내 문의", href: "/mypage/qna" },
   { label: "배송지 관리", href: "/mypage/addresses" },
 ];
 
@@ -16,12 +20,28 @@ export default function MypageShell({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const router = useRouter();
   const { isLoggedIn, isInitialized } = useAuthStore();
+  const [qnaUnreadCount, setQnaUnreadCount] = useState(0);
 
   useEffect(() => {
     if (isInitialized && !isLoggedIn) {
       router.replace("/");
     }
   }, [isInitialized, isLoggedIn, router]);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    if (pathname === "/mypage/qna") {
+      setQnaUnreadCount(0);
+      return;
+    }
+
+    const lastRead = localStorage.getItem(QNA_LAST_READ_KEY) ?? undefined;
+    qnaService
+      .getMyUnreadAnswerCount(lastRead)
+      .then(setQnaUnreadCount)
+      .catch(() => {});
+  }, [pathname, isLoggedIn]);
 
   if (!isInitialized || !isLoggedIn) {
     return null;
@@ -36,17 +56,23 @@ export default function MypageShell({ children }: { children: React.ReactNode })
           <ul className="flex gap-2 rounded-xl border border-gray-100 bg-white p-2 shadow-sm md:flex-col">
             {NAV_ITEMS.map((item) => {
               const isActive = pathname === item.href;
+              const showBadge = item.href === "/mypage/qna" && qnaUnreadCount > 0;
               return (
                 <li key={item.href} className="flex-1 md:flex-none">
                   <Link
                     href={item.href}
-                    className={`block rounded-lg px-4 py-2.5 text-sm font-medium transition-colors text-center md:text-left ${
+                    className={`relative flex items-center justify-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors md:justify-start ${
                       isActive
                         ? "bg-brand-blue text-white"
                         : "text-gray-600 hover:bg-gray-50"
                     }`}
                   >
                     {item.label}
+                    {showBadge && (
+                      <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                        {qnaUnreadCount > 99 ? "99+" : qnaUnreadCount}
+                      </span>
+                    )}
                   </Link>
                 </li>
               );
