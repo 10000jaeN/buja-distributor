@@ -226,14 +226,14 @@ export function ProductEditor({ value, onChange }: Props) {
         {/* 제목 */}
         <ToolbarButton
           onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
-          active={editor?.isActive("heading", { level: 2 })}
+          active={editor?.isActive("heading") && editor.getAttributes("heading").level === 2}
           title="제목 2"
         >
           <Heading2 className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}
-          active={editor?.isActive("heading", { level: 3 })}
+          active={editor?.isActive("heading") && editor.getAttributes("heading").level === 3}
           title="제목 3"
         >
           <Heading3 className="h-4 w-4" />
