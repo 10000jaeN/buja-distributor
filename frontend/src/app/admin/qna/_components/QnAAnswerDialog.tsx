@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { adminQnaService, AdminQna } from "@/api/adminQnaService";
+import { formatDate } from "@/lib/dateUtils";
 
 type Props = {
   qna: AdminQna | null;
@@ -21,14 +22,6 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   onSuccess: (updated: AdminQna) => void;
 };
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-}
 
 export function QnAAnswerDialog({ qna, open, onOpenChange, onSuccess }: Props) {
   const [answer, setAnswer] = useState("");

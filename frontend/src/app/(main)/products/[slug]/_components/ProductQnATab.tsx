@@ -9,25 +9,14 @@ import useAuthStore from "@/store/useAuthStore";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "./EmptyState";
 import { QnAWriteDialog } from "./QnAWriteDialog";
+import { isAdminRole } from "@/lib/authUtils";
+import { formatDate } from "@/lib/dateUtils";
+import { Spinner } from "@/components/shared/Spinner";
 
 type Props = {
   productId: string;
   productName: string;
 };
-
-const isAdminRole = (roles?: unknown) => {
-  if (!roles) return false;
-  if (Array.isArray(roles)) return (roles as string[]).includes("admin");
-  return roles === "admin";
-};
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-}
 
 export function ProductQnATab({ productId, productName }: Props) {
   const { user, isLoggedIn } = useAuthStore();
@@ -95,7 +84,7 @@ export function ProductQnATab({ productId, productName }: Props) {
       {/* 목록 */}
       {isLoading ? (
         <div className="flex justify-center py-16">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-200 border-t-brand-blue" />
+          <Spinner size="md" />
         </div>
       ) : qnaList.length === 0 ? (
         <EmptyState

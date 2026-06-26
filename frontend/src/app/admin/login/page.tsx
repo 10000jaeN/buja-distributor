@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
+import { isAdminRole } from "@/lib/authUtils";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -17,9 +18,7 @@ export default function AdminLoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const isAdmin = Array.isArray(user?.roles)
-    ? (user.roles as unknown as string[]).includes("admin")
-    : user?.roles === "admin";
+  const isAdmin = isAdminRole(user?.roles);
 
   useEffect(() => {
     if (isAdmin) router.replace("/admin/dashboard");

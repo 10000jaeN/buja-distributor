@@ -7,12 +7,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { adminQnaService } from "@/api/adminQnaService";
-
-const isAdminRole = (roles?: unknown) => {
-  if (!roles) return false;
-  if (Array.isArray(roles)) return (roles as string[]).includes("admin");
-  return roles === "admin";
-};
+import { isAdminRole } from "@/lib/authUtils";
 
 const NAV_ITEMS = [
   { href: "/admin/dashboard", label: "대시보드" },
