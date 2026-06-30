@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Script from "next/script";
 import { loadTossPayments } from "@tosspayments/tosspayments-sdk";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -113,6 +114,18 @@ export default function CheckoutPage() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  const openPostcode = () => {
+    new window.daum.Postcode({
+      oncomplete: (data) => {
+        setForm((prev) => ({
+          ...prev,
+          zipCode: data.zonecode,
+          mainAddress: data.address,
+        }));
+      },
+    }).open();
+  };
+
   const handlePay = async () => {
     if (!form.recipientName || !form.phoneNumber || !form.mainAddress || !form.zipCode) {
       toast.error("배송지 정보를 모두 입력해주세요.");
@@ -171,6 +184,10 @@ export default function CheckoutPage() {
 
   return (
     <div className="mx-auto max-w-[1024px] px-5 py-8">
+      <Script
+        src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"
+        strategy="lazyOnload"
+      />
       <h1 className="mb-8 text-xl font-bold text-foreground">주문서</h1>
 
       <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
@@ -270,19 +287,23 @@ export default function CheckoutPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>우편번호 *</Label>
-                <Input
-                  value={form.zipCode}
-                  onChange={(e) => handleChange("zipCode", e.target.value)}
-                  placeholder="12345"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>기본 주소 *</Label>
+                <Label>주소 *</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={form.zipCode}
+                    readOnly
+                    placeholder="우편번호"
+                    className="w-28 bg-gray-50"
+                  />
+                  <Button type="button" variant="outline" size="sm" onClick={openPostcode}>
+                    주소 검색
+                  </Button>
+                </div>
                 <Input
                   value={form.mainAddress}
-                  onChange={(e) => handleChange("mainAddress", e.target.value)}
-                  placeholder="기본 주소를 입력하세요"
+                  readOnly
+                  placeholder="주소 검색을 이용해주세요"
+                  className="bg-gray-50"
                 />
               </div>
               <div className="space-y-1.5">
@@ -290,7 +311,7 @@ export default function CheckoutPage() {
                 <Input
                   value={form.detailAddress}
                   onChange={(e) => handleChange("detailAddress", e.target.value)}
-                  placeholder="상세 주소를 입력하세요"
+                  placeholder="상세 주소를 입력하세요 (동/호수 등)"
                 />
               </div>
             </div>
