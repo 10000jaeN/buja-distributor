@@ -1,6 +1,7 @@
 "use client";
 
 import { userService, Address } from "@/api/userService";
+import { formatPhoneNumber } from "@/lib/utils";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -226,8 +227,10 @@ export default function AddressesPage() {
               <Label className="mb-1">전화번호 *</Label>
               <Input
                 value={form.phoneNumber}
-                onChange={(e) => setForm((prev) => ({ ...prev, phoneNumber: e.target.value }))}
-                placeholder="010-0000-0000"
+                onChange={(e) => setForm((prev) => ({ ...prev, phoneNumber: formatPhoneNumber(e.target.value) }))}
+                placeholder="전화번호를 입력하세요"
+                maxLength={13}
+                inputMode="numeric"
               />
             </div>
             <div>
