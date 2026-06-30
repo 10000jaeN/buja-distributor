@@ -14,6 +14,21 @@ import { checkoutService, type PreviewOrderResult } from "@/api/checkoutService"
 import { userService, type Address } from "@/api/userService";
 import { formatPhoneNumber } from "@/lib/utils";
 
+declare global {
+  interface Window {
+    daum: {
+      Postcode: new (config: {
+        oncomplete: (data: {
+          zonecode: string;
+          address: string;
+          jibunAddress: string;
+          addressType: string;
+        }) => void;
+      }) => { open: () => void };
+    };
+  }
+}
+
 const PAYMENT_METHODS = [
   { key: "CARD", label: "신용/체크카드" },
   { key: "TRANSFER", label: "계좌이체" },
@@ -116,6 +131,10 @@ export default function CheckoutPage() {
   };
 
   const openPostcode = () => {
+    if (!window.daum?.Postcode) {
+      toast.error("주소 검색 서비스를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
+      return;
+    }
     new window.daum.Postcode({
       oncomplete: (data) => {
         setForm((prev) => ({
@@ -277,6 +296,7 @@ export default function CheckoutPage() {
                   value={form.recipientName}
                   onChange={(e) => handleChange("recipientName", e.target.value)}
                   placeholder="이름을 입력하세요"
+                  maxLength={20}
                 />
               </div>
               <div className="space-y-1.5">
@@ -315,6 +335,7 @@ export default function CheckoutPage() {
                   value={form.detailAddress}
                   onChange={(e) => handleChange("detailAddress", e.target.value)}
                   placeholder="상세 주소를 입력하세요 (동/호수 등)"
+                  maxLength={50}
                 />
               </div>
             </div>
