@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Script from "next/script";
 import { loadTossPayments } from "@tosspayments/tosspayments-sdk";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,8 +10,24 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import useCheckoutStore from "@/store/useCheckoutStore";
 import useAuthStore from "@/store/useAuthStore";
-import { checkoutService } from "@/api/checkoutService";
+import { checkoutService, type PreviewOrderResult } from "@/api/checkoutService";
 import { userService, type Address } from "@/api/userService";
+import { formatPhoneNumber } from "@/lib/utils";
+
+declare global {
+  interface Window {
+    daum: {
+      Postcode: new (config: {
+        oncomplete: (data: {
+          zonecode: string;
+          address: string;
+          jibunAddress: string;
+          addressType: string;
+        }) => void;
+      }) => { open: () => void };
+    };
+  }
+}
 
 const PAYMENT_METHODS = [
   { key: "CARD", label: "신용/체크카드" },
@@ -31,7 +48,7 @@ const EMPTY_FORM = {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, shippingFee, totalAmount } = useCheckoutStore();
+  const { items } = useCheckoutStore();
   const { user } = useAuthStore();
 
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -39,12 +56,37 @@ export default function CheckoutPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethodKey>("CARD");
   const [isLoading, setIsLoading] = useState(false);
+  const [preview, setPreview] = useState<PreviewOrderResult | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   useEffect(() => {
     if (items.length === 0) {
       router.replace("/cart");
     }
   }, [items, router]);
+
+  // 주소 변경 시 금액 미리보기 (600ms 디바운스)
+  useEffect(() => {
+    if (!form.mainAddress || items.length === 0) {
+      setPreview(null);
+      return;
+    }
+    setPreviewLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const result = await checkoutService.previewOrder({
+          items: items.map(({ productId, quantity }) => ({ productId, quantity })),
+          mainAddress: form.mainAddress,
+        });
+        setPreview(result);
+      } catch {
+        setPreview(null);
+      } finally {
+        setPreviewLoading(false);
+      }
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [form.mainAddress, items]);
 
   // 저장된 배송지 불러오기 + 기본 배송지 자동입력
   useEffect(() => {
@@ -88,6 +130,22 @@ export default function CheckoutPage() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  const openPostcode = () => {
+    if (!window.daum?.Postcode) {
+      toast.error("주소 검색 서비스를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
+      return;
+    }
+    new window.daum.Postcode({
+      oncomplete: (data) => {
+        setForm((prev) => ({
+          ...prev,
+          zipCode: data.zonecode,
+          mainAddress: data.address,
+        }));
+      },
+    }).open();
+  };
+
   const handlePay = async () => {
     if (!form.recipientName || !form.phoneNumber || !form.mainAddress || !form.zipCode) {
       toast.error("배송지 정보를 모두 입력해주세요.");
@@ -96,7 +154,7 @@ export default function CheckoutPage() {
 
     setIsLoading(true);
     try {
-      const { orderId } = await checkoutService.createOrder({
+      const { orderId, totalAmount: orderTotal } = await checkoutService.createOrder({
         items: items.map(({ productId, quantity }) => ({ productId, quantity })),
         shippingAddress: form,
       });
@@ -111,7 +169,7 @@ export default function CheckoutPage() {
           : `${items[0].name} 외 ${items.length - 1}건`;
 
       const paymentParams = {
-        amount: { currency: "KRW" as const, value: totalAmount },
+        amount: { currency: "KRW" as const, value: orderTotal },
         orderId,
         orderName,
         successUrl: `${window.location.origin}/checkout/success`,
@@ -142,9 +200,14 @@ export default function CheckoutPage() {
   if (items.length === 0) return null;
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const displayTotal = preview?.totalAmount ?? subtotal;
 
   return (
     <div className="mx-auto max-w-[1024px] px-5 py-8">
+      <Script
+        src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"
+        strategy="lazyOnload"
+      />
       <h1 className="mb-8 text-xl font-bold text-foreground">주문서</h1>
 
       <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
@@ -233,30 +296,37 @@ export default function CheckoutPage() {
                   value={form.recipientName}
                   onChange={(e) => handleChange("recipientName", e.target.value)}
                   placeholder="이름을 입력하세요"
+                  maxLength={20}
                 />
               </div>
               <div className="space-y-1.5">
                 <Label>연락처 *</Label>
                 <Input
                   value={form.phoneNumber}
-                  onChange={(e) => handleChange("phoneNumber", e.target.value)}
-                  placeholder="010-0000-0000"
+                  onChange={(e) => handleChange("phoneNumber", formatPhoneNumber(e.target.value))}
+                  placeholder="전화번호를 입력하세요"
+                  maxLength={13}
+                  inputMode="numeric"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>우편번호 *</Label>
-                <Input
-                  value={form.zipCode}
-                  onChange={(e) => handleChange("zipCode", e.target.value)}
-                  placeholder="12345"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>기본 주소 *</Label>
+                <Label>주소 *</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={form.zipCode}
+                    readOnly
+                    placeholder="우편번호"
+                    className="w-28 bg-gray-50"
+                  />
+                  <Button type="button" variant="outline" size="sm" onClick={openPostcode}>
+                    주소 검색
+                  </Button>
+                </div>
                 <Input
                   value={form.mainAddress}
-                  onChange={(e) => handleChange("mainAddress", e.target.value)}
-                  placeholder="기본 주소를 입력하세요"
+                  readOnly
+                  placeholder="주소 검색을 이용해주세요"
+                  className="bg-gray-50"
                 />
               </div>
               <div className="space-y-1.5">
@@ -264,7 +334,8 @@ export default function CheckoutPage() {
                 <Input
                   value={form.detailAddress}
                   onChange={(e) => handleChange("detailAddress", e.target.value)}
-                  placeholder="상세 주소를 입력하세요"
+                  placeholder="상세 주소를 입력하세요 (동/호수 등)"
+                  maxLength={50}
                 />
               </div>
             </div>
@@ -301,23 +372,44 @@ export default function CheckoutPage() {
               <span>{subtotal.toLocaleString()}원</span>
             </div>
             <div className="flex justify-between text-gray-600">
-              <span>배송비</span>
-              <span>{shippingFee === 0 ? "무료" : `${shippingFee.toLocaleString()}원`}</span>
+              <span>기본 배송비</span>
+              <span>
+                {previewLoading
+                  ? "계산 중..."
+                  : preview
+                    ? preview.baseShippingFee === 0
+                      ? "무료"
+                      : `${preview.baseShippingFee.toLocaleString()}원`
+                    : form.mainAddress
+                      ? "계산 중..."
+                      : "-"}
+              </span>
             </div>
+            {preview && preview.extraShippingFee > 0 && (
+              <div className="flex justify-between text-gray-600">
+                <span>도서산간 추가 배송비</span>
+                <span>{preview.extraShippingFee.toLocaleString()}원</span>
+              </div>
+            )}
           </div>
           <div className="my-4 border-t border-gray-100" />
           <div className="flex justify-between font-bold text-foreground">
             <span>총 결제 금액</span>
-            <span className="text-brand-blue text-lg">{totalAmount.toLocaleString()}원</span>
+            <span className="text-brand-blue text-lg">
+              {previewLoading ? "계산 중..." : `${displayTotal.toLocaleString()}원`}
+            </span>
           </div>
 
           <Button
             className="mt-6 w-full"
             onClick={handlePay}
-            disabled={isLoading}
+            disabled={isLoading || previewLoading || !preview}
           >
-            {isLoading ? "처리 중..." : `${totalAmount.toLocaleString()}원 결제하기`}
+            {isLoading ? "처리 중..." : `${displayTotal.toLocaleString()}원 결제하기`}
           </Button>
+          {!preview && !previewLoading && (
+            <p className="mt-2 text-center text-xs text-gray-400">배송지를 입력하면 최종 금액이 표시됩니다.</p>
+          )}
         </div>
       </div>
     </div>

@@ -123,6 +123,9 @@ export default function CartPage() {
   const nonBundleItems = selectedItems.filter((i) => !i.productId.bundleShipping);
 
   const nonBundleShipping = nonBundleItems.reduce((sum, i) => {
+    const subtotal = i.productId.price * i.quantity;
+    const threshold = i.productId.freeShippingThreshold ?? 0;
+    if (threshold > 0 && subtotal >= threshold) return sum;
     return sum + (i.productId.shippingFee ?? 0);
   }, 0);
 
@@ -414,6 +417,9 @@ export default function CartPage() {
                   ? `${selected.size}개 상품 구매하기`
                   : "상품을 선택해주세요"}
               </button>
+              <p className="mt-3 text-center text-xs text-gray-400">
+                제주·도서산간 지역은 추가 배송비가 발생합니다.
+              </p>
             </div>
           </div>
         </div>

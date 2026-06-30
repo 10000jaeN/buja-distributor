@@ -21,7 +21,7 @@ export const authMiddleware = async (req, res, next) => {
     // (주의: jwt.js에서 JWT_SECRET으로 서명을 확인합니다.)
     const decoded = verifyToken(token);
 
-    if (!decoded) {
+    if (!decoded || decoded.expired) {
       return res.status(401).json({
         success: false,
         message: "유효하지 않거나 만료된 토큰입니다.",

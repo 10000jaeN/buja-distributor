@@ -11,7 +11,7 @@ export function ProductShippingTab({ shippingFee, freeShippingThreshold }: Props
         <dl className="space-y-2 rounded-xl border border-gray-100 bg-gray-50 px-4 py-4">
           <div className="flex justify-between">
             <dt className="text-gray-500">배송사</dt>
-            <dd className="font-medium">CJ대한통운</dd>
+            <dd className="font-medium">한진택배</dd>
           </div>
           <div className="flex justify-between">
             <dt className="text-gray-500">배송비</dt>
@@ -29,6 +29,14 @@ export function ProductShippingTab({ shippingFee, freeShippingThreshold }: Props
                 </>
               )}
             </dd>
+          </div>
+          <div className="flex justify-between">
+            <dt className="text-gray-500">제주 추가 배송비</dt>
+            <dd className="font-medium">3,000원</dd>
+          </div>
+          <div className="flex justify-between">
+            <dt className="text-gray-500">도서산간 추가 배송비</dt>
+            <dd className="font-medium">5,000원</dd>
           </div>
           <div className="flex justify-between">
             <dt className="text-gray-500">배송 기간</dt>
