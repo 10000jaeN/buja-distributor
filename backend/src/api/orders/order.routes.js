@@ -1,6 +1,7 @@
 import express from "express";
 import asyncHandler from "../../utils/asyncHandler.js";
 import {
+  previewOrder,
   createOrder,
   getMyOrders,
   getOrderById,
@@ -69,6 +70,13 @@ router.patch(
 // =================================================================
 // 🛍️ 일반 사용자 주문 관련 라우트 (로그인 필요 - router.use로 처리)
 // =================================================================
+
+/**
+ * @route [POST] /orders/preview
+ * @desc 5-0. 주문 금액 미리보기 (DB 쓰기 없음 — 배송비·도서산간 추가배송비·총액 계산)
+ * @access Private (User)
+ */
+router.post("/preview", asyncHandler(previewOrder));
 
 /**
  * @route [POST] /orders

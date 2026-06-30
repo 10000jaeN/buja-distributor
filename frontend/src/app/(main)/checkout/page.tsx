@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import useCheckoutStore from "@/store/useCheckoutStore";
 import useAuthStore from "@/store/useAuthStore";
-import { checkoutService } from "@/api/checkoutService";
+import { checkoutService, type PreviewOrderResult } from "@/api/checkoutService";
 import { userService, type Address } from "@/api/userService";
 
 const PAYMENT_METHODS = [
@@ -31,7 +31,7 @@ const EMPTY_FORM = {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, shippingFee, totalAmount } = useCheckoutStore();
+  const { items } = useCheckoutStore();
   const { user } = useAuthStore();
 
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -39,12 +39,37 @@ export default function CheckoutPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethodKey>("CARD");
   const [isLoading, setIsLoading] = useState(false);
+  const [preview, setPreview] = useState<PreviewOrderResult | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   useEffect(() => {
     if (items.length === 0) {
       router.replace("/cart");
     }
   }, [items, router]);
+
+  // 주소 변경 시 금액 미리보기 (600ms 디바운스)
+  useEffect(() => {
+    if (!form.mainAddress || items.length === 0) {
+      setPreview(null);
+      return;
+    }
+    setPreviewLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const result = await checkoutService.previewOrder({
+          items: items.map(({ productId, quantity }) => ({ productId, quantity })),
+          mainAddress: form.mainAddress,
+        });
+        setPreview(result);
+      } catch {
+        setPreview(null);
+      } finally {
+        setPreviewLoading(false);
+      }
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [form.mainAddress, items]);
 
   // 저장된 배송지 불러오기 + 기본 배송지 자동입력
   useEffect(() => {
@@ -96,7 +121,7 @@ export default function CheckoutPage() {
 
     setIsLoading(true);
     try {
-      const { orderId } = await checkoutService.createOrder({
+      const { orderId, totalAmount: orderTotal } = await checkoutService.createOrder({
         items: items.map(({ productId, quantity }) => ({ productId, quantity })),
         shippingAddress: form,
       });
@@ -111,7 +136,7 @@ export default function CheckoutPage() {
           : `${items[0].name} 외 ${items.length - 1}건`;
 
       const paymentParams = {
-        amount: { currency: "KRW" as const, value: totalAmount },
+        amount: { currency: "KRW" as const, value: orderTotal },
         orderId,
         orderName,
         successUrl: `${window.location.origin}/checkout/success`,
@@ -142,6 +167,8 @@ export default function CheckoutPage() {
   if (items.length === 0) return null;
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const displayShippingFee = preview?.shippingFee ?? 0;
+  const displayTotal = preview?.totalAmount ?? subtotal;
 
   return (
     <div className="mx-auto max-w-[1024px] px-5 py-8">
@@ -301,23 +328,44 @@ export default function CheckoutPage() {
               <span>{subtotal.toLocaleString()}원</span>
             </div>
             <div className="flex justify-between text-gray-600">
-              <span>배송비</span>
-              <span>{shippingFee === 0 ? "무료" : `${shippingFee.toLocaleString()}원`}</span>
+              <span>기본 배송비</span>
+              <span>
+                {previewLoading
+                  ? "계산 중..."
+                  : preview
+                    ? preview.baseShippingFee === 0
+                      ? "무료"
+                      : `${preview.baseShippingFee.toLocaleString()}원`
+                    : form.mainAddress
+                      ? "계산 중..."
+                      : "-"}
+              </span>
             </div>
+            {preview && preview.extraShippingFee > 0 && (
+              <div className="flex justify-between text-gray-600">
+                <span>도서산간 추가 배송비</span>
+                <span>{preview.extraShippingFee.toLocaleString()}원</span>
+              </div>
+            )}
           </div>
           <div className="my-4 border-t border-gray-100" />
           <div className="flex justify-between font-bold text-foreground">
             <span>총 결제 금액</span>
-            <span className="text-brand-blue text-lg">{totalAmount.toLocaleString()}원</span>
+            <span className="text-brand-blue text-lg">
+              {previewLoading ? "계산 중..." : `${displayTotal.toLocaleString()}원`}
+            </span>
           </div>
 
           <Button
             className="mt-6 w-full"
             onClick={handlePay}
-            disabled={isLoading}
+            disabled={isLoading || previewLoading || !preview}
           >
-            {isLoading ? "처리 중..." : `${totalAmount.toLocaleString()}원 결제하기`}
+            {isLoading ? "처리 중..." : `${displayTotal.toLocaleString()}원 결제하기`}
           </Button>
+          {!preview && !previewLoading && (
+            <p className="mt-2 text-center text-xs text-gray-400">배송지를 입력하면 최종 금액이 표시됩니다.</p>
+          )}
         </div>
       </div>
     </div>
