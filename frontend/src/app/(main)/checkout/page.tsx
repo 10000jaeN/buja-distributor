@@ -167,7 +167,6 @@ export default function CheckoutPage() {
   if (items.length === 0) return null;
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const displayShippingFee = preview?.shippingFee ?? 0;
   const displayTotal = preview?.totalAmount ?? subtotal;
 
   return (
