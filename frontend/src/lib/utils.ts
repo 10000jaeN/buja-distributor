@@ -5,6 +5,18 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+// 이메일 마스킹 — 로컬 파트 앞 2자만 노출, 나머지 ***로 대체
+// ex) hello@gmail.com → he***@gmail.com
+export function maskEmail(email: string): string {
+  const atIndex = email.indexOf("@");
+  if (atIndex < 0) return email;
+  const local = email.slice(0, atIndex);
+  const domain = email.slice(atIndex);
+  const visible = local.slice(0, 2);
+  const masked = "*".repeat(Math.max(local.length - 2, 3));
+  return `${visible}${masked}${domain}`;
+}
+
 // 한국 전화번호 자동 포맷팅 (숫자만 추출 후 하이픈 삽입)
 // 02-XXXX-XXXX / XXX-XXXX-XXXX 형식 지원
 export function formatPhoneNumber(value: string): string {
