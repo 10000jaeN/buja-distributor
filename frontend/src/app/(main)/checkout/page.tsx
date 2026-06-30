@@ -12,6 +12,7 @@ import useCheckoutStore from "@/store/useCheckoutStore";
 import useAuthStore from "@/store/useAuthStore";
 import { checkoutService, type PreviewOrderResult } from "@/api/checkoutService";
 import { userService, type Address } from "@/api/userService";
+import { formatPhoneNumber } from "@/lib/utils";
 
 const PAYMENT_METHODS = [
   { key: "CARD", label: "신용/체크카드" },
@@ -282,8 +283,10 @@ export default function CheckoutPage() {
                 <Label>연락처 *</Label>
                 <Input
                   value={form.phoneNumber}
-                  onChange={(e) => handleChange("phoneNumber", e.target.value)}
-                  placeholder="010-0000-0000"
+                  onChange={(e) => handleChange("phoneNumber", formatPhoneNumber(e.target.value))}
+                  placeholder="전화번호를 입력하세요"
+                  maxLength={13}
+                  inputMode="numeric"
                 />
               </div>
               <div className="space-y-1.5">
