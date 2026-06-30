@@ -35,6 +35,15 @@ export default function UserDetailDialog({ user, onClose }: Props) {
             <Row label="닉네임" value={user.nickName} />
             <Row label="이메일" value={user.email ?? "—"} />
             <Row
+              label="전화번호"
+              value={
+                (() => {
+                  const addr = user.address?.find((a) => a.isDefault) ?? user.address?.[0];
+                  return addr?.phoneNumber ?? "—";
+                })()
+              }
+            />
+            <Row
               label="가입경로"
               value={
                 <Badge variant="secondary" className="text-xs">
