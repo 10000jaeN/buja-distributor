@@ -26,6 +26,14 @@ const Footer = () => {
             <span className="shrink-0 text-gray-500">주소</span>
             <span className="text-gray-200">강원특별자치도 춘천시 우두1길 140, 202동 1502호(우두동, 춘천우두EGthe1 2차)</span>
           </li>
+          <li className="flex gap-2">
+            <span className="shrink-0 text-gray-500">개인정보 보호책임자</span>
+            <span className="text-gray-200">김동빈 (대표)</span>
+          </li>
+          <li className="flex gap-2">
+            <span className="shrink-0 text-gray-500">이메일</span>
+            <span className="text-gray-200">kb7153@naver.com</span>
+          </li>
         </ul>
       </div>
 
