@@ -48,7 +48,7 @@ export default function MypageShell({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="mx-auto max-w-[1024px] px-5 py-10">
+    <div className="mx-auto max-w-[var(--max-width)] px-5 py-10">
       <h1 className="mb-8 text-2xl font-bold text-gray-900">마이페이지</h1>
       <div className="flex flex-col gap-6 md:flex-row md:items-start">
         {/* 사이드 네비게이션 */}

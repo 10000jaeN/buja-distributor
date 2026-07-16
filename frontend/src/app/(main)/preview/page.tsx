@@ -46,7 +46,7 @@ export default function PreviewPage() {
       </div>
 
       {/* 상품 정보 영역 */}
-      <div className="mx-auto max-w-[1024px] md:grid md:grid-cols-[320px_1fr] md:items-stretch md:gap-8 md:px-5 md:py-8 lg:grid-cols-[460px_1fr] lg:gap-12 lg:py-10">
+      <div className="mx-auto max-w-[var(--max-width)] md:grid md:grid-cols-[320px_1fr] md:items-stretch md:gap-8 md:px-5 md:py-8 lg:grid-cols-[460px_1fr] lg:gap-12 lg:py-10">
         {/* 썸네일 */}
         <div className="w-full overflow-hidden bg-gray-50 md:shrink-0 md:rounded-2xl lg:w-[460px]">
           <Image
