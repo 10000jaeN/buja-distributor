@@ -13,6 +13,7 @@ import useAuthStore from "@/store/useAuthStore";
 import { checkoutService, type PreviewOrderResult } from "@/api/checkoutService";
 import { userService, type Address } from "@/api/userService";
 import { formatPhoneNumber } from "@/lib/utils";
+import { Spinner } from "@/components/shared/Spinner";
 
 declare global {
   interface Window {
@@ -375,13 +376,13 @@ export default function CheckoutPage() {
               <span>기본 배송비</span>
               <span>
                 {previewLoading
-                  ? "계산 중..."
+                  ? <Spinner size="sm" />
                   : preview
                     ? preview.baseShippingFee === 0
                       ? "무료"
                       : `${preview.baseShippingFee.toLocaleString()}원`
                     : form.mainAddress
-                      ? "계산 중..."
+                      ? <Spinner size="sm" />
                       : "-"}
               </span>
             </div>
@@ -396,7 +397,7 @@ export default function CheckoutPage() {
           <div className="flex justify-between font-bold text-foreground">
             <span>총 결제 금액</span>
             <span className="text-brand-blue text-lg">
-              {previewLoading ? "계산 중..." : `${displayTotal.toLocaleString()}원`}
+              {previewLoading ? <Spinner size="sm" /> : `${displayTotal.toLocaleString()}원`}
             </span>
           </div>
 
