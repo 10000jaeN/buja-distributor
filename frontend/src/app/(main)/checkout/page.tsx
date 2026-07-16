@@ -372,9 +372,9 @@ export default function CheckoutPage() {
               <span>상품 금액</span>
               <span>{subtotal.toLocaleString()}원</span>
             </div>
-            <div className="flex justify-between text-gray-600">
+            <div className="flex items-center justify-between text-gray-600">
               <span>기본 배송비</span>
-              <span>
+              <span className="flex items-center">
                 {previewLoading
                   ? <Spinner size="sm" />
                   : preview
@@ -394,9 +394,9 @@ export default function CheckoutPage() {
             )}
           </div>
           <div className="my-4 border-t border-gray-100" />
-          <div className="flex justify-between font-bold text-foreground">
+          <div className="flex items-center justify-between font-bold text-foreground">
             <span>총 결제 금액</span>
-            <span className="text-brand-blue text-lg">
+            <span className="text-brand-blue flex items-center text-lg">
               {previewLoading ? <Spinner size="sm" /> : `${displayTotal.toLocaleString()}원`}
             </span>
           </div>
