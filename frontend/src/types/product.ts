@@ -28,6 +28,7 @@ export interface Product {
     path: string[];
   };
   thumbnail: string[];
+  stock: number | null;
   isAvailable: boolean;
   createdAt: string;
   updatedAt: string;

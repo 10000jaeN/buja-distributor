@@ -55,6 +55,7 @@ export const productService = {
     bundleShipping: boolean;
     category: { parent: string; child: string };
     thumbnail: string[];
+    stock?: number | null;
     isAvailable?: boolean;
     content?: string;
     contentBlock?: { type: "text" | "image"; value: string }[];
@@ -73,13 +74,15 @@ export const productService = {
       bundleShipping: boolean;
       category: { parent: string; child: string };
       thumbnail: string[];
+      stock: number | null;
       isAvailable: boolean;
       content: string;
       contentBlock: { type: "text" | "image"; value: string }[];
     }>,
   ): Promise<Product> => {
+    const decodedSlug = decodeURIComponent(slug);
     const res = await apiClient.patch<{ data: Product }>(
-      `/products/${encodeURIComponent(slug)}`,
+      `/products/${decodedSlug}`,
       data,
     );
     return res.data;

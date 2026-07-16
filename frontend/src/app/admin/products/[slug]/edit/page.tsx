@@ -27,6 +27,7 @@ function buildPayload(f: ProductFormData) {
     bundleShipping: isBundle,
     category: { parent: f.categoryParent, child: f.categoryChild },
     thumbnail: f.thumbnail ? [f.thumbnail] : [],
+    stock: f.stock !== "" ? Number(f.stock) : null,
     isAvailable: f.isAvailable,
     content: f.content,
   };
@@ -70,6 +71,7 @@ export default function ProductEditPage() {
           categoryParent: product.category.parent,
           categoryChild: product.category.child,
           thumbnail: product.thumbnail.join(", "),
+          stock: product.stock !== null && product.stock !== undefined ? String(product.stock) : "",
           isAvailable: product.isAvailable,
           content: product.content || "",
         });

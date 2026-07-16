@@ -16,6 +16,7 @@ type Props = {
   freeShippingThreshold: number;
   thumbnail: string;
   name: string;
+  stock: number | null;
 };
 
 export function ProductActions({
@@ -25,6 +26,7 @@ export function ProductActions({
   freeShippingThreshold,
   thumbnail,
   name,
+  stock,
 }: Props) {
   const [quantity, setQuantity] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -94,13 +96,17 @@ export function ProductActions({
             </span>
             <button
               aria-label="수량 증가"
-              onClick={() => setQuantity((q) => q + 1)}
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 text-lg text-gray-600 hover:bg-gray-100"
+              onClick={() => setQuantity((q) => (stock !== null ? Math.min(stock, q + 1) : q + 1))}
+              disabled={stock !== null && quantity >= stock}
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 text-lg text-gray-600 hover:bg-gray-100 disabled:opacity-30"
             >
               +
             </button>
           </div>
         </div>
+        {stock !== null && quantity >= stock && (
+          <p className="mt-2 text-xs text-gray-400 text-right">추가 구매를 원하시면 문의해 주세요.</p>
+        )}
 
         <div className="mt-4 space-y-2 rounded-xl bg-gray-50 px-4 py-3">
           <div className="flex items-center justify-between text-sm text-gray-500">
@@ -180,8 +186,9 @@ export function ProductActions({
                 </span>
                 <button
                   aria-label="수량 증가"
-                  onClick={() => setQuantity((q) => q + 1)}
-                  className="flex h-10 w-10 items-center justify-center rounded-md border border-gray-300 text-base text-gray-600 hover:bg-gray-100"
+                  onClick={() => setQuantity((q) => (stock !== null ? Math.min(stock, q + 1) : q + 1))}
+                  disabled={stock !== null && quantity >= stock}
+                  className="flex h-10 w-10 items-center justify-center rounded-md border border-gray-300 text-base text-gray-600 hover:bg-gray-100 disabled:opacity-30"
                 >
                   +
                 </button>

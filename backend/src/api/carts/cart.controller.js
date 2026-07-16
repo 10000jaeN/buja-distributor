@@ -106,6 +106,19 @@ export const addItemToCart = async (req, res) => {
 
   const cart = await Cart.findOne({ user: userId });
 
+  // 재고 수량 체크 (장바구니 기존 수량 + 추가 수량)
+  if (product.stock !== null) {
+    const existingQty = cart?.items.find(
+      (item) => item.productId.toString() === productId
+    )?.quantity ?? 0;
+    if (existingQty + quantity > product.stock) {
+      throw new CustomError(
+        `재고가 부족합니다. (남은 재고: ${product.stock}개, 장바구니 담긴 수량: ${existingQty}개)`,
+        400
+      );
+    }
+  }
+
   const snapshot = {
     name: product.name,
     thumbnail: product.thumbnail?.[0] ?? "",

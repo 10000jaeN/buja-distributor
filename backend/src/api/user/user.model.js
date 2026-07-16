@@ -21,6 +21,15 @@ const UserSchema = new mongoose.Schema(
       required: false,
       sparse: true,
     },
+    phoneNumber: {
+      type: String,
+      required: false,
+      default: null,
+      match: [
+        /^(010|011|016|017|018|019)-\d{3,4}-\d{4}$/,
+        "올바른 전화번호 형식이 아닙니다. (예: 010-1234-5678)",
+      ],
+    },
     nickName: {
       type: String,
       required: true,
