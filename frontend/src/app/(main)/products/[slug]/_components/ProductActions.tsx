@@ -104,6 +104,9 @@ export function ProductActions({
             </button>
           </div>
         </div>
+        {stock !== null && quantity >= stock && (
+          <p className="mt-2 text-xs text-gray-400 text-right">추가 구매를 원하시면 문의해 주세요.</p>
+        )}
 
         <div className="mt-4 space-y-2 rounded-xl bg-gray-50 px-4 py-3">
           <div className="flex items-center justify-between text-sm text-gray-500">

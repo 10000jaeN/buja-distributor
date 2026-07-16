@@ -415,7 +415,10 @@ export default function CheckoutPage() {
             {isLoading ? "처리 중..." : `${displayTotal.toLocaleString()}원 결제하기`}
           </Button>
           {previewError ? (
-            <p className="mt-2 text-center text-xs text-red-500">{previewError}</p>
+            <div className="mt-2 space-y-0.5 text-center">
+              <p className="text-xs text-red-500">{previewError}</p>
+              <p className="text-xs text-gray-400">추가 구매를 원하시면 문의해 주세요.</p>
+            </div>
           ) : !preview && !previewLoading ? (
             <p className="mt-2 text-center text-xs text-gray-400">배송지를 입력하면 최종 금액이 표시됩니다.</p>
           ) : null}
