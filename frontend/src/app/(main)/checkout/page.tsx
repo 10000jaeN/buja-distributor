@@ -13,6 +13,7 @@ import useAuthStore from "@/store/useAuthStore";
 import { checkoutService, type PreviewOrderResult } from "@/api/checkoutService";
 import { userService, type Address } from "@/api/userService";
 import { formatPhoneNumber } from "@/lib/utils";
+import { Spinner } from "@/components/shared/Spinner";
 
 declare global {
   interface Window {
@@ -371,17 +372,17 @@ export default function CheckoutPage() {
               <span>상품 금액</span>
               <span>{subtotal.toLocaleString()}원</span>
             </div>
-            <div className="flex justify-between text-gray-600">
+            <div className="flex items-center justify-between text-gray-600">
               <span>기본 배송비</span>
-              <span>
+              <span className="flex items-center">
                 {previewLoading
-                  ? "계산 중..."
+                  ? <Spinner size="sm" />
                   : preview
                     ? preview.baseShippingFee === 0
                       ? "무료"
                       : `${preview.baseShippingFee.toLocaleString()}원`
                     : form.mainAddress
-                      ? "계산 중..."
+                      ? <Spinner size="sm" />
                       : "-"}
               </span>
             </div>
@@ -393,10 +394,10 @@ export default function CheckoutPage() {
             )}
           </div>
           <div className="my-4 border-t border-gray-100" />
-          <div className="flex justify-between font-bold text-foreground">
+          <div className="flex items-center justify-between font-bold text-foreground">
             <span>총 결제 금액</span>
-            <span className="text-brand-blue text-lg">
-              {previewLoading ? "계산 중..." : `${displayTotal.toLocaleString()}원`}
+            <span className="text-brand-blue flex items-center text-lg">
+              {previewLoading ? <Spinner size="sm" /> : `${displayTotal.toLocaleString()}원`}
             </span>
           </div>
 
