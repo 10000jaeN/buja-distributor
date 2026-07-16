@@ -1,9 +1,81 @@
 import Order from "./order.model.js";
 import Product from "../products/product.model.js";
 import User from "../user/user.model.js";
+import Settings from "../settings/settings.model.js";
 import mongoose from "mongoose";
 import crypto from "crypto";
 import CustomError from "../../utils/customError.js";
+
+// =================================================================
+// 도서산간 추가배송비 판별
+// =================================================================
+const JEJU_KEYWORDS = ["제주"];
+const ISLAND_KEYWORDS = ["울릉", "독도", "백령", "연평", "대청", "소청", "덕적", "자월", "영흥"];
+
+function getExtraShippingFee(mainAddress) {
+  if (!mainAddress) return 0;
+  if (JEJU_KEYWORDS.some((k) => mainAddress.includes(k))) return 3000;
+  if (ISLAND_KEYWORDS.some((k) => mainAddress.includes(k))) return 5000;
+  return 0;
+}
+
+// =================================================================
+// 공통 금액 계산 로직 (preview / createOrder 공유)
+// - 비묶음: 상품별 freeShippingThreshold 적용
+// - 묶음: 합산 금액 기준 bundleFreeThreshold 적용, 최대 배송비
+// - 도서산간: mainAddress 키워드 기반 추가배송비
+// =================================================================
+async function calculateOrderAmounts(items, products, mainAddress) {
+  const settings = await Settings.findOne({ key: "global" }).lean();
+  const bundleFreeThreshold = settings?.bundleFreeThreshold ?? 50000;
+
+  const bundleMap = new Map();
+  const nonBundleMap = new Map();
+
+  for (const item of items) {
+    const product = products.find((p) => p._id.toString() === item.productId);
+    const map = product.bundleShipping ? bundleMap : nonBundleMap;
+    const existing = map.get(item.productId);
+    if (existing) {
+      existing.totalQuantity += item.quantity;
+    } else {
+      map.set(item.productId, { product, totalQuantity: item.quantity });
+    }
+  }
+
+  const itemSubtotal = items.reduce((sum, item) => {
+    const product = products.find((p) => p._id.toString() === item.productId);
+    return sum + product.price * item.quantity;
+  }, 0);
+
+  // 비묶음: 상품별 freeShippingThreshold 적용
+  let nonBundleShipping = 0;
+  for (const { product, totalQuantity } of nonBundleMap.values()) {
+    const threshold = product.freeShippingThreshold ?? 0;
+    if (threshold > 0 && product.price * totalQuantity >= threshold) continue;
+    nonBundleShipping += product.shippingFee ?? 0;
+  }
+
+  // 묶음: 합산 금액 기준 무료 여부, 최대 배송비 적용
+  let bundleShipping = 0;
+  if (bundleMap.size > 0) {
+    const bundleSubtotal = [...bundleMap.values()].reduce(
+      (sum, { product, totalQuantity }) => sum + product.price * totalQuantity,
+      0
+    );
+    if (bundleFreeThreshold > 0 && bundleSubtotal >= bundleFreeThreshold) {
+      bundleShipping = 0;
+    } else {
+      bundleShipping = Math.max(...[...bundleMap.values()].map(({ product }) => product.shippingFee ?? 0));
+    }
+  }
+
+  const baseShippingFee = nonBundleShipping + bundleShipping;
+  const extraShippingFee = getExtraShippingFee(mainAddress);
+  const shippingFee = baseShippingFee + extraShippingFee;
+
+  return { itemSubtotal, baseShippingFee, extraShippingFee, shippingFee, totalAmount: itemSubtotal + shippingFee };
+}
 
 // =================================================================
 // 💡 주문번호 생성 함수 (Create unique and readable order number)
@@ -27,21 +99,45 @@ const generateOrderNumber = () => {
 // 1. 새 주문 생성 (POST /api/orders) - [트랜잭션 필수]
 //    상태: pending
 // =================================================================
+// =================================================================
+// 0. 주문 금액 미리보기 (POST /api/orders/preview) — DB 쓰기 없음
+// =================================================================
+export const previewOrder = async (req, res) => {
+  const { items, mainAddress } = req.body;
+
+  if (!items || items.length === 0) {
+    throw new CustomError("상품 목록이 비어 있습니다.", 400);
+  }
+
+  for (const item of items) {
+    if (!item.quantity || item.quantity <= 0) {
+      throw new CustomError("상품 수량이 유효하지 않습니다.", 400);
+    }
+  }
+
+  const productIds = items.map((item) => item.productId);
+  const products = await Product.find({ _id: { $in: productIds }, isAvailable: true });
+
+  if (products.length !== productIds.length) {
+    throw new CustomError("주문 상품 중 품절되거나 존재하지 않는 상품이 있습니다.", 404);
+  }
+
+  const result = await calculateOrderAmounts(items, products, mainAddress ?? "");
+  res.status(200).json(result);
+};
+
+// =================================================================
+// 1. 새 주문 생성 (POST /api/orders) - [트랜잭션 필수]
+//    상태: pending
+// =================================================================
 export const createOrder = async (req, res) => {
-  // 1. 유효성 검사 및 데이터 추출
   const { items, shippingAddress } = req.body;
-  // req.user는 인증 미들웨어를 통해 주입된 사용자 정보 (ID 포함)
   const userId = req.user._id;
 
-  // 1. 유효성 검사 (CustomError 사용)
   if (!items || items.length === 0) {
     throw new CustomError("주문할 상품 목록이 비어 있습니다.", 400);
   }
-  if (
-    !shippingAddress ||
-    !shippingAddress.mainAddress ||
-    !shippingAddress.recipientName
-  ) {
+  if (!shippingAddress?.mainAddress || !shippingAddress?.recipientName) {
     throw new CustomError("유효한 배송지 정보가 필요합니다.", 400);
   }
 
@@ -49,7 +145,6 @@ export const createOrder = async (req, res) => {
   session.startTransaction();
 
   try {
-    // 2. 주문 상품 정보 및 가격 검증 (원자성 보장)
     const productIds = items.map((item) => item.productId);
     const products = await Product.find({
       _id: { $in: productIds },
@@ -57,49 +152,30 @@ export const createOrder = async (req, res) => {
     }).session(session);
 
     if (products.length !== productIds.length) {
-      // 품절 상품 포함 시 404
-      throw new CustomError(
-        "주문 상품 중 품절되거나 존재하지 않는 상품이 있습니다.",
-        404
-      );
+      throw new CustomError("주문 상품 중 품절되거나 존재하지 않는 상품이 있습니다.", 404);
     }
 
-    let itemSubtotal = 0;
-    let shippingFee = 0;
     const orderItems = [];
-    const seenProductIds = new Set();
-
     for (const item of items) {
       const product = products.find((p) => p._id.toString() === item.productId);
       if (!product || item.quantity <= 0) {
-        // 유효하지 않은 수량 시 400
-        throw new CustomError(
-          `상품 이름 "${item.name}"의 수량이 유효하지 않습니다.`,
-          400
-        );
+        throw new CustomError(`상품 이름 "${item.name}"의 수량이 유효하지 않습니다.`, 400);
       }
-
-      // 3. 주문 당시 스냅샷 데이터 생성 및 금액 계산
-      itemSubtotal += product.price * item.quantity;
-
-      // 배송비: 상품별로 한 번만 합산 (수량 무관)
-      if (!seenProductIds.has(product._id.toString())) {
-        shippingFee += product.shippingFee ?? 0;
-        seenProductIds.add(product._id.toString());
-      }
-
       orderItems.push({
         productId: product._id,
-        name: product.name, // 스냅샷: 주문 당시 상품 이름
-        price: product.price, // 스냅샷: 주문 당시 상품 가격
+        name: product.name,
+        price: product.price,
         quantity: item.quantity,
-        categoryParent: product.category?.parent, // 스냅샷: 주문 당시 상위 카테고리
+        categoryParent: product.category?.parent,
       });
     }
 
-    const totalAmount = itemSubtotal + shippingFee;
+    const { shippingFee, totalAmount } = await calculateOrderAmounts(
+      items,
+      products,
+      shippingAddress.mainAddress
+    );
 
-    // 4. 주문 문서 생성 (pending 상태로 DB에 저장)
     const newOrder = new Order({
       orderNumber: generateOrderNumber(),
       user: userId,
@@ -107,23 +183,20 @@ export const createOrder = async (req, res) => {
       shippingFee,
       totalAmount,
       shippingAddress,
-      status: "pending", // 초기 상태는 결제 대기
+      status: "pending",
     });
 
     await newOrder.save({ session });
-
-    // 5. 트랜잭션 커밋 및 응답
     await session.commitTransaction();
 
     res.status(201).json({
       message: "주문이 성공적으로 생성되었습니다. 결제를 진행해주세요.",
       orderId: newOrder._id,
       orderNumber: newOrder.orderNumber,
+      totalAmount,
     });
   } catch (error) {
     await session.abortTransaction();
-    // 6. 에러 처리: 발생한 에러를 Global Error Handler로 던집니다.
-    // CustomError는 4xx로, 그 외는 500으로 처리됩니다.
     throw error;
   } finally {
     session.endSession();

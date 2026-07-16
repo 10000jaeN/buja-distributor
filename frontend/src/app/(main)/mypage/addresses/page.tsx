@@ -1,6 +1,7 @@
 "use client";
 
 import { userService, Address } from "@/api/userService";
+import { formatPhoneNumber } from "@/lib/utils";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -78,6 +79,10 @@ export default function AddressesPage() {
   };
 
   const openPostcode = () => {
+    if (!window.daum?.Postcode) {
+      toast.error("주소 검색 서비스를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
+      return;
+    }
     new window.daum.Postcode({
       oncomplete: (data) => {
         setForm((prev) => ({
@@ -220,14 +225,17 @@ export default function AddressesPage() {
                 value={form.recipientName}
                 onChange={(e) => setForm((prev) => ({ ...prev, recipientName: e.target.value }))}
                 placeholder="홍길동"
+                maxLength={20}
               />
             </div>
             <div>
               <Label className="mb-1">전화번호 *</Label>
               <Input
                 value={form.phoneNumber}
-                onChange={(e) => setForm((prev) => ({ ...prev, phoneNumber: e.target.value }))}
-                placeholder="010-0000-0000"
+                onChange={(e) => setForm((prev) => ({ ...prev, phoneNumber: formatPhoneNumber(e.target.value) }))}
+                placeholder="전화번호를 입력하세요"
+                maxLength={13}
+                inputMode="numeric"
               />
             </div>
             <div>
@@ -244,6 +252,7 @@ export default function AddressesPage() {
                 onChange={(e) => setForm((prev) => ({ ...prev, detailAddress: e.target.value }))}
                 placeholder="상세 주소 (동/호수 등)"
                 className="mt-2"
+                maxLength={50}
               />
             </div>
             <label className="flex cursor-pointer items-center gap-2">

@@ -19,7 +19,11 @@ interface DropdownMenuProps {
   items: DropdownMenuItem[];
 }
 
-export function DropdownMenu({ trigger, tooltipLabel, items }: DropdownMenuProps) {
+export function DropdownMenu({
+  trigger,
+  tooltipLabel,
+  items,
+}: DropdownMenuProps) {
   const triggerEl = (
     <Menu.Trigger className="hover:text-brand-blue flex items-center text-gray-600">
       {trigger}
@@ -39,9 +43,20 @@ export function DropdownMenu({ trigger, tooltipLabel, items }: DropdownMenuProps
           <Menu.Popup className="min-w-36 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg outline-none">
             {items.map((item) => (
               <div key={item.href ?? item.label}>
-                {item.separator && <div className="my-1 border-t border-gray-100" />}
+                {item.separator && (
+                  <div className="my-1 border-t border-gray-100" />
+                )}
                 <Menu.Item
-                  render={item.href ? <Link href={item.href} /> : <button type="button" onClick={item.onClick} className="w-full text-left" />}
+                  render={
+                    item.href ? (
+                      <Link href={item.href} />
+                    ) : (
+                      <div
+                        onClick={item.onClick}
+                        className="w-full text-left"
+                      />
+                    )
+                  }
                   className={`block px-4 py-2.5 text-sm outline-none ${
                     item.variant === "danger"
                       ? "text-red-500 hover:bg-red-50 data-highlighted:bg-red-50"
