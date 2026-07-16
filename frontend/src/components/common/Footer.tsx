@@ -20,19 +20,11 @@ const Footer = () => {
           </li>
           <li className="flex gap-2">
             <span className="shrink-0 text-gray-500">사업자 등록번호</span>
-            <span className="text-gray-200">000-00-00000</span>
-          </li>
-          <li className="flex gap-2">
-            <span className="shrink-0 text-gray-500">통신판매업신고번호</span>
-            <span className="text-gray-200">0000-ㅇㅇㅇㅇ-0000</span>
+            <span className="text-gray-200">448-19-01483</span>
           </li>
           <li className="flex gap-2 md:col-span-2">
             <span className="shrink-0 text-gray-500">주소</span>
-            <span className="text-gray-200">강원도 춘천시 ---</span>
-          </li>
-          <li className="flex gap-2 md:col-span-2">
-            <span className="shrink-0 text-gray-500">통신판매신고</span>
-            <span className="text-gray-200">제 000</span>
+            <span className="text-gray-200">강원특별자치도 춘천시 우두1길 140, 202동 1502호(우두동, 춘천우두EGthe1 2차)</span>
           </li>
         </ul>
       </div>
