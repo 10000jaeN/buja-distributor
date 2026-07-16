@@ -25,6 +25,7 @@ export type ProductFormData = {
   categoryParent: string;
   categoryChild: string;
   thumbnail: string;
+  stock: string;
   isAvailable: boolean;
   content: string;
 };
@@ -38,6 +39,7 @@ export const INITIAL_FORM: ProductFormData = {
   categoryParent: "",
   categoryChild: "",
   thumbnail: "",
+  stock: "",
   isAvailable: true,
   content: "",
 };
@@ -377,6 +379,22 @@ export function ProductForm({ form, onChange, categories }: Props) {
                   />
                 </label>
               )}
+            </div>
+
+            {/* 재고 수량 */}
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <Label className="mb-2 block text-sm font-semibold text-gray-700">
+                재고 수량
+              </Label>
+              <p className="mb-2.5 text-xs text-gray-400">비워두면 무제한으로 설정됩니다.</p>
+              <Input
+                type="number"
+                min={0}
+                placeholder="무제한"
+                value={form.stock}
+                onChange={(e) => onChange("stock", e.target.value)}
+                className="h-9 text-sm"
+              />
             </div>
 
             {/* 재고 여부 */}

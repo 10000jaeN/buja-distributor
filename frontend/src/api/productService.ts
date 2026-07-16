@@ -55,6 +55,7 @@ export const productService = {
     bundleShipping: boolean;
     category: { parent: string; child: string };
     thumbnail: string[];
+    stock?: number | null;
     isAvailable?: boolean;
     content?: string;
     contentBlock?: { type: "text" | "image"; value: string }[];
@@ -73,6 +74,7 @@ export const productService = {
       bundleShipping: boolean;
       category: { parent: string; child: string };
       thumbnail: string[];
+      stock: number | null;
       isAvailable: boolean;
       content: string;
       contentBlock: { type: "text" | "image"; value: string }[];

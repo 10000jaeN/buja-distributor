@@ -69,6 +69,12 @@ const ProductSchema = new mongoose.Schema(
       reviewCount: { type: Number, default: 0 },
       ratingAverage: { type: Number, default: 0 },
     },
+    // 재고 수량 (null = 무제한, 숫자 = 수량 제한)
+    stock: {
+      type: Number,
+      default: null,
+      min: [0, "재고 수량은 0보다 작을 수 없습니다."],
+    },
     // 판매가능 여부
     isAvailable: {
       type: Boolean,

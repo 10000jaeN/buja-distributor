@@ -16,6 +16,7 @@ type Props = {
   freeShippingThreshold: number;
   thumbnail: string;
   name: string;
+  stock: number | null;
 };
 
 export function ProductActions({
@@ -25,6 +26,7 @@ export function ProductActions({
   freeShippingThreshold,
   thumbnail,
   name,
+  stock,
 }: Props) {
   const [quantity, setQuantity] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -94,8 +96,9 @@ export function ProductActions({
             </span>
             <button
               aria-label="수량 증가"
-              onClick={() => setQuantity((q) => q + 1)}
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 text-lg text-gray-600 hover:bg-gray-100"
+              onClick={() => setQuantity((q) => (stock !== null ? Math.min(stock, q + 1) : q + 1))}
+              disabled={stock !== null && quantity >= stock}
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 text-lg text-gray-600 hover:bg-gray-100 disabled:opacity-30"
             >
               +
             </button>
@@ -180,8 +183,9 @@ export function ProductActions({
                 </span>
                 <button
                   aria-label="수량 증가"
-                  onClick={() => setQuantity((q) => q + 1)}
-                  className="flex h-10 w-10 items-center justify-center rounded-md border border-gray-300 text-base text-gray-600 hover:bg-gray-100"
+                  onClick={() => setQuantity((q) => (stock !== null ? Math.min(stock, q + 1) : q + 1))}
+                  disabled={stock !== null && quantity >= stock}
+                  className="flex h-10 w-10 items-center justify-center rounded-md border border-gray-300 text-base text-gray-600 hover:bg-gray-100 disabled:opacity-30"
                 >
                   +
                 </button>

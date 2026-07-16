@@ -26,6 +26,7 @@ function buildPayload(f: ProductFormData) {
     bundleShipping: isBundle,
     category: { parent: f.categoryParent, child: f.categoryChild },
     thumbnail: f.thumbnail ? [f.thumbnail] : [],
+    stock: f.stock !== "" ? Number(f.stock) : null,
     isAvailable: f.isAvailable,
     content: f.content,
   };
