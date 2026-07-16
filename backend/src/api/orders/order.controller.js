@@ -122,6 +122,13 @@ export const previewOrder = async (req, res) => {
     throw new CustomError("주문 상품 중 품절되거나 존재하지 않는 상품이 있습니다.", 404);
   }
 
+  for (const item of items) {
+    const product = products.find((p) => p._id.toString() === item.productId);
+    if (product.stock !== null && product.stock < item.quantity) {
+      throw new CustomError(`"${product.name}" 재고가 부족합니다. (남은 재고: ${product.stock}개)`, 400);
+    }
+  }
+
   const result = await calculateOrderAmounts(items, products, mainAddress ?? "");
   res.status(200).json(result);
 };
@@ -161,6 +168,9 @@ export const createOrder = async (req, res) => {
       if (!product || item.quantity <= 0) {
         throw new CustomError(`상품 이름 "${item.name}"의 수량이 유효하지 않습니다.`, 400);
       }
+      if (product.stock !== null && product.stock < item.quantity) {
+        throw new CustomError(`"${product.name}" 재고가 부족합니다. (남은 재고: ${product.stock}개)`, 400);
+      }
       orderItems.push({
         productId: product._id,
         name: product.name,
@@ -187,6 +197,23 @@ export const createOrder = async (req, res) => {
     });
 
     await newOrder.save({ session });
+
+    // 재고 차감 (stock이 null이면 무제한이므로 스킵)
+    for (const item of items) {
+      const product = products.find((p) => p._id.toString() === item.productId);
+      if (product.stock !== null) {
+        const newStock = product.stock - item.quantity;
+        await Product.findByIdAndUpdate(
+          product._id,
+          {
+            $inc: { stock: -item.quantity },
+            ...(newStock <= 0 && { isAvailable: false }),
+          },
+          { session }
+        );
+      }
+    }
+
     await session.commitTransaction();
 
     res.status(201).json({
@@ -393,6 +420,21 @@ export const cancelOrder = async (req, res) => {
     order.cancelledAt = new Date();
 
     await order.save({ session });
+
+    // 5. 재고 복구 (stock이 있는 상품만)
+    for (const item of order.items) {
+      const product = await Product.findById(item.productId).session(session);
+      if (product && product.stock !== null) {
+        await Product.findByIdAndUpdate(
+          product._id,
+          {
+            $inc: { stock: item.quantity },
+            isAvailable: true,
+          },
+          { session }
+        );
+      }
+    }
 
     await session.commitTransaction();
 

@@ -63,6 +63,7 @@ const productsDetailPage = async ({ params }: Props) => {
     freeShippingThreshold: product?.freeShippingThreshold ?? 0,
     ratingAverage: product?.stats.ratingAverage ?? 0,
     reviewCount: product?.stats.reviewCount ?? 0,
+    stock: product?.stock ?? null,
   };
 
   const actionsProps = {
@@ -72,6 +73,7 @@ const productsDetailPage = async ({ params }: Props) => {
     freeShippingThreshold: product?.freeShippingThreshold ?? 0,
     thumbnail: product?.thumbnail[0] || noImage.src,
     name: product?.name ?? "",
+    stock: product?.stock ?? null,
   };
 
   return (
