@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { NAV_HEIGHT } from "@/constants/layout";
 import { ProductDetailTab } from "./ProductDetailTab";
 import { ProductQnATab } from "./ProductQnATab";
 import { ProductReviewTab } from "./ProductReviewTab";
@@ -37,13 +38,7 @@ export function ProductTabs({
   const handleTabClick = (tab: Tab) => {
     setActiveTab(tab);
     if (containerRef.current) {
-      const navHeight =
-        parseFloat(
-          getComputedStyle(document.documentElement).getPropertyValue(
-            "--nav-height",
-          ),
-        ) || 0;
-      const top = containerRef.current.offsetTop - navHeight;
+      const top = containerRef.current.getBoundingClientRect().top + window.scrollY - NAV_HEIGHT;
       window.scrollTo({ top, behavior: "smooth" });
     }
   };

@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
+import { NAV_HEIGHT, MOBILE_BOTTOM_BAR_HEIGHT } from "@/constants/layout";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -45,7 +46,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className={cn("font-sans", geist.variable, pretendard.variable)}>
+    <html lang="ko" className={cn("font-sans", geist.variable, pretendard.variable)} style={{ "--nav-height": `${NAV_HEIGHT}px`, "--mobile-bottom-bar-height": `${MOBILE_BOTTOM_BAR_HEIGHT}px` } as React.CSSProperties}>
       <body className="font-sans antialiased">{children}</body>
     </html>
   );

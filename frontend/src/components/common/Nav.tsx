@@ -16,6 +16,7 @@ import useCartStore from "@/store/useCartStore";
 import useMenuStore from "@/store/useMenuStore";
 import { MenuItem } from "@/types/menu";
 import { USER_MENU } from "@/constants/menu";
+import { NAV_HEIGHT } from "@/constants/layout";
 
 const Nav = ({ menu }: { menu: MenuItem[] }) => {
   const [searchOpen, setSearchOpen] = useState(false);
@@ -44,7 +45,7 @@ const Nav = ({ menu }: { menu: MenuItem[] }) => {
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-gray-300 bg-white">
-      <div className="mx-auto flex h-17.25 w-full max-w-[1024px] items-center justify-between p-5">
+      <div style={{ height: NAV_HEIGHT }} className="mx-auto flex w-full max-w-[var(--max-width)] items-center justify-between p-5">
         {/* 왼쪽: 햄버거(모바일) + 로고 + 카테고리(PC) */}
         <div className="flex items-center gap-6">
           <Tooltip label="메뉴" className="lg:hidden">
