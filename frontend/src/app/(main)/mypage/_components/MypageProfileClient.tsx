@@ -35,13 +35,16 @@ export default function MypageProfileClient() {
   };
 
   const handleDeleteAccount = async () => {
+    if (isDeleting) return;
+    setIsDeleting(true);
     try {
       await userService.deleteAccount();
       clearSession();
       toast.success("회원 탈퇴가 완료됐습니다.");
-      router.push("/");
+      setTimeout(() => router.push("/"), 1000);
     } catch {
       toast.error("회원 탈퇴에 실패했습니다. 잠시 후 다시 시도해주세요.");
+      setIsDeleting(false);
     }
   };
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -50,6 +53,7 @@ export default function MypageProfileClient() {
   const [nickName, setNickName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     userService
@@ -180,16 +184,17 @@ export default function MypageProfileClient() {
           <AlertDialogHeader>
             <AlertDialogTitle>정말 탈퇴하시겠어요?</AlertDialogTitle>
             <AlertDialogDescription>
-              탈퇴하면 주문 내역, 리뷰, 문의 등 모든 데이터가 삭제되며 복구할 수 없습니다.
+              탈퇴하면 계정 정보가 삭제되며 복구할 수 없습니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>취소</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteAccount}
-              className="bg-red-500 hover:bg-red-600"
+              disabled={isDeleting}
+              className="bg-red-500 hover:bg-red-600 disabled:opacity-50"
             >
-              탈퇴하기
+              {isDeleting ? "처리 중..." : "탈퇴하기"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
