@@ -2,20 +2,8 @@
 
 import { userService, UserProfile } from "@/api/userService";
 import useAuthStore from "@/store/useAuthStore";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { formatPhoneNumber } from "@/lib/utils";
 
 const PROVIDER_LABEL: Record<string, string> = {
@@ -28,8 +16,7 @@ const PROVIDER_LABEL: Record<string, string> = {
 type EditField = "nickName" | "phoneNumber" | "email" | null;
 
 export default function MypageProfileClient() {
-  const { user, setUser, logout, clearSession } = useAuthStore();
-  const router = useRouter();
+  const { user, setUser } = useAuthStore();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -38,7 +25,6 @@ export default function MypageProfileClient() {
   const [editField, setEditField] = useState<EditField>(null);
   const [editValue, setEditValue] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     userService
@@ -74,26 +60,6 @@ export default function MypageProfileClient() {
       toast.error("저장에 실패했습니다.");
     } finally {
       setIsSaving(false);
-    }
-  };
-
-  const handleLogout = () => {
-    logout();
-    toast.success("로그아웃 됐습니다.");
-    router.push("/");
-  };
-
-  const handleDeleteAccount = async () => {
-    if (isDeleting) return;
-    setIsDeleting(true);
-    try {
-      await userService.deleteAccount();
-      clearSession();
-      toast.success("회원 탈퇴가 완료됐습니다.");
-      setTimeout(() => router.push("/"), 1000);
-    } catch {
-      toast.error("회원 탈퇴에 실패했습니다. 잠시 후 다시 시도해주세요.");
-      setIsDeleting(false);
     }
   };
 
@@ -165,9 +131,7 @@ export default function MypageProfileClient() {
   };
 
   return (
-    <div className="space-y-4">
-      {/* 기본 정보 카드 */}
-      <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+    <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
         <h2 className="mb-5 text-base font-bold text-gray-900">기본 정보</h2>
         <div className="space-y-5">
           {renderField("nickName", "닉네임", profile.nickName, "닉네임을 입력하세요", { maxLength: 20 })}
@@ -199,39 +163,5 @@ export default function MypageProfileClient() {
           </div>
         </div>
       </div>
-
-      {/* 로그아웃 */}
-      <button
-        onClick={handleLogout}
-        className="w-full rounded-xl border border-red-100 py-3 text-sm font-medium text-red-500 hover:bg-red-50"
-      >
-        로그아웃
-      </button>
-
-      {/* 회원 탈퇴 */}
-      <AlertDialog>
-        <AlertDialogTrigger className="w-full py-2 text-xs text-gray-400 underline-offset-2 hover:underline">
-          회원 탈퇴
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>정말 탈퇴하시겠어요?</AlertDialogTitle>
-            <AlertDialogDescription>
-              탈퇴하면 계정 정보가 삭제되며 복구할 수 없습니다.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>취소</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteAccount}
-              disabled={isDeleting}
-              className="bg-red-500 hover:bg-red-600 disabled:opacity-50"
-            >
-              {isDeleting ? "처리 중..." : "탈퇴하기"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
   );
 }
