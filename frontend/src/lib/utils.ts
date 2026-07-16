@@ -17,6 +17,7 @@ export function maskEmail(email: string): string {
   return `${visible}${masked}${domain}`;
 }
 
+
 // 한국 전화번호 자동 포맷팅 (숫자만 추출 후 하이픈 삽입)
 // 02-XXXX-XXXX / XXX-XXXX-XXXX 형식 지원
 export function formatPhoneNumber(value: string): string {
