@@ -80,8 +80,9 @@ export const productService = {
       contentBlock: { type: "text" | "image"; value: string }[];
     }>,
   ): Promise<Product> => {
+    const decodedSlug = decodeURIComponent(slug);
     const res = await apiClient.patch<{ data: Product }>(
-      `/products/${encodeURIComponent(slug)}`,
+      `/products/${decodedSlug}`,
       data,
     );
     return res.data;
