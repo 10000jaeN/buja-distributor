@@ -40,26 +40,25 @@ export const patchUser = async (req, res) => {
   // 1. 인증된 사용자 ID
   const userIdToUpdate = req.user._id;
 
-  // 2. 클라이언트로부터 받은 수정 데이터
-  const updateData = req.body;
-
-  // 3. 보안: 수정 불가능한 필드 제거 (민감한 필드 보호)
-  const forbiddenFields = [
-    "provider",
-    "providerId",
-    "roles",
-    "refreshToken",
-    "_id",
-  ];
-  forbiddenFields.forEach((field) => {
-    if (updateData[field] !== undefined) {
-      delete updateData[field];
+  // 2. 허용된 필드만 화이트리스트 방식으로 추출
+  const ALLOWED_FIELDS = ["nickName", "phoneNumber", "email"];
+  const updateData = {};
+  for (const field of ALLOWED_FIELDS) {
+    if (req.body[field] !== undefined) {
+      updateData[field] = req.body[field];
     }
-  });
+  }
 
   if (Object.keys(updateData).length === 0) {
-    // 수정할 내용이 없는 경우 400 Bad Request CustomError를 던집니다.
     throw new CustomError("수정할 내용이 없습니다.", 400);
+  }
+
+  // 3. 소셜 로그인 계정은 이메일 수정 불가
+  if (updateData.email !== undefined && req.user.provider !== "local") {
+    throw new CustomError(
+      "소셜 로그인 계정은 이메일을 변경할 수 없습니다.",
+      403
+    );
   }
 
   // Mongoose의 findByIdAndUpdate를 사용하여 업데이트
