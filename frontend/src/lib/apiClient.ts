@@ -1,3 +1,6 @@
+import { toast } from "sonner";
+import useAuthStore from "@/store/useAuthStore";
+
 const isServer = typeof window === "undefined";
 const isProd = process.env.NODE_ENV === "production";
 
@@ -73,12 +76,12 @@ async function apiFetch<T>(
   }
 
   if (res.status === 401 && !isServer) {
-    localStorage.removeItem("accessToken");
-    sessionStorage.removeItem("accessToken");
+    useAuthStore.getState().clearSession();
     const isAdmin = window.location.pathname.startsWith("/admin/") || window.location.pathname === "/admin";
     const loginPath = isAdmin ? "/admin/login" : "/login";
     if (window.location.pathname !== loginPath) {
-      window.location.href = loginPath;
+      toast.warning("로그인이 만료되었습니다. 다시 로그인해 주세요.");
+      setTimeout(() => { window.location.href = loginPath; }, 1500);
     }
     throw new Error("Unauthorized");
   }
