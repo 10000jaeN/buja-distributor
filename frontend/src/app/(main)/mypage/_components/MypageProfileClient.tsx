@@ -5,6 +5,17 @@ import useAuthStore from "@/store/useAuthStore";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const PROVIDER_LABEL: Record<string, string> = {
   google: "구글",
@@ -14,7 +25,7 @@ const PROVIDER_LABEL: Record<string, string> = {
 };
 
 export default function MypageProfileClient() {
-  const { user, setUser, logout } = useAuthStore();
+  const { user, setUser, logout, clearSession } = useAuthStore();
   const router = useRouter();
 
   const handleLogout = () => {
@@ -22,12 +33,27 @@ export default function MypageProfileClient() {
     toast.success("로그아웃 됐습니다.");
     router.push("/");
   };
+
+  const handleDeleteAccount = async () => {
+    if (isDeleting) return;
+    setIsDeleting(true);
+    try {
+      await userService.deleteAccount();
+      clearSession();
+      toast.success("회원 탈퇴가 완료됐습니다.");
+      setTimeout(() => router.push("/"), 1000);
+    } catch {
+      toast.error("회원 탈퇴에 실패했습니다. 잠시 후 다시 시도해주세요.");
+      setIsDeleting(false);
+    }
+  };
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [nickName, setNickName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     userService
@@ -148,6 +174,31 @@ export default function MypageProfileClient() {
       >
         로그아웃
       </button>
+
+      {/* 회원 탈퇴 */}
+      <AlertDialog>
+        <AlertDialogTrigger className="w-full py-2 text-xs text-gray-400 underline-offset-2 hover:underline">
+          회원 탈퇴
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>정말 탈퇴하시겠어요?</AlertDialogTitle>
+            <AlertDialogDescription>
+              탈퇴하면 계정 정보가 삭제되며 복구할 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              disabled={isDeleting}
+              className="bg-red-500 hover:bg-red-600 disabled:opacity-50"
+            >
+              {isDeleting ? "처리 중..." : "탈퇴하기"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
