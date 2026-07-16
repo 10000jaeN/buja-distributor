@@ -46,7 +46,8 @@ export default function MypageProfileClient() {
 
   const handleSave = async () => {
     if (!editField || !profile) return;
-    if (editField === "nickName" && (!editValue.trim() || editValue.length < 2)) return;
+    if (editField === "nickName" && (!editValue.trim() || editValue.length < 2))
+      return;
 
     setIsSaving(true);
     try {
@@ -54,7 +55,8 @@ export default function MypageProfileClient() {
         [editField]: editValue.trim() || null,
       });
       setProfile(updated);
-      if (editField === "nickName") setUser({ ...user!, nickName: updated.nickName });
+      if (editField === "nickName")
+        setUser({ ...user!, nickName: updated.nickName });
       setEditField(null);
     } catch {
       toast.error("저장에 실패했습니다.");
@@ -72,7 +74,9 @@ export default function MypageProfileClient() {
   }
 
   if (error || !profile) {
-    return <p className="text-sm text-gray-500">{error ?? "오류가 발생했습니다."}</p>;
+    return (
+      <p className="text-sm text-gray-500">{error ?? "오류가 발생했습니다."}</p>
+    );
   }
 
   const renderField = (
@@ -80,7 +84,10 @@ export default function MypageProfileClient() {
     label: string,
     value: string,
     placeholder: string,
-    options?: { inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"]; maxLength?: number }
+    options?: {
+      inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
+      maxLength?: number;
+    },
   ) => {
     const isEditing = editField === field;
     return (
@@ -91,9 +98,13 @@ export default function MypageProfileClient() {
             <input
               value={editValue}
               onChange={(e) =>
-                setEditValue(field === "phoneNumber" ? formatPhoneNumber(e.target.value) : e.target.value)
+                setEditValue(
+                  field === "phoneNumber"
+                    ? formatPhoneNumber(e.target.value)
+                    : e.target.value,
+                )
               }
-              className="focus:border-brand-blue h-9 flex-1 rounded-lg border border-gray-200 px-3 text-sm outline-none focus:ring-1 focus:ring-brand-blue/20"
+              className="focus:border-brand-blue focus:ring-brand-blue/20 h-9 flex-1 rounded-lg border border-gray-200 px-3 text-sm outline-none focus:ring-1"
               maxLength={options?.maxLength ?? 50}
               inputMode={options?.inputMode}
               placeholder={placeholder}
@@ -101,7 +112,9 @@ export default function MypageProfileClient() {
             />
             <button
               onClick={handleSave}
-              disabled={isSaving || (field === "nickName" && editValue.length < 2)}
+              disabled={
+                isSaving || (field === "nickName" && editValue.length < 2)
+              }
               className="bg-brand-blue rounded-lg px-3 py-2 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
             >
               저장
@@ -116,7 +129,9 @@ export default function MypageProfileClient() {
         ) : (
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium text-gray-800">
-              {value || <span className="font-normal text-gray-400">{placeholder}</span>}
+              {value || (
+                <span className="font-normal text-gray-400">{placeholder}</span>
+              )}
             </p>
             <button
               onClick={() => startEdit(field, value)}
@@ -132,36 +147,55 @@ export default function MypageProfileClient() {
 
   return (
     <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
-        <h2 className="mb-5 text-base font-bold text-gray-900">기본 정보</h2>
-        <div className="space-y-5">
-          {renderField("nickName", "닉네임", profile.nickName, "닉네임을 입력하세요", { maxLength: 20 })}
-          {renderField("phoneNumber", "전화번호", profile.phoneNumber ?? "", "전화번호를 입력하세요", {
+      <h2 className="mb-5 text-base font-bold text-gray-900">기본 정보</h2>
+      <div className="space-y-5">
+        {renderField(
+          "nickName",
+          "닉네임",
+          profile.nickName,
+          "닉네임을 입력하세요",
+          { maxLength: 20 },
+        )}
+        {renderField(
+          "phoneNumber",
+          "전화번호",
+          profile.phoneNumber ?? "",
+          "전화번호를 입력하세요",
+          {
             inputMode: "numeric",
             maxLength: 13,
-          })}
-          {profile.provider === "local" ? (
-            renderField("email", "이메일", profile.email ?? "", "이메일을 입력하세요")
-          ) : (
-            profile.email && (
+          },
+        )}
+        {profile.provider === "local"
+          ? renderField(
+              "email",
+              "이메일",
+              profile.email ?? "",
+              "이메일을 입력하세요",
+            )
+          : profile.email && (
               <div>
-                <p className="mb-1.5 text-xs font-medium text-gray-400">이메일</p>
+                <p className="mb-1.5 text-xs font-medium text-gray-400">
+                  이메일
+                </p>
                 <p className="text-sm text-gray-800">{profile.email}</p>
               </div>
-            )
-          )}
-          <div>
-            <p className="mb-1.5 text-xs font-medium text-gray-400">로그인 방법</p>
-            <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
-              {PROVIDER_LABEL[profile.provider] ?? profile.provider}
-            </span>
-          </div>
-          <div>
-            <p className="mb-1.5 text-xs font-medium text-gray-400">가입일</p>
-            <p className="text-sm text-gray-800">
-              {new Date(profile.createdAt).toLocaleDateString("ko-KR")}
-            </p>
-          </div>
+            )}
+        <div>
+          <p className="mb-1.5 text-xs font-medium text-gray-400">
+            로그인 방법
+          </p>
+          <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+            {PROVIDER_LABEL[profile.provider] ?? profile.provider}
+          </span>
+        </div>
+        <div>
+          <p className="mb-1.5 text-xs font-medium text-gray-400">가입일</p>
+          <p className="text-sm text-gray-800">
+            {new Date(profile.createdAt).toLocaleDateString("ko-KR")}
+          </p>
         </div>
       </div>
+    </div>
   );
 }

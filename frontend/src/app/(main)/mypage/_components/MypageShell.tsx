@@ -15,7 +15,11 @@ const NAV_ITEMS = [
   { label: "내 문의", href: "/mypage/qna" },
 ];
 
-export default function MypageShell({ children }: { children: React.ReactNode }) {
+export default function MypageShell({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const { isLoggedIn, isInitialized } = useAuthStore();
@@ -55,7 +59,8 @@ export default function MypageShell({ children }: { children: React.ReactNode })
           <ul className="flex gap-2 rounded-xl border border-gray-100 bg-white p-2 shadow-sm md:flex-col">
             {NAV_ITEMS.map((item) => {
               const isActive = pathname === item.href;
-              const showBadge = item.href === "/mypage/qna" && qnaUnreadCount > 0;
+              const showBadge =
+                item.href === "/mypage/qna" && qnaUnreadCount > 0;
               return (
                 <li key={item.href} className="flex-1 md:flex-none">
                   <Link

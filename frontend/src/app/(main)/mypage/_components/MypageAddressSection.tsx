@@ -47,7 +47,10 @@ type FormData = typeof EMPTY_FORM;
 export default function MypageAddressSection() {
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [modal, setModal] = useState<{ mode: "add" | "edit"; address?: Address } | null>(null);
+  const [modal, setModal] = useState<{
+    mode: "add" | "edit";
+    address?: Address;
+  } | null>(null);
   const [form, setForm] = useState<FormData>(EMPTY_FORM);
   const [isSaving, setIsSaving] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
@@ -80,7 +83,9 @@ export default function MypageAddressSection() {
 
   const openPostcode = () => {
     if (!window.daum?.Postcode) {
-      toast.error("주소 검색 서비스를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
+      toast.error(
+        "주소 검색 서비스를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.",
+      );
       return;
     }
     new window.daum.Postcode({
@@ -96,7 +101,12 @@ export default function MypageAddressSection() {
   };
 
   const handleSave = async () => {
-    if (!form.recipientName || !form.phoneNumber || !form.zipCode || !form.mainAddress) {
+    if (
+      !form.recipientName ||
+      !form.phoneNumber ||
+      !form.zipCode ||
+      !form.mainAddress
+    ) {
       toast.error("수령인, 전화번호, 우편번호, 주소는 필수입니다.");
       return;
     }
@@ -150,7 +160,11 @@ export default function MypageAddressSection() {
       <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-base font-bold text-gray-900">배송지 관리</h2>
-          <Button onClick={openAddModal} disabled={addresses.length >= 10} size="sm">
+          <Button
+            onClick={openAddModal}
+            disabled={addresses.length >= 10}
+            size="sm"
+          >
             + 배송지 추가
           </Button>
         </div>
@@ -162,7 +176,10 @@ export default function MypageAddressSection() {
         ) : addresses.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 py-10">
             <p className="text-sm text-gray-400">등록된 배송지가 없습니다.</p>
-            <button onClick={openAddModal} className="text-brand-blue text-sm font-medium hover:underline">
+            <button
+              onClick={openAddModal}
+              className="text-brand-blue text-sm font-medium hover:underline"
+            >
               배송지 추가하기
             </button>
           </div>
@@ -174,7 +191,9 @@ export default function MypageAddressSection() {
                 className={`rounded-xl border p-4 ${addr.isDefault ? "border-brand-blue/40 bg-blue-50/30" : "border-gray-100"}`}
               >
                 <div className="mb-1.5 flex items-center gap-2">
-                  <span className="text-sm font-semibold text-gray-900">{addr.recipientName}</span>
+                  <span className="text-sm font-semibold text-gray-900">
+                    {addr.recipientName}
+                  </span>
                   {addr.isDefault && (
                     <span className="bg-brand-blue/10 text-brand-blue rounded-full px-2 py-0.5 text-xs font-medium">
                       기본 배송지
@@ -190,7 +209,7 @@ export default function MypageAddressSection() {
                   {!addr.isDefault && (
                     <button
                       onClick={() => handleSetDefault(addr._id)}
-                      className="text-brand-blue/60 text-xs hover:text-brand-blue"
+                      className="text-brand-blue/60 hover:text-brand-blue text-xs"
                     >
                       기본 배송지 설정
                     </button>
@@ -218,14 +237,21 @@ export default function MypageAddressSection() {
       <Dialog open={!!modal} onOpenChange={(open) => !open && setModal(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{modal?.mode === "add" ? "배송지 추가" : "배송지 수정"}</DialogTitle>
+            <DialogTitle>
+              {modal?.mode === "add" ? "배송지 추가" : "배송지 수정"}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div>
               <Label className="mb-1">수령인 *</Label>
               <Input
                 value={form.recipientName}
-                onChange={(e) => setForm((prev) => ({ ...prev, recipientName: e.target.value }))}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    recipientName: e.target.value,
+                  }))
+                }
                 placeholder="홍길동"
                 maxLength={20}
               />
@@ -235,7 +261,10 @@ export default function MypageAddressSection() {
               <Input
                 value={form.phoneNumber}
                 onChange={(e) =>
-                  setForm((prev) => ({ ...prev, phoneNumber: formatPhoneNumber(e.target.value) }))
+                  setForm((prev) => ({
+                    ...prev,
+                    phoneNumber: formatPhoneNumber(e.target.value),
+                  }))
                 }
                 placeholder="전화번호를 입력하세요"
                 maxLength={13}
@@ -245,15 +274,35 @@ export default function MypageAddressSection() {
             <div>
               <Label className="mb-1">주소 *</Label>
               <div className="flex gap-2">
-                <Input value={form.zipCode} readOnly placeholder="우편번호" className="w-24 bg-gray-50" />
-                <Button type="button" variant="outline" size="sm" onClick={openPostcode}>
+                <Input
+                  value={form.zipCode}
+                  readOnly
+                  placeholder="우편번호"
+                  className="w-24 bg-gray-50"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={openPostcode}
+                >
                   주소 검색
                 </Button>
               </div>
-              <Input value={form.mainAddress} readOnly placeholder="기본 주소" className="mt-2 bg-gray-50" />
+              <Input
+                value={form.mainAddress}
+                readOnly
+                placeholder="기본 주소"
+                className="mt-2 bg-gray-50"
+              />
               <Input
                 value={form.detailAddress}
-                onChange={(e) => setForm((prev) => ({ ...prev, detailAddress: e.target.value }))}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    detailAddress: e.target.value,
+                  }))
+                }
                 placeholder="상세 주소 (동/호수 등)"
                 className="mt-2"
                 maxLength={50}
@@ -263,14 +312,18 @@ export default function MypageAddressSection() {
               <input
                 type="checkbox"
                 checked={form.isDefault}
-                onChange={(e) => setForm((prev) => ({ ...prev, isDefault: e.target.checked }))}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, isDefault: e.target.checked }))
+                }
                 className="accent-brand-blue h-4 w-4"
               />
               <span className="text-sm text-gray-600">기본 배송지로 설정</span>
             </label>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setModal(null)}>취소</Button>
+            <Button variant="outline" onClick={() => setModal(null)}>
+              취소
+            </Button>
             <Button onClick={handleSave} disabled={isSaving}>
               {isSaving ? "저장 중..." : "저장"}
             </Button>
