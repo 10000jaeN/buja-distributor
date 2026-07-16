@@ -12,7 +12,7 @@ const RANK_STYLES: Record<number, string> = {
 
 export default function BestClient({ products }: { products: Product[] }) {
   return (
-    <div className="mx-auto max-w-[1024px] px-5 py-10">
+    <div className="mx-auto max-w-[var(--max-width)] px-5 py-10">
       <div className="mb-8">
         <h1 className="flex items-center gap-2 text-page-title">
           <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />

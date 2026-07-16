@@ -204,7 +204,7 @@ export default function CheckoutPage() {
   const displayTotal = preview?.totalAmount ?? subtotal;
 
   return (
-    <div className="mx-auto max-w-[1024px] px-5 py-8">
+    <div className="mx-auto max-w-[var(--max-width)] px-5 py-8">
       <Script
         src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"
         strategy="lazyOnload"

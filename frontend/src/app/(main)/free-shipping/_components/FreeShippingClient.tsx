@@ -38,7 +38,7 @@ export default function FreeShippingClient({ initialProducts, sort }: Props) {
   };
 
   return (
-    <div className={`mx-auto max-w-[1024px] px-5 py-10 transition-opacity ${isPending ? "opacity-50" : ""}`}>
+    <div className={`mx-auto max-w-[var(--max-width)] px-5 py-10 transition-opacity ${isPending ? "opacity-50" : ""}`}>
       <div className="mb-8">
         <h1 className="flex items-center gap-2 text-page-title">
           <Truck className="h-5 w-5 text-brand-blue" />

@@ -168,7 +168,7 @@ export default function CartPage() {
 
   if (!isLoggedIn) {
     return (
-      <div className="mx-auto max-w-[1024px] px-5 py-10">
+      <div className="mx-auto max-w-[var(--max-width)] px-5 py-10">
         <h1 className="mb-8 text-2xl font-bold text-gray-900">장바구니</h1>
         <div className="flex min-h-[50vh] flex-col items-center justify-center gap-5">
           <div className="flex flex-col items-center gap-2 text-center">
@@ -210,7 +210,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1024px] px-5 py-10">
+    <div className="mx-auto max-w-[var(--max-width)] px-5 py-10">
       <ConfirmDialog
         open={removeTarget !== null}
         onOpenChange={(open) => { if (!open) setRemoveTarget(null); }}

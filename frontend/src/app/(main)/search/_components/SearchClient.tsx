@@ -40,7 +40,7 @@ export default function SearchClient({ initialProducts, q, sort }: Props) {
   };
 
   return (
-    <div className="mx-auto max-w-[1024px] px-5 py-10">
+    <div className="mx-auto max-w-[var(--max-width)] px-5 py-10">
       {/* 헤더 */}
       <div className="mb-6">
         <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-400">
