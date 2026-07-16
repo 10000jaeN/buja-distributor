@@ -63,4 +63,8 @@ export const userService = {
     );
     return res.data;
   },
+
+  deleteAccount: async (): Promise<void> => {
+    await apiClient.delete("/user");
+  },
 };
