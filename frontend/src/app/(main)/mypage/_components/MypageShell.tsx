@@ -24,7 +24,7 @@ export default function MypageShell({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     if (isInitialized && !isLoggedIn) {
-      router.replace("/");
+      router.replace("/login");
     }
   }, [isInitialized, isLoggedIn, router]);
 
