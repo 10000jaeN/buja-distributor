@@ -5,7 +5,9 @@ import { toast } from "sonner";
 import { RotateCcw, Search, Trash2 } from "lucide-react";
 import { adminUserService, AdminUser } from "@/api/adminUserService";
 import { formatDate } from "@/lib/dateUtils";
+import { maskEmail } from "@/lib/utils";
 import { Spinner } from "@/components/shared/Spinner";
+import UserDetailDialog from "./UserDetailDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +37,7 @@ export default function AdminUsersClient() {
   const [inputValue, setInputValue] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [detailUser, setDetailUser] = useState<AdminUser | null>(null);
 
   const fetchUsers = useCallback(async (search?: string) => {
     setIsLoading(true);
@@ -162,9 +165,15 @@ export default function AdminUsersClient() {
                 </tr>
               ) : (
                 users.map((user) => (
-                  <tr key={user._id} className="hover:bg-gray-50">
+                  <tr
+                    key={user._id}
+                    className="cursor-pointer hover:bg-gray-50"
+                    onClick={() => setDetailUser(user)}
+                  >
                     <td className="px-4 py-3 font-medium text-gray-800">{user.nickName}</td>
-                    <td className="px-4 py-3 text-gray-500">{user.email ?? "—"}</td>
+                    <td className="px-4 py-3 text-gray-500">
+                      {user.email ? maskEmail(user.email) : "—"}
+                    </td>
                     <td className="px-4 py-3">
                       <Badge variant="secondary" className="text-xs">
                         {PROVIDER_LABEL[user.provider] ?? user.provider}
@@ -186,7 +195,7 @@ export default function AdminUsersClient() {
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => setDeleteTarget(user)}
+                        onClick={(e) => { e.stopPropagation(); setDeleteTarget(user); }}
                         disabled={user.roles.includes("admin")}
                       >
                         <Trash2 className="size-3.5" />
@@ -214,7 +223,11 @@ export default function AdminUsersClient() {
             </p>
           ) : (
             users.map((user) => (
-              <div key={user._id} className="flex items-start justify-between gap-3 p-4">
+              <div
+                key={user._id}
+                className="flex cursor-pointer items-start justify-between gap-3 p-4 hover:bg-gray-50"
+                onClick={() => setDetailUser(user)}
+              >
                 <div className="min-w-0 space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-gray-800">{user.nickName}</span>
@@ -228,7 +241,9 @@ export default function AdminUsersClient() {
                       </Badge>
                     )}
                   </div>
-                  <p className="truncate text-xs text-gray-500">{user.email ?? "이메일 없음"}</p>
+                  <p className="truncate text-xs text-gray-500">
+                    {user.email ? maskEmail(user.email) : "이메일 없음"}
+                  </p>
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary" className="text-xs">
                       {PROVIDER_LABEL[user.provider] ?? user.provider}
@@ -239,7 +254,7 @@ export default function AdminUsersClient() {
                 <Button
                   variant="destructive"
                   size="icon-sm"
-                  onClick={() => setDeleteTarget(user)}
+                  onClick={(e) => { e.stopPropagation(); setDeleteTarget(user); }}
                   disabled={user.roles.includes("admin")}
                   aria-label="회원 삭제"
                 >
@@ -250,6 +265,9 @@ export default function AdminUsersClient() {
           )}
         </div>
       </div>
+
+      {/* 회원 상세 다이얼로그 */}
+      <UserDetailDialog user={detailUser} onClose={() => setDetailUser(null)} />
 
       {/* 삭제 확인 다이얼로그 */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
