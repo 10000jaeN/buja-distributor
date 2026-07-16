@@ -15,6 +15,7 @@ export type UserProfile = {
   _id: string;
   provider: "local" | "google" | "kakao" | "naver";
   email?: string;
+  phoneNumber?: string | null;
   nickName: string;
   roles: string[];
   address: Address[];
@@ -27,7 +28,7 @@ export const userService = {
     return res.data;
   },
 
-  updateProfile: async (data: { nickName?: string }): Promise<UserProfile> => {
+  updateProfile: async (data: { nickName?: string; phoneNumber?: string | null; email?: string }): Promise<UserProfile> => {
     const res = await apiClient.patch<{ data: UserProfile }>("/user", data);
     return res.data;
   },

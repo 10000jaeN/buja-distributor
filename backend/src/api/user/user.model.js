@@ -21,6 +21,11 @@ const UserSchema = new mongoose.Schema(
       required: false,
       sparse: true,
     },
+    phoneNumber: {
+      type: String,
+      required: false,
+      default: null,
+    },
     nickName: {
       type: String,
       required: true,
