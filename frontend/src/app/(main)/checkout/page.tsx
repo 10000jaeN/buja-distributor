@@ -59,6 +59,7 @@ export default function CheckoutPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [preview, setPreview] = useState<PreviewOrderResult | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
 
   useEffect(() => {
     if (items.length === 0) {
@@ -73,6 +74,7 @@ export default function CheckoutPage() {
       return;
     }
     setPreviewLoading(true);
+    setPreviewError(null);
     const timer = setTimeout(async () => {
       try {
         const result = await checkoutService.previewOrder({
@@ -80,8 +82,12 @@ export default function CheckoutPage() {
           mainAddress: form.mainAddress,
         });
         setPreview(result);
-      } catch {
+        setPreviewError(null);
+      } catch (err: unknown) {
+        const message = (err as { message?: string })?.message;
         setPreview(null);
+        setPreviewError(message || "금액 계산에 실패했습니다.");
+        toast.error(message || "금액 계산에 실패했습니다.");
       } finally {
         setPreviewLoading(false);
       }
@@ -377,12 +383,12 @@ export default function CheckoutPage() {
               <span className="flex items-center">
                 {previewLoading
                   ? <Spinner size="sm" />
-                  : preview
-                    ? preview.baseShippingFee === 0
-                      ? "무료"
-                      : `${preview.baseShippingFee.toLocaleString()}원`
-                    : form.mainAddress
-                      ? <Spinner size="sm" />
+                  : previewError
+                    ? <span className="text-red-500 text-xs">계산 불가</span>
+                    : preview
+                      ? preview.baseShippingFee === 0
+                        ? "무료"
+                        : `${preview.baseShippingFee.toLocaleString()}원`
                       : "-"}
               </span>
             </div>
@@ -404,13 +410,15 @@ export default function CheckoutPage() {
           <Button
             className="mt-6 w-full"
             onClick={handlePay}
-            disabled={isLoading || previewLoading || !preview}
+            disabled={isLoading || previewLoading || !preview || !!previewError}
           >
             {isLoading ? "처리 중..." : `${displayTotal.toLocaleString()}원 결제하기`}
           </Button>
-          {!preview && !previewLoading && (
+          {previewError ? (
+            <p className="mt-2 text-center text-xs text-red-500">{previewError}</p>
+          ) : !preview && !previewLoading ? (
             <p className="mt-2 text-center text-xs text-gray-400">배송지를 입력하면 최종 금액이 표시됩니다.</p>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
