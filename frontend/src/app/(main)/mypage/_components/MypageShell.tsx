@@ -11,7 +11,6 @@ const QNA_LAST_READ_KEY = "qna_last_read";
 const NAV_ITEMS = [
   { label: "내 프로필", href: "/mypage" },
   { label: "주문내역", href: "/mypage/orders" },
-  { label: "포인트", href: "/mypage/points" },
   { label: "내 리뷰", href: "/mypage/reviews" },
   { label: "내 문의", href: "/mypage/qna" },
 ];
