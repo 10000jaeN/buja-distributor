@@ -61,7 +61,21 @@ export const updatePromotion = async (req, res) => {
   const { id } = req.params;
   if (!mongoose.Types.ObjectId.isValid(id)) throw new CustomError("유효하지 않은 ID입니다.", 400);
 
-  const promotion = await Promotion.findByIdAndUpdate(id, req.body, { new: true, runValidators: true });
+  const { name, description, type, value, target, targetIds, minQuantity, minOrderAmount, startDate, endDate, isActive } = req.body;
+  const updateData = {};
+  if (name !== undefined) updateData.name = name;
+  if (description !== undefined) updateData.description = description;
+  if (type !== undefined) updateData.type = type;
+  if (value !== undefined) updateData.value = value;
+  if (target !== undefined) updateData.target = target;
+  if (targetIds !== undefined) updateData.targetIds = targetIds;
+  if (minQuantity !== undefined) updateData.minQuantity = minQuantity;
+  if (minOrderAmount !== undefined) updateData.minOrderAmount = minOrderAmount;
+  if (startDate !== undefined) updateData.startDate = startDate;
+  if (endDate !== undefined) updateData.endDate = endDate;
+  if (isActive !== undefined) updateData.isActive = isActive;
+
+  const promotion = await Promotion.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
   if (!promotion) throw new CustomError("프로모션을 찾을 수 없습니다.", 404);
 
   res.json(promotion);

@@ -358,8 +358,6 @@ export const createOrder = async (req, res) => {
     // 포인트 검증
     let validatedPoints = 0;
     if (pointsToUse && pointsToUse > 0) {
-      const user = await User.findById(userId).session(session);
-      if ((user?.points ?? 0) < pointsToUse) throw new CustomError("보유 포인트가 부족합니다.", 400);
       validatedPoints = pointsToUse;
     }
 
@@ -398,17 +396,20 @@ export const createOrder = async (req, res) => {
       }
     }
 
-    // 포인트 차감
+    // 포인트 차감 — findOneAndUpdate로 잔액 검증과 차감을 원자적으로 처리
     if (validatedPoints > 0) {
-      const user = await User.findById(userId).session(session);
-      const newBalance = user.points - validatedPoints;
-      await User.findByIdAndUpdate(userId, { points: newBalance }, { session });
+      const updatedUser = await User.findOneAndUpdate(
+        { _id: userId, points: { $gte: validatedPoints } },
+        { $inc: { points: -validatedPoints } },
+        { new: true, session }
+      );
+      if (!updatedUser) throw new CustomError("보유 포인트가 부족합니다.", 400);
       await PointTransaction.create(
         [{
           user: userId,
           type: "spend",
           amount: validatedPoints,
-          balance: newBalance,
+          balance: updatedUser.points,
           reason: `주문 #${newOrder.orderNumber} 포인트 사용`,
           order: newOrder._id,
         }],
@@ -926,29 +927,44 @@ export const completeDelivery = async (req, res) => {
   order.status = "delivered";
   order.deliveredAt = new Date();
 
-  // 포인트 적립 (구매 확정 시)
+  // 포인트 적립 (구매 확정 시) — 트랜잭션으로 원자적 처리
   const settings = await Settings.findOne({ key: "global" }).lean();
   const pointRate = settings?.pointRate ?? 3;
   const earnedPoints = Math.floor(order.totalAmount * (pointRate / 100));
 
-  if (earnedPoints > 0) {
-    const user = await User.findById(order.user);
-    if (user) {
-      const newBalance = user.points + earnedPoints;
-      await User.findByIdAndUpdate(order.user, { points: newBalance });
-      await PointTransaction.create({
-        user: order.user,
-        type: "earn",
-        amount: earnedPoints,
-        balance: newBalance,
-        reason: `주문 #${order.orderNumber} 구매 확정 적립`,
-        order: order._id,
-      });
-      order.pointsEarned = earnedPoints;
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    if (earnedPoints > 0) {
+      const updatedUser = await User.findOneAndUpdate(
+        { _id: order.user },
+        { $inc: { points: earnedPoints } },
+        { new: true, session }
+      );
+      if (updatedUser) {
+        await PointTransaction.create(
+          [{
+            user: order.user,
+            type: "earn",
+            amount: earnedPoints,
+            balance: updatedUser.points,
+            reason: `주문 #${order.orderNumber} 구매 확정 적립`,
+            order: order._id,
+          }],
+          { session }
+        );
+        order.pointsEarned = earnedPoints;
+      }
     }
-  }
 
-  await order.save();
+    await order.save({ session });
+    await session.commitTransaction();
+  } catch (err) {
+    await session.abortTransaction();
+    throw err;
+  } finally {
+    session.endSession();
+  }
 
   res.status(200).json({
     message: `주문 ${order.orderNumber}이 'delivered'(배송 완료) 처리되었습니다.`,

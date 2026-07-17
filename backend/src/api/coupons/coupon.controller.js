@@ -84,18 +84,23 @@ export const claimCoupon = async (req, res) => {
   const coupon = await Coupon.findOne({ code: code.toUpperCase(), isActive: true });
   if (!coupon) throw new CustomError("유효하지 않은 쿠폰 코드입니다.", 400);
   if (coupon.expiresAt && coupon.expiresAt < new Date()) throw new CustomError("만료된 쿠폰입니다.", 400);
-  if (coupon.maxUses !== null && coupon.usedCount >= coupon.maxUses) {
-    throw new CustomError("쿠폰 발급 한도를 초과했습니다.", 400);
-  }
-
   // 이미 발급받은 쿠폰인지 확인
   const alreadyClaimed = await UserCoupon.findOne({ user: userId, coupon: coupon._id });
   if (alreadyClaimed) throw new CustomError("이미 보유한 쿠폰입니다.", 409);
 
-  await Promise.all([
-    UserCoupon.create({ user: userId, coupon: coupon._id }),
-    Coupon.findByIdAndUpdate(coupon._id, { $inc: { usedCount: 1 } }),
-  ]);
+  // maxUses 체크 + usedCount 증가를 원자적으로 처리해 race condition 방지
+  if (coupon.maxUses !== null) {
+    const updated = await Coupon.findOneAndUpdate(
+      { _id: coupon._id, usedCount: { $lt: coupon.maxUses } },
+      { $inc: { usedCount: 1 } },
+      { new: true }
+    );
+    if (!updated) throw new CustomError("쿠폰 발급 한도를 초과했습니다.", 400);
+  } else {
+    await Coupon.findByIdAndUpdate(coupon._id, { $inc: { usedCount: 1 } });
+  }
+
+  await UserCoupon.create({ user: userId, coupon: coupon._id });
 
   res.status(201).json({
     message: "쿠폰이 쿠폰함에 추가됐습니다.",
