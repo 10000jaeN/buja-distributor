@@ -12,6 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Promotion } from "@/api/promotionService";
+import { calcProductDiscount } from "@/lib/promotionUtils";
 
 const SORT_OPTIONS = [
   { label: "최신순", value: "recent" },
@@ -25,6 +27,7 @@ type SortValue = (typeof SORT_OPTIONS)[number]["value"];
 type Props = {
   initialProducts: Product[];
   initialChildren: string[];
+  initialPromotions: Promotion[];
   category: string;
   sub: string;
   sort: SortValue;
@@ -33,6 +36,7 @@ type Props = {
 export default function ProductsClient({
   initialProducts,
   initialChildren,
+  initialPromotions,
   category,
   sub,
   sort,
@@ -154,7 +158,11 @@ export default function ProductsClient({
         <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-3 md:gap-5 lg:grid-cols-4">
           {initialProducts.map((product) => (
             <li key={product._id}>
-              <ProductCard product={product} size="lg" />
+              <ProductCard
+                product={product}
+                size="lg"
+                discount={calcProductDiscount(product, initialPromotions)}
+              />
             </li>
           ))}
         </ul>

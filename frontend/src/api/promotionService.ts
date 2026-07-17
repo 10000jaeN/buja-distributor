@@ -38,6 +38,15 @@ export const promotionService = {
     return apiClient.get<Promotion[]>("/promotions");
   },
 
+  getActive: async (productIds: string[], categoryParents: string[]): Promise<Promotion[]> => {
+    return apiClient.get<Promotion[]>("/promotions/active", {
+      params: {
+        productIds: productIds.join(","),
+        categoryParents: categoryParents.join(","),
+      },
+    });
+  },
+
   create: async (data: PromotionFormData): Promise<Promotion> => {
     return apiClient.post<Promotion>("/promotions", data);
   },

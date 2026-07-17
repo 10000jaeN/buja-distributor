@@ -12,14 +12,16 @@ import useAuthStore from "@/store/useAuthStore";
 import useCartStore from "@/store/useCartStore";
 import { cartService } from "@/api/cartService";
 import ConfirmDialog from "@/components/shared/ConfirmDialog";
+import { ProductDiscount } from "@/lib/promotionUtils";
 
 interface Props {
   product: Product;
   size?: "sm" | "lg";
   priority?: boolean;
+  discount?: ProductDiscount | null;
 }
 
-export default function ProductCard({ product, size = "lg", priority = false }: Props) {
+export default function ProductCard({ product, size = "lg", priority = false, discount }: Props) {
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const incrementCart = useCartStore((state) => state.increment);
   const router = useRouter();
@@ -90,6 +92,13 @@ export default function ProductCard({ product, size = "lg", priority = false }: 
             }
           />
 
+          {/* 할인 배지 */}
+          {discount && product.isAvailable && (
+            <span className="absolute top-2 left-2 z-10 rounded-md bg-brand-blue px-2 py-0.5 text-xs font-semibold text-white">
+              {discount.label} 할인
+            </span>
+          )}
+
           {/* 품절 오버레이 */}
           {!product.isAvailable && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/35">
@@ -120,9 +129,20 @@ export default function ProductCard({ product, size = "lg", priority = false }: 
           >
             {product.name}
           </p>
-          <p className={isLg ? "text-sm font-bold text-gray-900" : "text-[12px] font-bold text-gray-900"}>
-            {product.price.toLocaleString()}원
-          </p>
+          {discount ? (
+            <div className="flex items-baseline gap-1.5">
+              <p className={isLg ? "text-sm font-bold text-brand-blue" : "text-[12px] font-bold text-brand-blue"}>
+                {discount.discountedPrice.toLocaleString()}원
+              </p>
+              <p className="text-xs text-gray-400 line-through">
+                {product.price.toLocaleString()}원
+              </p>
+            </div>
+          ) : (
+            <p className={isLg ? "text-sm font-bold text-gray-900" : "text-[12px] font-bold text-gray-900"}>
+              {product.price.toLocaleString()}원
+            </p>
+          )}
         </div>
       </Link>
     </>

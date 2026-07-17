@@ -1,5 +1,6 @@
 import { productService } from "@/api/productService";
 import { categoryService } from "@/api/categoryService";
+import { promotionService } from "@/api/promotionService";
 import ProductsClient from "./_components/ProductsClient";
 
 export const revalidate = 60;
@@ -32,10 +33,18 @@ export default async function ProductsPage({
       : Promise.resolve([] as string[]),
   ]);
 
+  const promotions = await promotionService
+    .getActive(
+      products.map((p) => p._id),
+      [...new Set(products.map((p) => p.category.parent))]
+    )
+    .catch(() => []);
+
   return (
     <ProductsClient
       initialProducts={products}
       initialChildren={children}
+      initialPromotions={promotions}
       category={category}
       sub={sub}
       sort={sort}
