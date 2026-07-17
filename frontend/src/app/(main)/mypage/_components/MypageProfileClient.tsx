@@ -1,10 +1,12 @@
 "use client";
 
 import { userService, UserProfile } from "@/api/userService";
+import { pointService } from "@/api/pointService";
 import useAuthStore from "@/store/useAuthStore";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { formatPhoneNumber } from "@/lib/utils";
+import Link from "next/link";
 
 const PROVIDER_LABEL: Record<string, string> = {
   google: "구글",
@@ -19,6 +21,7 @@ export default function MypageProfileClient() {
   const { user, setUser } = useAuthStore();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [points, setPoints] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,9 +30,14 @@ export default function MypageProfileClient() {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    userService
-      .getProfile()
-      .then((data) => setProfile(data))
+    Promise.all([
+      userService.getProfile(),
+      pointService.getHistory(1, 1),
+    ])
+      .then(([profileData, pointData]) => {
+        setProfile(profileData);
+        setPoints(pointData.balance);
+      })
       .catch(() => setError("프로필을 불러오지 못했습니다."))
       .finally(() => setIsLoading(false));
   }, []);
@@ -194,6 +202,20 @@ export default function MypageProfileClient() {
           <p className="text-sm text-gray-800">
             {new Date(profile.createdAt).toLocaleDateString("ko-KR")}
           </p>
+        </div>
+        <div>
+          <p className="mb-1.5 text-xs font-medium text-gray-400">포인트</p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-gray-800">
+              {points !== null ? `${points.toLocaleString()}P` : "-"}
+            </p>
+            <Link
+              href="/mypage/points"
+              className="text-brand-blue text-xs font-medium hover:underline"
+            >
+              내역 보기
+            </Link>
+          </div>
         </div>
       </div>
     </div>

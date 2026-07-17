@@ -14,6 +14,7 @@ type Props = {
   appliedShippingFee: number;
   freeShippingThreshold: number;
   isFreeShipping: boolean;
+  discountTotal: number;
   totalPrice: number;
   onDecrease: () => void;
   onIncrease: () => void;
@@ -34,6 +35,7 @@ export function ProductBottomSheet({
   appliedShippingFee,
   freeShippingThreshold,
   isFreeShipping,
+  discountTotal,
   totalPrice,
   onDecrease,
   onIncrease,
@@ -128,6 +130,12 @@ export function ProductBottomSheet({
 
           {/* 가격 요약 */}
           <div className="space-y-2 rounded-xl bg-gray-50 px-4 py-3">
+            {discountTotal > 0 && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-500">프로모션 할인</span>
+                <span className="font-medium text-brand-blue">-{discountTotal.toLocaleString()}원</span>
+              </div>
+            )}
             <div className="flex items-center justify-between text-sm text-gray-500">
               <span>배송비</span>
               <span>

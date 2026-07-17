@@ -2,6 +2,10 @@ import Order from "./order.model.js";
 import Product from "../products/product.model.js";
 import User from "../user/user.model.js";
 import Settings from "../settings/settings.model.js";
+import Promotion from "../promotions/promotion.model.js";
+import Coupon from "../coupons/coupon.model.js";
+import UserCoupon from "../coupons/userCoupon.model.js";
+import PointTransaction from "../points/pointTransaction.model.js";
 import mongoose from "mongoose";
 import crypto from "crypto";
 import CustomError from "../../utils/customError.js";
@@ -74,7 +78,90 @@ async function calculateOrderAmounts(items, products, mainAddress) {
   const extraShippingFee = getExtraShippingFee(mainAddress);
   const shippingFee = baseShippingFee + extraShippingFee;
 
-  return { itemSubtotal, baseShippingFee, extraShippingFee, shippingFee, totalAmount: itemSubtotal + shippingFee };
+  return { itemSubtotal, baseShippingFee, extraShippingFee, shippingFee };
+}
+
+// =================================================================
+// 프로모션 할인 계산
+// =================================================================
+function calcPromotionDiscount(promotion, items, products) {
+  const now = new Date();
+  if (!promotion.isActive || now < promotion.startDate || now > promotion.endDate) return 0;
+
+  let applicableSubtotal = 0;
+  let applicableQuantity = 0;
+
+  for (const item of items) {
+    const product = products.find((p) => p._id.toString() === item.productId);
+    if (!product) continue;
+
+    let applicable = false;
+    if (promotion.target === "all") {
+      applicable = true;
+    } else if (promotion.target === "product") {
+      applicable = promotion.targetIds.includes(item.productId);
+    } else if (promotion.target === "category") {
+      applicable = promotion.targetIds.includes(product.category?.parent);
+    }
+
+    if (applicable) {
+      applicableSubtotal += product.price * item.quantity;
+      applicableQuantity += item.quantity;
+    }
+  }
+
+  if (promotion.minQuantity && applicableQuantity < promotion.minQuantity) return 0;
+  if (promotion.minOrderAmount && applicableSubtotal < promotion.minOrderAmount) return 0;
+  if (applicableSubtotal === 0) return 0;
+
+  if (promotion.type === "percentage") {
+    return Math.floor(applicableSubtotal * (promotion.value / 100));
+  }
+  return Math.min(promotion.value, applicableSubtotal);
+}
+
+// =================================================================
+// 쿠폰 할인 계산
+// - target: all / product / category 에 따라 적용 대상 소계 계산
+// - minOrderAmount는 전체 주문 소계 기준으로 체크
+// =================================================================
+function calcCouponDiscount(coupon, itemSubtotal, items = [], products = []) {
+  if (coupon.minOrderAmount && itemSubtotal < coupon.minOrderAmount) {
+    throw new CustomError(
+      `쿠폰 최소 주문금액(${coupon.minOrderAmount.toLocaleString()}원)을 충족하지 못합니다.`,
+      400
+    );
+  }
+
+  let applicableSubtotal = itemSubtotal;
+
+  if (coupon.target === "product" && coupon.targetIds?.length > 0) {
+    applicableSubtotal = items.reduce((sum, item) => {
+      const product = products.find((p) => p._id.toString() === item.productId.toString());
+      if (!product) return sum;
+      if (coupon.targetIds.includes(item.productId.toString())) {
+        return sum + product.price * item.quantity;
+      }
+      return sum;
+    }, 0);
+  } else if (coupon.target === "category" && coupon.targetIds?.length > 0) {
+    applicableSubtotal = items.reduce((sum, item) => {
+      const product = products.find((p) => p._id.toString() === item.productId.toString());
+      if (!product) return sum;
+      if (coupon.targetIds.includes(product.category?.parent)) {
+        return sum + product.price * item.quantity;
+      }
+      return sum;
+    }, 0);
+  }
+
+  if (applicableSubtotal === 0) return 0;
+
+  if (coupon.type === "percentage") {
+    const discount = Math.floor(applicableSubtotal * (coupon.value / 100));
+    return coupon.maxDiscount ? Math.min(discount, coupon.maxDiscount) : discount;
+  }
+  return Math.min(coupon.value, applicableSubtotal);
 }
 
 // =================================================================
@@ -103,7 +190,7 @@ const generateOrderNumber = () => {
 // 0. 주문 금액 미리보기 (POST /api/orders/preview) — DB 쓰기 없음
 // =================================================================
 export const previewOrder = async (req, res) => {
-  const { items, mainAddress } = req.body;
+  const { items, mainAddress, promotionId, userCouponId, pointsToUse } = req.body;
 
   if (!items || items.length === 0) {
     throw new CustomError("상품 목록이 비어 있습니다.", 400);
@@ -129,8 +216,60 @@ export const previewOrder = async (req, res) => {
     }
   }
 
-  const result = await calculateOrderAmounts(items, products, mainAddress ?? "");
-  res.status(200).json(result);
+  const { itemSubtotal, baseShippingFee, extraShippingFee, shippingFee } =
+    await calculateOrderAmounts(items, products, mainAddress ?? "");
+
+  // 프로모션 OR 쿠폰 (둘 중 하나)
+  let discountAmount = 0;
+  let promotionSnapshot = null;
+  let couponSnapshot = null;
+
+  if (promotionId && userCouponId) {
+    throw new CustomError("프로모션과 쿠폰은 동시에 적용할 수 없습니다.", 400);
+  }
+
+  if (promotionId) {
+    const promotion = await Promotion.findById(promotionId);
+    if (!promotion || !promotion.isActive) throw new CustomError("유효하지 않은 프로모션입니다.", 400);
+    discountAmount = calcPromotionDiscount(promotion, items, products);
+    promotionSnapshot = { promotionId: promotion._id, name: promotion.name, discountAmount };
+  }
+
+  if (userCouponId) {
+    const userCoupon = await UserCoupon.findOne({
+      _id: userCouponId,
+      user: req.user._id,
+      status: "available",
+    }).populate("coupon");
+    if (!userCoupon || !userCoupon.coupon) throw new CustomError("유효하지 않은 쿠폰입니다.", 400);
+    const coupon = userCoupon.coupon;
+    if (!coupon.isActive) throw new CustomError("비활성화된 쿠폰입니다.", 400);
+    if (coupon.expiresAt && coupon.expiresAt < new Date()) throw new CustomError("만료된 쿠폰입니다.", 400);
+    discountAmount = calcCouponDiscount(coupon, itemSubtotal, items, products);
+    couponSnapshot = { couponId: coupon._id, code: coupon.code, discountAmount };
+  }
+
+  // 포인트 검증
+  let validatedPoints = 0;
+  if (pointsToUse && pointsToUse > 0) {
+    const user = await User.findById(req.user._id).select("points");
+    const maxPoints = Math.min(pointsToUse, user?.points ?? 0);
+    validatedPoints = Math.max(0, maxPoints);
+  }
+
+  const totalAmount = Math.max(0, itemSubtotal - discountAmount - validatedPoints + shippingFee);
+
+  res.status(200).json({
+    itemSubtotal,
+    discountAmount,
+    promotion: promotionSnapshot,
+    coupon: couponSnapshot,
+    pointsToUse: validatedPoints,
+    baseShippingFee,
+    extraShippingFee,
+    shippingFee,
+    totalAmount,
+  });
 };
 
 // =================================================================
@@ -138,7 +277,7 @@ export const previewOrder = async (req, res) => {
 //    상태: pending
 // =================================================================
 export const createOrder = async (req, res) => {
-  const { items, shippingAddress } = req.body;
+  const { items, shippingAddress, promotionId, userCouponId, pointsToUse } = req.body;
   const userId = req.user._id;
 
   if (!items || items.length === 0) {
@@ -146,6 +285,9 @@ export const createOrder = async (req, res) => {
   }
   if (!shippingAddress?.mainAddress || !shippingAddress?.recipientName) {
     throw new CustomError("유효한 배송지 정보가 필요합니다.", 400);
+  }
+  if (promotionId && userCouponId) {
+    throw new CustomError("프로모션과 쿠폰은 동시에 적용할 수 없습니다.", 400);
   }
 
   const session = await mongoose.startSession();
@@ -180,17 +322,57 @@ export const createOrder = async (req, res) => {
       });
     }
 
-    const { shippingFee, totalAmount } = await calculateOrderAmounts(
+    const { itemSubtotal, shippingFee } = await calculateOrderAmounts(
       items,
       products,
       shippingAddress.mainAddress
     );
 
+    // 프로모션 OR 쿠폰 검증 및 할인 계산
+    let discountAmount = 0;
+    let promotionSnapshot = { promotionId: null, name: null, discountAmount: 0 };
+    let couponSnapshot = { couponId: null, code: null, discountAmount: 0 };
+    let userCouponDoc = null;
+
+    if (promotionId) {
+      const promotion = await Promotion.findById(promotionId).session(session);
+      if (!promotion || !promotion.isActive) throw new CustomError("유효하지 않은 프로모션입니다.", 400);
+      discountAmount = calcPromotionDiscount(promotion, items, products);
+      promotionSnapshot = { promotionId: promotion._id, name: promotion.name, discountAmount };
+    }
+
+    if (userCouponId) {
+      userCouponDoc = await UserCoupon.findOne({
+        _id: userCouponId,
+        user: userId,
+        status: "available",
+      }).session(session).populate("coupon");
+      if (!userCouponDoc || !userCouponDoc.coupon) throw new CustomError("유효하지 않은 쿠폰입니다.", 400);
+      const coupon = userCouponDoc.coupon;
+      if (!coupon.isActive) throw new CustomError("비활성화된 쿠폰입니다.", 400);
+      if (coupon.expiresAt && coupon.expiresAt < new Date()) throw new CustomError("만료된 쿠폰입니다.", 400);
+      discountAmount = calcCouponDiscount(coupon, itemSubtotal, items, products);
+      couponSnapshot = { couponId: coupon._id, code: coupon.code, discountAmount };
+    }
+
+    // 포인트 검증
+    let validatedPoints = 0;
+    if (pointsToUse && pointsToUse > 0) {
+      validatedPoints = pointsToUse;
+    }
+
+    const totalAmount = Math.max(0, itemSubtotal - discountAmount - validatedPoints + shippingFee);
+
     const newOrder = new Order({
       orderNumber: generateOrderNumber(),
       user: userId,
       items: orderItems,
+      subtotal: itemSubtotal,
       shippingFee,
+      appliedPromotion: promotionSnapshot,
+      appliedCoupon: couponSnapshot,
+      pointsUsed: validatedPoints,
+      pointsEarned: 0, // 구매 확정 시 적립
       totalAmount,
       shippingAddress,
       status: "pending",
@@ -198,7 +380,7 @@ export const createOrder = async (req, res) => {
 
     await newOrder.save({ session });
 
-    // 재고 차감 (stock이 null이면 무제한이므로 스킵)
+    // 재고 차감
     for (const item of items) {
       const product = products.find((p) => p._id.toString() === item.productId);
       if (product.stock !== null) {
@@ -212,6 +394,36 @@ export const createOrder = async (req, res) => {
           { session }
         );
       }
+    }
+
+    // 포인트 차감 — findOneAndUpdate로 잔액 검증과 차감을 원자적으로 처리
+    if (validatedPoints > 0) {
+      const updatedUser = await User.findOneAndUpdate(
+        { _id: userId, points: { $gte: validatedPoints } },
+        { $inc: { points: -validatedPoints } },
+        { new: true, session }
+      );
+      if (!updatedUser) throw new CustomError("보유 포인트가 부족합니다.", 400);
+      await PointTransaction.create(
+        [{
+          user: userId,
+          type: "spend",
+          amount: validatedPoints,
+          balance: updatedUser.points,
+          reason: `주문 #${newOrder.orderNumber} 포인트 사용`,
+          order: newOrder._id,
+        }],
+        { session }
+      );
+    }
+
+    // 쿠폰 사용 처리 — UserCoupon 상태를 'used'로 변경
+    if (userCouponDoc) {
+      await UserCoupon.findByIdAndUpdate(
+        userCouponDoc._id,
+        { status: "used", usedAt: new Date(), order: newOrder._id },
+        { session }
+      );
     }
 
     await session.commitTransaction();
@@ -434,6 +646,35 @@ export const cancelOrder = async (req, res) => {
           { session }
         );
       }
+    }
+
+    // 6. 포인트 환불 (사용한 포인트가 있을 때)
+    if (order.pointsUsed > 0) {
+      const user = await User.findById(order.user).session(session);
+      if (user) {
+        const newBalance = user.points + order.pointsUsed;
+        await User.findByIdAndUpdate(order.user, { points: newBalance }, { session });
+        await PointTransaction.create(
+          [{
+            user: order.user,
+            type: "cancel",
+            amount: order.pointsUsed,
+            balance: newBalance,
+            reason: `주문 #${order.orderNumber} 취소 포인트 환불`,
+            order: order._id,
+          }],
+          { session }
+        );
+      }
+    }
+
+    // 7. 쿠폰 사용 취소 — UserCoupon 상태를 'available'로 복구
+    if (order.appliedCoupon?.couponId) {
+      await UserCoupon.findOneAndUpdate(
+        { order: order._id },
+        { status: "available", usedAt: null, order: null },
+        { session }
+      );
     }
 
     await session.commitTransaction();
@@ -682,14 +923,53 @@ export const completeDelivery = async (req, res) => {
     );
   }
 
-  // 💡 핵심 로직: 상태를 'delivered'(배송 완료)로 변경
+  // 상태를 'delivered'로 변경
   order.status = "delivered";
-  order.deliveredAt = new Date(); // 배송 완료 시점 기록
-  await order.save();
+  order.deliveredAt = new Date();
+
+  // 포인트 적립 (구매 확정 시) — 트랜잭션으로 원자적 처리
+  const settings = await Settings.findOne({ key: "global" }).lean();
+  const pointRate = settings?.pointRate ?? 3;
+  const earnedPoints = Math.floor(order.totalAmount * (pointRate / 100));
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    if (earnedPoints > 0) {
+      const updatedUser = await User.findOneAndUpdate(
+        { _id: order.user },
+        { $inc: { points: earnedPoints } },
+        { new: true, session }
+      );
+      if (updatedUser) {
+        await PointTransaction.create(
+          [{
+            user: order.user,
+            type: "earn",
+            amount: earnedPoints,
+            balance: updatedUser.points,
+            reason: `주문 #${order.orderNumber} 구매 확정 적립`,
+            order: order._id,
+          }],
+          { session }
+        );
+        order.pointsEarned = earnedPoints;
+      }
+    }
+
+    await order.save({ session });
+    await session.commitTransaction();
+  } catch (err) {
+    await session.abortTransaction();
+    throw err;
+  } finally {
+    session.endSession();
+  }
 
   res.status(200).json({
     message: `주문 ${order.orderNumber}이 'delivered'(배송 완료) 처리되었습니다.`,
     orderId: order._id,
     status: order.status,
+    pointsEarned: earnedPoints,
   });
 };

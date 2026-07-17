@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ProductBottomSheet } from "./ProductBottomSheet";
+import { ProductDiscount } from "@/lib/promotionUtils";
 
 type Props = {
   productId: string;
@@ -18,6 +19,7 @@ type Props = {
   name: string;
   stock: number | null;
   isAvailable: boolean;
+  discount?: ProductDiscount | null;
 };
 
 export function ProductActions({
@@ -29,6 +31,7 @@ export function ProductActions({
   name,
   stock,
   isAvailable,
+  discount,
 }: Props) {
   const [quantity, setQuantity] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -39,7 +42,9 @@ export function ProductActions({
   const setCheckout = useCheckoutStore((state) => state.setCheckout);
   const router = useRouter();
 
-  const subtotal = price * quantity;
+  const effectivePrice = discount ? discount.discountedPrice : price;
+  const subtotal = effectivePrice * quantity;
+  const discountTotal = discount ? discount.discountAmount * quantity : 0;
   const isFreeShipping =
     freeShippingThreshold > 0 && subtotal >= freeShippingThreshold;
   const appliedShippingFee = isFreeShipping ? 0 : shippingFee;
@@ -114,6 +119,12 @@ export function ProductActions({
         )}
 
         <div className="mt-4 space-y-2 rounded-xl bg-gray-50 px-4 py-3">
+          {discountTotal > 0 && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-500">프로모션 할인</span>
+              <span className="font-medium text-brand-blue">-{discountTotal.toLocaleString()}원</span>
+            </div>
+          )}
           <div className="flex items-center justify-between text-sm text-gray-500">
             <span>배송비</span>
             <span>
@@ -180,6 +191,7 @@ export function ProductActions({
         appliedShippingFee={appliedShippingFee}
         freeShippingThreshold={freeShippingThreshold}
         isFreeShipping={isFreeShipping}
+        discountTotal={discountTotal}
         totalPrice={totalPrice}
         onDecrease={() => setQuantity((q) => Math.max(1, q - 1))}
         onIncrease={() =>

@@ -10,8 +10,10 @@ import { ImagePlus, Trash2 } from "lucide-react";
 
 export default function AdminSettingsClient() {
   const [bundleFreeThreshold, setBundleFreeThreshold] = useState("");
+  const [pointRate, setPointRate] = useState("");
   const [banners, setBanners] = useState<Banner[]>([]);
   const [savedThreshold, setSavedThreshold] = useState("");
+  const [savedPointRate, setSavedPointRate] = useState("");
   const [savedBanners, setSavedBanners] = useState<Banner[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -20,6 +22,7 @@ export default function AdminSettingsClient() {
 
   const isDirty =
     bundleFreeThreshold !== savedThreshold ||
+    pointRate !== savedPointRate ||
     JSON.stringify(banners) !== JSON.stringify(savedBanners);
 
   useEffect(() => {
@@ -27,10 +30,13 @@ export default function AdminSettingsClient() {
       .getSettings()
       .then((s) => {
         const threshold = String(s.bundleFreeThreshold);
+        const rate = String(s.pointRate ?? 3);
         const bannerList = s.banners ?? [];
         setBundleFreeThreshold(threshold);
+        setPointRate(rate);
         setBanners(bannerList);
         setSavedThreshold(threshold);
+        setSavedPointRate(rate);
         setSavedBanners(bannerList);
       })
       .catch(() => setLoadError(true))
@@ -76,18 +82,25 @@ export default function AdminSettingsClient() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const value = Number(bundleFreeThreshold);
-    if (isNaN(value) || value < 0) {
-      toast.error("0 이상의 숫자를 입력해주세요.");
+    const thresholdValue = Number(bundleFreeThreshold);
+    const rateValue = Number(pointRate);
+    if (isNaN(thresholdValue) || thresholdValue < 0) {
+      toast.error("묶음배송 기준금액은 0 이상의 숫자를 입력해주세요.");
+      return;
+    }
+    if (isNaN(rateValue) || rateValue < 0 || rateValue > 100) {
+      toast.error("포인트 적립률은 0~100 사이의 숫자를 입력해주세요.");
       return;
     }
     setIsSubmitting(true);
     try {
       await settingsService.updateSettings({
-        bundleFreeThreshold: value,
+        bundleFreeThreshold: thresholdValue,
+        pointRate: rateValue,
         banners,
       });
-      setSavedThreshold(String(value));
+      setSavedThreshold(String(thresholdValue));
+      setSavedPointRate(String(rateValue));
       setSavedBanners(banners);
       toast.success("설정이 저장됐습니다.");
     } catch {
@@ -137,6 +150,27 @@ export default function AdminSettingsClient() {
               <p className="text-xs text-gray-400">
                 묶음배송 가능 상품의 합계가 이 금액 이상이면 배송비가 무료로
                 처리됩니다.
+              </p>
+            </div>
+          </div>
+
+          {/* 포인트 설정 */}
+          <div className="space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+            <h2 className="text-sm font-semibold text-gray-700">포인트 설정</h2>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium text-gray-700">
+                구매 확정 포인트 적립률 (%)
+              </Label>
+              <Input
+                type="number"
+                value={pointRate}
+                onChange={(e) => setPointRate(e.target.value)}
+                min="0"
+                max="100"
+                placeholder="3"
+              />
+              <p className="text-xs text-gray-400">
+                구매 확정(배송 완료) 시 결제 금액의 이 비율만큼 포인트가 적립됩니다. (0~100)
               </p>
             </div>
           </div>
