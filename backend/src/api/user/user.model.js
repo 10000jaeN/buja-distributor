@@ -38,7 +38,14 @@ const UserSchema = new mongoose.Schema(
       minLength: [2, "닉네임은 최소 2글자 이상이여야 합니다."],
     },
 
-    // 3. 권한 및 기타 정보
+    // 3. 포인트
+    points: {
+      type: Number,
+      default: 0,
+      min: [0, "포인트는 0 이상이어야 합니다."],
+    },
+
+    // 4. 권한 및 기타 정보
     roles: {
       type: [String],
       enum: ["user", "admin"],
