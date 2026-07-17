@@ -73,14 +73,14 @@ export default function AdminPopupsClient() {
   };
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-lg font-bold text-gray-800">팝업 관리</h1>
+    <div>
+      <div className="mb-5 flex items-center justify-between">
+        <h1 className="text-xl font-bold text-gray-800">팝업 관리</h1>
         <Button
-          size="sm"
           onClick={() => { setEditTarget(null); setDialogOpen(true); }}
+          className="flex items-center gap-1.5"
         >
-          <Plus className="mr-1.5 h-4 w-4" /> 팝업 추가
+          <Plus className="size-4" /> 팝업 추가
         </Button>
       </div>
 
@@ -89,20 +89,20 @@ export default function AdminPopupsClient() {
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-200 border-t-brand-blue" />
         </div>
       ) : popups.length === 0 ? (
-        <div className="rounded-xl border border-gray-100 py-16 text-center text-sm text-gray-400">
+        <div className="flex h-48 items-center justify-center rounded-xl border border-dashed border-gray-200 text-sm text-gray-400">
           등록된 팝업이 없습니다.
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-gray-100">
+        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-left text-xs text-gray-500">
+            <thead className="border-b border-gray-100 bg-gray-50">
               <tr>
-                <th className="px-4 py-3">미리보기</th>
-                <th className="px-4 py-3">제목</th>
-                <th className="px-4 py-3">액션</th>
-                <th className="px-4 py-3">노출 기간</th>
-                <th className="px-4 py-3">상태</th>
-                <th className="px-4 py-3 text-right">관리</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">미리보기</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">제목</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">액션</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">노출 기간</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">상태</th>
+                <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
