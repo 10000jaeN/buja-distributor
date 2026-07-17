@@ -5,6 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Promotion, PromotionFormData, PromotionTarget, PromotionType } from "@/api/promotionService";
+import { productService } from "@/api/productService";
+import { categoryService } from "@/api/categoryService";
+import { Product, Category } from "@/types/product";
+import { Search } from "lucide-react";
 
 type Props = {
   open: boolean;
@@ -28,9 +32,79 @@ const EMPTY: PromotionFormData = {
   isActive: true,
 };
 
+type MultiSelectProps = {
+  items: { id: string; label: string }[];
+  selected: string[];
+  onChange: (selected: string[]) => void;
+  placeholder?: string;
+  isLoading?: boolean;
+};
+
+function MultiSelectBox({ items, selected, onChange, placeholder = "검색...", isLoading }: MultiSelectProps) {
+  const [search, setSearch] = useState("");
+
+  const filtered = items.filter((item) =>
+    item.label.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const toggle = (id: string) => {
+    if (selected.includes(id)) {
+      onChange(selected.filter((s) => s !== id));
+    } else {
+      onChange([...selected, id]);
+    }
+  };
+
+  return (
+    <div className="rounded-md border border-gray-200">
+      <div className="relative border-b border-gray-100 px-3 py-2">
+        <Search className="absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-gray-400" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={placeholder}
+          className="w-full bg-transparent pl-6 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none"
+        />
+      </div>
+      <div className="max-h-48 overflow-y-auto">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-6">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-200 border-t-brand-blue" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <p className="py-4 text-center text-xs text-gray-400">검색 결과가 없습니다.</p>
+        ) : (
+          filtered.map((item) => (
+            <label
+              key={item.id}
+              className="flex cursor-pointer items-center gap-2.5 px-3 py-2 text-sm hover:bg-gray-50"
+            >
+              <input
+                type="checkbox"
+                checked={selected.includes(item.id)}
+                onChange={() => toggle(item.id)}
+                className="h-4 w-4 rounded border-gray-300 accent-brand-blue"
+              />
+              <span className="text-gray-700">{item.label}</span>
+            </label>
+          ))
+        )}
+      </div>
+      {selected.length > 0 && (
+        <div className="border-t border-gray-100 px-3 py-2 text-xs text-gray-500">
+          {selected.length}개 선택됨
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function PromotionFormDialog({ open, onClose, onSubmit, initial, isSubmitting }: Props) {
   const [form, setForm] = useState<PromotionFormData>(EMPTY);
-  const [targetIdsInput, setTargetIdsInput] = useState("");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoadingOptions, setIsLoadingOptions] = useState(false);
 
   useEffect(() => {
     if (initial) {
@@ -47,26 +121,40 @@ export default function PromotionFormDialog({ open, onClose, onSubmit, initial, 
         endDate: initial.endDate.slice(0, 16),
         isActive: initial.isActive,
       });
-      setTargetIdsInput(initial.targetIds.join(", "));
     } else {
       setForm(EMPTY);
-      setTargetIdsInput("");
     }
   }, [initial, open]);
+
+  // target이 바뀔 때 상품/카테고리 데이터 로드
+  useEffect(() => {
+    if (!open) return;
+    if (form.target === "product" && products.length === 0) {
+      setIsLoadingOptions(true);
+      productService.getProducts({}).then(setProducts).finally(() => setIsLoadingOptions(false));
+    }
+    if (form.target === "category" && categories.length === 0) {
+      setIsLoadingOptions(true);
+      categoryService.getCategories().then(setCategories).finally(() => setIsLoadingOptions(false));
+    }
+  }, [form.target, open]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!open) return null;
 
   const set = <K extends keyof PromotionFormData>(key: K, value: PromotionFormData[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
+  const handleTargetChange = (target: PromotionTarget) => {
+    setForm((prev) => ({ ...prev, target, targetIds: [] }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const ids = targetIdsInput
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    await onSubmit({ ...form, targetIds: ids });
+    await onSubmit(form);
   };
+
+  const productItems = products.map((p) => ({ id: p._id, label: p.name }));
+  const categoryItems = categories.map((c) => ({ id: c.parent, label: c.parent }));
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -77,7 +165,7 @@ export default function PromotionFormDialog({ open, onClose, onSubmit, initial, 
           </h2>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 overflow-y-auto p-6" style={{ maxHeight: "70vh" }}>
+        <form onSubmit={handleSubmit} className="space-y-4 overflow-y-auto p-6" style={{ maxHeight: "75vh" }}>
           <div className="space-y-1.5">
             <Label className="text-sm font-medium text-gray-700">프로모션명 *</Label>
             <Input
@@ -127,24 +215,37 @@ export default function PromotionFormDialog({ open, onClose, onSubmit, initial, 
             <Label className="text-sm font-medium text-gray-700">적용 대상 *</Label>
             <select
               value={form.target}
-              onChange={(e) => set("target", e.target.value as PromotionTarget)}
+              onChange={(e) => handleTargetChange(e.target.value as PromotionTarget)}
               className="h-9 w-full rounded-md border border-gray-200 px-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-blue"
             >
               <option value="all">전체 상품</option>
-              <option value="product">특정 상품 (상품 ID)</option>
-              <option value="category">특정 카테고리 (parent명)</option>
+              <option value="product">특정 상품 선택</option>
+              <option value="category">특정 카테고리 선택</option>
             </select>
           </div>
 
-          {form.target !== "all" && (
+          {form.target === "product" && (
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium text-gray-700">
-                {form.target === "product" ? "상품 ID (쉼표 구분)" : "카테고리 parent명 (쉼표 구분)"}
-              </Label>
-              <Input
-                value={targetIdsInput}
-                onChange={(e) => setTargetIdsInput(e.target.value)}
-                placeholder={form.target === "product" ? "6123abc..., 6456def..." : "식품, 생활용품"}
+              <Label className="text-sm font-medium text-gray-700">상품 선택</Label>
+              <MultiSelectBox
+                items={productItems}
+                selected={form.targetIds ?? []}
+                onChange={(ids) => set("targetIds", ids)}
+                placeholder="상품명 검색..."
+                isLoading={isLoadingOptions}
+              />
+            </div>
+          )}
+
+          {form.target === "category" && (
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium text-gray-700">카테고리 선택</Label>
+              <MultiSelectBox
+                items={categoryItems}
+                selected={form.targetIds ?? []}
+                onChange={(ids) => set("targetIds", ids)}
+                placeholder="카테고리명 검색..."
+                isLoading={isLoadingOptions}
               />
             </div>
           )}
