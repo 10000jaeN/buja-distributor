@@ -1,7 +1,7 @@
 import express from "express";
 import asyncHandler from "../../utils/asyncHandler.js";
-import authMiddleware from "../../middleware/auth.middleware.js";
-import adminAuthMiddleware from "../../middleware/admin.middleware.js";
+import { authMiddleware } from "../../middleware/auth.middleware.js";
+import { adminAuthMiddleware } from "../../middleware/admin.middleware.js";
 import {
   getAllPromotions,
   getActivePromotions,
