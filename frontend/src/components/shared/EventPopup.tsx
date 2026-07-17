@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { popupService, Popup } from "@/api/popupService";
 import { couponService } from "@/api/couponService";
+import useAuthStore from "@/store/useAuthStore";
 import { toast } from "sonner";
 
 function getDismissKey(id: string) {
@@ -26,6 +28,8 @@ export default function EventPopup() {
   const [popup, setPopup] = useState<Popup | null>(null);
   const [visible, setVisible] = useState(false);
   const [claiming, setClaiming] = useState(false);
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+  const router = useRouter();
 
   useEffect(() => {
     popupService.getActive().then((popups) => {
@@ -48,6 +52,12 @@ export default function EventPopup() {
 
   const handleCouponClaim = async () => {
     if (!popup.couponCode || claiming) return;
+    if (!isLoggedIn) {
+      toast.info("쿠폰을 받으려면 로그인이 필요합니다.", {
+        action: { label: "로그인", onClick: () => router.push("/login") },
+      });
+      return;
+    }
     setClaiming(true);
     try {
       const res = await couponService.claim(popup.couponCode);
