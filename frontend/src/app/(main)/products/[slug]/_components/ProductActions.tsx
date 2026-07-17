@@ -17,6 +17,7 @@ type Props = {
   thumbnail: string;
   name: string;
   stock: number | null;
+  isAvailable: boolean;
 };
 
 export function ProductActions({
@@ -27,6 +28,7 @@ export function ProductActions({
   thumbnail,
   name,
   stock,
+  isAvailable,
 }: Props) {
   const [quantity, setQuantity] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -138,17 +140,17 @@ export function ProductActions({
         <div className="mt-4 flex gap-3">
           <button
             onClick={handleAddToCart}
-            disabled={isLoading}
+            disabled={isLoading || !isAvailable}
             className="flex-1 rounded-xl border border-gray-300 bg-white py-4 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
           >
             장바구니
           </button>
           <button
             onClick={handleBuyNow}
-            disabled={isBuying}
+            disabled={isBuying || !isAvailable}
             className="bg-brand-blue flex-1 rounded-xl py-4 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"
           >
-            구매하기
+            {!isAvailable ? "품절" : "구매하기"}
           </button>
         </div>
       </div>
@@ -159,10 +161,11 @@ export function ProductActions({
         className="fixed bottom-0 left-0 z-40 w-full border-t border-gray-200 bg-white px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-2px_8px_rgba(0,0,0,0.06)] lg:hidden"
       >
         <button
-          onClick={() => setIsSheetOpen(true)}
-          className="bg-brand-blue w-full rounded-xl py-4 text-sm font-semibold text-white transition-colors hover:opacity-90"
+          onClick={() => isAvailable && setIsSheetOpen(true)}
+          disabled={!isAvailable}
+          className="bg-brand-blue w-full rounded-xl py-4 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"
         >
-          구매하기
+          {!isAvailable ? "품절" : "구매하기"}
         </button>
       </nav>
 
@@ -176,6 +179,7 @@ export function ProductActions({
         shippingFee={shippingFee}
         freeShippingThreshold={freeShippingThreshold}
         stock={stock}
+        isAvailable={isAvailable}
         quantity={quantity}
         onDecrease={() => setQuantity((q) => Math.max(1, q - 1))}
         onIncrease={() =>

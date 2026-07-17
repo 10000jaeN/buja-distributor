@@ -12,6 +12,7 @@ type Props = {
   shippingFee: number;
   freeShippingThreshold: number;
   stock: number | null;
+  isAvailable: boolean;
   quantity: number;
   onDecrease: () => void;
   onIncrease: () => void;
@@ -30,6 +31,7 @@ export function ProductBottomSheet({
   shippingFee,
   freeShippingThreshold,
   stock,
+  isAvailable,
   quantity,
   onDecrease,
   onIncrease,
@@ -156,17 +158,17 @@ export function ProductBottomSheet({
           <div className="mt-4 flex gap-3">
             <button
               onClick={onAddToCart}
-              disabled={isCartLoading}
+              disabled={isCartLoading || !isAvailable}
               className="flex-1 rounded-xl border border-gray-300 bg-white py-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
             >
               장바구니
             </button>
             <button
               onClick={onBuyNow}
-              disabled={isBuying}
+              disabled={isBuying || !isAvailable}
               className="bg-brand-blue flex-1 rounded-xl py-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
             >
-              구매하기
+              {!isAvailable ? "품절" : "구매하기"}
             </button>
           </div>
         </div>

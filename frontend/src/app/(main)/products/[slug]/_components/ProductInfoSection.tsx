@@ -8,6 +8,7 @@ type Props = React.ComponentProps<"div"> & {
   ratingAverage: number;
   reviewCount: number;
   stock: number | null;
+  isAvailable: boolean;
 };
 
 export function ProductInfoSection({
@@ -18,6 +19,7 @@ export function ProductInfoSection({
   ratingAverage,
   reviewCount,
   stock,
+  isAvailable,
   ...divProps
 }: Props) {
   return (
@@ -46,11 +48,21 @@ export function ProductInfoSection({
             {price.toLocaleString()}원
           </dd>
         </div>
-        {stock !== null && (
+        {(!isAvailable || stock !== null) && (
           <div className="flex items-center justify-between">
             <dt className="text-subtle text-sm">재고</dt>
-            <dd className={`text-sm font-medium ${stock <= 5 ? "text-red-500" : "text-secondary-body"}`}>
-              {stock === 0 ? "품절" : `${stock}개 남음`}
+            <dd
+              className={`text-sm font-medium ${
+                !isAvailable || stock === 0
+                  ? "text-red-500"
+                  : stock !== null && stock <= 5
+                    ? "text-red-500"
+                    : "text-secondary-body"
+              }`}
+            >
+              {!isAvailable || stock === 0
+                ? "품절"
+                : `${stock}개 남음`}
             </dd>
           </div>
         )}
