@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import useCheckoutStore from "@/store/useCheckoutStore";
 import useAuthStore from "@/store/useAuthStore";
-import { checkoutService, type PreviewOrderResult, type ValidateCouponResult } from "@/api/checkoutService";
+import { checkoutService, type PreviewOrderResult } from "@/api/checkoutService";
 import { userService, type Address } from "@/api/userService";
 import { pointService } from "@/api/pointService";
 import { formatPhoneNumber } from "@/lib/utils";
@@ -64,7 +64,7 @@ export default function CheckoutPage() {
   const [previewError, setPreviewError] = useState<string | null>(null);
 
   // 할인/포인트 상태
-  const [appliedCoupon, setAppliedCoupon] = useState<ValidateCouponResult | null>(null);
+  const [selectedUserCouponId, setSelectedUserCouponId] = useState<string | null>(null);
   const [pointsToUse, setPointsToUse] = useState(0);
   const [userPoints, setUserPoints] = useState(0);
 
@@ -109,7 +109,7 @@ export default function CheckoutPage() {
         const result = await checkoutService.previewOrder({
           items: items.map(({ productId, quantity }) => ({ productId, quantity })),
           mainAddress: form.mainAddress,
-          couponCode: appliedCoupon?.code,
+          userCouponId: selectedUserCouponId ?? undefined,
           pointsToUse: pointsToUse > 0 ? pointsToUse : undefined,
         });
         setPreview(result);
@@ -124,7 +124,7 @@ export default function CheckoutPage() {
       }
     }, 600);
     return () => clearTimeout(timer);
-  }, [form.mainAddress, items, appliedCoupon, pointsToUse]);
+  }, [form.mainAddress, items, selectedUserCouponId, pointsToUse]);
 
   const handleAddressSelect = (id: string | "direct") => {
     setSelectedAddressId(id);
@@ -175,7 +175,7 @@ export default function CheckoutPage() {
       const { orderId, totalAmount: orderTotal } = await checkoutService.createOrder({
         items: items.map(({ productId, quantity }) => ({ productId, quantity })),
         shippingAddress: form,
-        couponCode: appliedCoupon?.code,
+        userCouponId: selectedUserCouponId ?? undefined,
         pointsToUse: pointsToUse > 0 ? pointsToUse : undefined,
       });
 
@@ -364,9 +364,8 @@ export default function CheckoutPage() {
             userPoints={userPoints}
             pointsToUse={pointsToUse}
             onPointsChange={setPointsToUse}
-            appliedCoupon={appliedCoupon}
-            onCouponApply={setAppliedCoupon}
-            onCouponRemove={() => setAppliedCoupon(null)}
+            selectedUserCouponId={selectedUserCouponId}
+            onCouponSelect={setSelectedUserCouponId}
             subtotal={subtotal}
           />
 

@@ -4,7 +4,7 @@ import User from "../user/user.model.js";
 import Settings from "../settings/settings.model.js";
 import Promotion from "../promotions/promotion.model.js";
 import Coupon from "../coupons/coupon.model.js";
-import CouponUsage from "../coupons/couponUsage.model.js";
+import UserCoupon from "../coupons/userCoupon.model.js";
 import PointTransaction from "../points/pointTransaction.model.js";
 import mongoose from "mongoose";
 import crypto from "crypto";
@@ -163,7 +163,7 @@ const generateOrderNumber = () => {
 // 0. 주문 금액 미리보기 (POST /api/orders/preview) — DB 쓰기 없음
 // =================================================================
 export const previewOrder = async (req, res) => {
-  const { items, mainAddress, promotionId, couponCode, pointsToUse } = req.body;
+  const { items, mainAddress, promotionId, userCouponId, pointsToUse } = req.body;
 
   if (!items || items.length === 0) {
     throw new CustomError("상품 목록이 비어 있습니다.", 400);
@@ -197,7 +197,7 @@ export const previewOrder = async (req, res) => {
   let promotionSnapshot = null;
   let couponSnapshot = null;
 
-  if (promotionId && couponCode) {
+  if (promotionId && userCouponId) {
     throw new CustomError("프로모션과 쿠폰은 동시에 적용할 수 없습니다.", 400);
   }
 
@@ -208,11 +208,16 @@ export const previewOrder = async (req, res) => {
     promotionSnapshot = { promotionId: promotion._id, name: promotion.name, discountAmount };
   }
 
-  if (couponCode) {
-    const coupon = await Coupon.findOne({ code: couponCode.toUpperCase(), isActive: true });
-    if (!coupon) throw new CustomError("유효하지 않은 쿠폰 코드입니다.", 400);
+  if (userCouponId) {
+    const userCoupon = await UserCoupon.findOne({
+      _id: userCouponId,
+      user: req.user._id,
+      status: "available",
+    }).populate("coupon");
+    if (!userCoupon || !userCoupon.coupon) throw new CustomError("유효하지 않은 쿠폰입니다.", 400);
+    const coupon = userCoupon.coupon;
+    if (!coupon.isActive) throw new CustomError("비활성화된 쿠폰입니다.", 400);
     if (coupon.expiresAt && coupon.expiresAt < new Date()) throw new CustomError("만료된 쿠폰입니다.", 400);
-    if (coupon.maxUses !== null && coupon.usedCount >= coupon.maxUses) throw new CustomError("쿠폰 사용 한도를 초과했습니다.", 400);
     discountAmount = calcCouponDiscount(coupon, itemSubtotal);
     couponSnapshot = { couponId: coupon._id, code: coupon.code, discountAmount };
   }
@@ -245,7 +250,7 @@ export const previewOrder = async (req, res) => {
 //    상태: pending
 // =================================================================
 export const createOrder = async (req, res) => {
-  const { items, shippingAddress, promotionId, couponCode, pointsToUse } = req.body;
+  const { items, shippingAddress, promotionId, userCouponId, pointsToUse } = req.body;
   const userId = req.user._id;
 
   if (!items || items.length === 0) {
@@ -254,7 +259,7 @@ export const createOrder = async (req, res) => {
   if (!shippingAddress?.mainAddress || !shippingAddress?.recipientName) {
     throw new CustomError("유효한 배송지 정보가 필요합니다.", 400);
   }
-  if (promotionId && couponCode) {
+  if (promotionId && userCouponId) {
     throw new CustomError("프로모션과 쿠폰은 동시에 적용할 수 없습니다.", 400);
   }
 
@@ -300,7 +305,7 @@ export const createOrder = async (req, res) => {
     let discountAmount = 0;
     let promotionSnapshot = { promotionId: null, name: null, discountAmount: 0 };
     let couponSnapshot = { couponId: null, code: null, discountAmount: 0 };
-    let couponDoc = null;
+    let userCouponDoc = null;
 
     if (promotionId) {
       const promotion = await Promotion.findById(promotionId).session(session);
@@ -309,17 +314,18 @@ export const createOrder = async (req, res) => {
       promotionSnapshot = { promotionId: promotion._id, name: promotion.name, discountAmount };
     }
 
-    if (couponCode) {
-      couponDoc = await Coupon.findOne({ code: couponCode.toUpperCase(), isActive: true }).session(session);
-      if (!couponDoc) throw new CustomError("유효하지 않은 쿠폰 코드입니다.", 400);
-      if (couponDoc.expiresAt && couponDoc.expiresAt < new Date()) throw new CustomError("만료된 쿠폰입니다.", 400);
-      if (couponDoc.maxUses !== null && couponDoc.usedCount >= couponDoc.maxUses) throw new CustomError("쿠폰 사용 한도를 초과했습니다.", 400);
-
-      const userUsageCount = await CouponUsage.countDocuments({ coupon: couponDoc._id, user: userId }).session(session);
-      if (userUsageCount >= couponDoc.maxUsesPerUser) throw new CustomError("이미 사용한 쿠폰입니다.", 400);
-
-      discountAmount = calcCouponDiscount(couponDoc, itemSubtotal);
-      couponSnapshot = { couponId: couponDoc._id, code: couponDoc.code, discountAmount };
+    if (userCouponId) {
+      userCouponDoc = await UserCoupon.findOne({
+        _id: userCouponId,
+        user: userId,
+        status: "available",
+      }).session(session).populate("coupon");
+      if (!userCouponDoc || !userCouponDoc.coupon) throw new CustomError("유효하지 않은 쿠폰입니다.", 400);
+      const coupon = userCouponDoc.coupon;
+      if (!coupon.isActive) throw new CustomError("비활성화된 쿠폰입니다.", 400);
+      if (coupon.expiresAt && coupon.expiresAt < new Date()) throw new CustomError("만료된 쿠폰입니다.", 400);
+      discountAmount = calcCouponDiscount(coupon, itemSubtotal);
+      couponSnapshot = { couponId: coupon._id, code: coupon.code, discountAmount };
     }
 
     // 포인트 검증
@@ -383,11 +389,11 @@ export const createOrder = async (req, res) => {
       );
     }
 
-    // 쿠폰 사용 처리
-    if (couponDoc) {
-      await Coupon.findByIdAndUpdate(couponDoc._id, { $inc: { usedCount: 1 } }, { session });
-      await CouponUsage.create(
-        [{ coupon: couponDoc._id, user: userId, order: newOrder._id }],
+    // 쿠폰 사용 처리 — UserCoupon 상태를 'used'로 변경
+    if (userCouponDoc) {
+      await UserCoupon.findByIdAndUpdate(
+        userCouponDoc._id,
+        { status: "used", usedAt: new Date(), order: newOrder._id },
         { session }
       );
     }
@@ -634,14 +640,13 @@ export const cancelOrder = async (req, res) => {
       }
     }
 
-    // 7. 쿠폰 사용 취소 (쿠폰이 적용된 경우)
+    // 7. 쿠폰 사용 취소 — UserCoupon 상태를 'available'로 복구
     if (order.appliedCoupon?.couponId) {
-      await Coupon.findByIdAndUpdate(
-        order.appliedCoupon.couponId,
-        { $inc: { usedCount: -1 } },
+      await UserCoupon.findOneAndUpdate(
+        { order: order._id },
+        { status: "available", usedAt: null, order: null },
         { session }
       );
-      await CouponUsage.deleteOne({ order: order._id }).session(session);
     }
 
     await session.commitTransaction();

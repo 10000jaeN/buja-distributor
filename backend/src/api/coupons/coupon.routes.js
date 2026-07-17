@@ -7,13 +7,15 @@ import {
   createCoupon,
   updateCoupon,
   deleteCoupon,
-  validateCoupon,
+  claimCoupon,
+  getMyCoupons,
 } from "./coupon.controller.js";
 
 const router = express.Router();
 
-// 유저 — 쿠폰 유효성 검사
-router.post("/validate", authMiddleware, asyncHandler(validateCoupon));
+// 유저 — 쿠폰함
+router.post("/claim", authMiddleware, asyncHandler(claimCoupon));
+router.get("/mine", authMiddleware, asyncHandler(getMyCoupons));
 
 // 어드민 전용
 router.get("/", authMiddleware, adminAuthMiddleware, asyncHandler(getAllCoupons));

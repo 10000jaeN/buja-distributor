@@ -3,7 +3,7 @@ import { apiClient } from "@/lib/apiClient";
 export interface PreviewOrderPayload {
   items: { productId: string; quantity: number }[];
   mainAddress: string;
-  couponCode?: string;
+  userCouponId?: string;
   pointsToUse?: number;
 }
 
@@ -28,7 +28,7 @@ export interface CreateOrderPayload {
     mainAddress: string;
     detailAddress?: string;
   };
-  couponCode?: string;
+  userCouponId?: string;
   pointsToUse?: number;
 }
 
@@ -45,13 +45,6 @@ export interface ConfirmPaymentResult {
   paymentProvider: string | null;
 }
 
-export interface ValidateCouponResult {
-  couponId: string;
-  code: string;
-  name: string;
-  discountAmount: number;
-}
-
 export const checkoutService = {
   previewOrder: async (data: PreviewOrderPayload): Promise<PreviewOrderResult> => {
     return apiClient.post<PreviewOrderResult>("/orders/preview", data);
@@ -65,7 +58,4 @@ export const checkoutService = {
     return apiClient.post<ConfirmPaymentResult>("/payments/confirm", data);
   },
 
-  validateCoupon: async (code: string, subtotal: number): Promise<ValidateCouponResult> => {
-    return apiClient.post<ValidateCouponResult>("/coupons/validate", { code, subtotal });
-  },
 };

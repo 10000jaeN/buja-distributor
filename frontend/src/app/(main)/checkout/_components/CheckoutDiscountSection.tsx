@@ -1,19 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { checkoutService, ValidateCouponResult } from "@/api/checkoutService";
-import { X } from "lucide-react";
+import { couponService, UserCoupon } from "@/api/couponService";
+import { ChevronDown } from "lucide-react";
 
 type Props = {
   userPoints: number;
   pointsToUse: number;
   onPointsChange: (v: number) => void;
-  appliedCoupon: ValidateCouponResult | null;
-  onCouponApply: (coupon: ValidateCouponResult) => void;
-  onCouponRemove: () => void;
+  selectedUserCouponId: string | null;
+  onCouponSelect: (userCouponId: string | null) => void;
   subtotal: number;
 };
 
@@ -21,42 +20,32 @@ export default function CheckoutDiscountSection({
   userPoints,
   pointsToUse,
   onPointsChange,
-  appliedCoupon,
-  onCouponApply,
-  onCouponRemove,
+  selectedUserCouponId,
+  onCouponSelect,
   subtotal,
 }: Props) {
-  const [couponInput, setCouponInput] = useState("");
-  const [couponLoading, setCouponLoading] = useState(false);
-  const [couponError, setCouponError] = useState<string | null>(null);
+  const [myCoupons, setMyCoupons] = useState<UserCoupon[]>([]);
+  const [couponOpen, setCouponOpen] = useState(false);
 
-  const handleCouponApply = async () => {
-    if (!couponInput.trim()) return;
-    setCouponLoading(true);
-    setCouponError(null);
-    try {
-      const result = await checkoutService.validateCoupon(couponInput.trim(), subtotal);
-      onCouponApply(result);
-      setCouponInput("");
-    } catch (err: unknown) {
-      const msg = (err as { message?: string })?.message ?? "유효하지 않은 쿠폰입니다.";
-      setCouponError(msg);
-    } finally {
-      setCouponLoading(false);
-    }
-  };
+  useEffect(() => {
+    couponService.getMyCoupons("available").then(setMyCoupons).catch(() => {});
+  }, []);
+
+  // 현재 주문 금액에 적용 가능한 쿠폰만 필터
+  const applicableCoupons = myCoupons.filter((uc) => {
+    const c = uc.coupon;
+    if (!c.isActive) return false;
+    if (c.expiresAt && new Date(c.expiresAt) < new Date()) return false;
+    if (c.minOrderAmount && subtotal < c.minOrderAmount) return false;
+    return true;
+  });
+
+  const selectedCoupon = myCoupons.find((uc) => uc._id === selectedUserCouponId);
 
   const handlePointsInput = (value: string) => {
     const num = parseInt(value.replace(/\D/g, ""), 10);
-    if (isNaN(num) || num < 0) {
-      onPointsChange(0);
-    } else {
-      onPointsChange(Math.min(num, userPoints));
-    }
-  };
-
-  const handleUseAllPoints = () => {
-    onPointsChange(userPoints);
+    if (isNaN(num) || num < 0) onPointsChange(0);
+    else onPointsChange(Math.min(num, userPoints));
   };
 
   return (
@@ -64,48 +53,76 @@ export default function CheckoutDiscountSection({
       <h2 className="mb-4 text-base font-bold text-foreground">할인 / 포인트</h2>
       <div className="space-y-5">
 
-        {/* 쿠폰 */}
+        {/* 쿠폰 선택 */}
         <div className="space-y-2">
-          <Label className="text-sm font-medium text-gray-700">쿠폰</Label>
-          {appliedCoupon ? (
-            <div className="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 px-4 py-3">
-              <div>
-                <p className="text-sm font-medium text-green-700">{appliedCoupon.name}</p>
-                <p className="text-xs text-green-600">
-                  -{appliedCoupon.discountAmount.toLocaleString()}원 할인
-                </p>
-              </div>
-              <button
-                onClick={onCouponRemove}
-                className="rounded-full p-1 text-green-500 hover:bg-green-100"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
+          <Label className="text-sm font-medium text-gray-700">쿠폰 선택</Label>
+          {myCoupons.length === 0 ? (
+            <p className="text-sm text-gray-400">보유한 쿠폰이 없습니다.</p>
           ) : (
-            <div className="flex gap-2">
-              <Input
-                value={couponInput}
-                onChange={(e) => {
-                  setCouponInput(e.target.value.toUpperCase());
-                  setCouponError(null);
-                }}
-                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleCouponApply(); } }}
-                placeholder="쿠폰 코드 입력"
-                className={couponError ? "border-red-300 focus-visible:ring-red-300" : ""}
-              />
-              <Button
+            <div className="relative">
+              <button
                 type="button"
-                variant="outline"
-                onClick={handleCouponApply}
-                disabled={couponLoading || !couponInput.trim()}
-                className="shrink-0"
+                onClick={() => setCouponOpen((v) => !v)}
+                className="flex w-full items-center justify-between rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-700 hover:border-gray-300"
               >
-                {couponLoading ? "확인 중..." : "적용"}
-              </Button>
+                <span>
+                  {selectedCoupon
+                    ? `${selectedCoupon.coupon.name} (${selectedCoupon.coupon.type === "percentage" ? `${selectedCoupon.coupon.value}%` : `${selectedCoupon.coupon.value.toLocaleString()}원`} 할인)`
+                    : "쿠폰을 선택해주세요"}
+                </span>
+                <ChevronDown className={`size-4 text-gray-400 transition-transform ${couponOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {couponOpen && (
+                <div className="absolute z-10 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg">
+                  {/* 선택 해제 */}
+                  <button
+                    type="button"
+                    onClick={() => { onCouponSelect(null); setCouponOpen(false); }}
+                    className="w-full px-4 py-2.5 text-left text-sm text-gray-400 hover:bg-gray-50"
+                  >
+                    적용 안 함
+                  </button>
+                  {applicableCoupons.length === 0 ? (
+                    <p className="px-4 py-2.5 text-sm text-gray-400">현재 주문에 적용 가능한 쿠폰이 없습니다.</p>
+                  ) : (
+                    applicableCoupons.map((uc) => {
+                      const c = uc.coupon;
+                      const discountLabel = c.type === "percentage"
+                        ? `${c.value}%${c.maxDiscount ? ` (최대 ${c.maxDiscount.toLocaleString()}원)` : ""}`
+                        : `${c.value.toLocaleString()}원`;
+                      return (
+                        <button
+                          key={uc._id}
+                          type="button"
+                          onClick={() => { onCouponSelect(uc._id); setCouponOpen(false); }}
+                          className={`w-full px-4 py-2.5 text-left hover:bg-gray-50 ${selectedUserCouponId === uc._id ? "bg-blue-50" : ""}`}
+                        >
+                          <p className="text-sm font-medium text-gray-800">{c.name}</p>
+                          <p className="text-xs text-gray-500">
+                            {discountLabel} 할인
+                            {c.minOrderAmount ? ` · ${c.minOrderAmount.toLocaleString()}원 이상` : ""}
+                            {c.expiresAt ? ` · ~${new Date(c.expiresAt).toLocaleDateString("ko-KR")}` : ""}
+                          </p>
+                        </button>
+                      );
+                    })
+                  )}
+                  {/* 적용 불가 쿠폰 */}
+                  {myCoupons.filter((uc) => !applicableCoupons.includes(uc)).map((uc) => (
+                    <div key={uc._id} className="px-4 py-2.5 opacity-40">
+                      <p className="text-sm text-gray-600">{uc.coupon.name}</p>
+                      <p className="text-xs text-gray-400">
+                        {uc.coupon.minOrderAmount && subtotal < uc.coupon.minOrderAmount
+                          ? `${uc.coupon.minOrderAmount.toLocaleString()}원 이상 주문 시 사용 가능`
+                          : "적용 불가"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
-          {couponError && <p className="text-xs text-red-500">{couponError}</p>}
         </div>
 
         {/* 포인트 */}
@@ -128,7 +145,7 @@ export default function CheckoutDiscountSection({
             <Button
               type="button"
               variant="outline"
-              onClick={handleUseAllPoints}
+              onClick={() => onPointsChange(userPoints)}
               disabled={userPoints === 0}
               className="shrink-0"
             >
