@@ -8,12 +8,13 @@ type Props = {
   onClose: () => void;
   thumbnail: string;
   name: string;
-  price: number;
-  shippingFee: number;
-  freeShippingThreshold: number;
   stock: number | null;
   isAvailable: boolean;
   quantity: number;
+  appliedShippingFee: number;
+  freeShippingThreshold: number;
+  isFreeShipping: boolean;
+  totalPrice: number;
   onDecrease: () => void;
   onIncrease: () => void;
   onAddToCart: () => void;
@@ -27,12 +28,13 @@ export function ProductBottomSheet({
   onClose,
   thumbnail,
   name,
-  price,
-  shippingFee,
-  freeShippingThreshold,
   stock,
   isAvailable,
   quantity,
+  appliedShippingFee,
+  freeShippingThreshold,
+  isFreeShipping,
+  totalPrice,
   onDecrease,
   onIncrease,
   onAddToCart,
@@ -40,11 +42,6 @@ export function ProductBottomSheet({
   isCartLoading,
   isBuying,
 }: Props) {
-  const subtotal = price * quantity;
-  const isFreeShipping =
-    freeShippingThreshold > 0 && subtotal >= freeShippingThreshold;
-  const appliedShippingFee = isFreeShipping ? 0 : shippingFee;
-  const totalPrice = subtotal + appliedShippingFee;
 
   // 시트 열릴 때 body 스크롤 잠금
   useEffect(() => {

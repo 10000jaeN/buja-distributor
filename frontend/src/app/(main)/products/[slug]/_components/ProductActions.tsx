@@ -175,12 +175,13 @@ export function ProductActions({
         onClose={() => setIsSheetOpen(false)}
         thumbnail={thumbnail}
         name={name}
-        price={price}
-        shippingFee={shippingFee}
-        freeShippingThreshold={freeShippingThreshold}
         stock={stock}
         isAvailable={isAvailable}
         quantity={quantity}
+        appliedShippingFee={appliedShippingFee}
+        freeShippingThreshold={freeShippingThreshold}
+        isFreeShipping={isFreeShipping}
+        totalPrice={totalPrice}
         onDecrease={() => setQuantity((q) => Math.max(1, q - 1))}
         onIncrease={() =>
           setQuantity((q) => (stock !== null ? Math.min(stock, q + 1) : q + 1))
