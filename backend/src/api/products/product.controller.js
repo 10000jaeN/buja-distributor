@@ -142,6 +142,17 @@ export const patchProduct = async (req, res) => {
     updateData.slug = slugify(updateData.name);
   }
 
+  // 2. stock이 1 이상으로 업데이트되면 isAvailable을 자동으로 true로 설정
+  // (단, 요청에서 isAvailable을 명시적으로 false로 전달한 경우는 제외)
+  if (
+    updateData.stock !== undefined &&
+    updateData.stock !== null &&
+    Number(updateData.stock) >= 1 &&
+    updateData.isAvailable !== false
+  ) {
+    updateData.isAvailable = true;
+  }
+
   // 2. findOneAndUpdate로 업데이트
   const updatedProduct = await Product.findOneAndUpdate(
     { slug: slug },
