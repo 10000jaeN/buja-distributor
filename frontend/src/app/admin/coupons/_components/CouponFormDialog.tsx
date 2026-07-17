@@ -4,7 +4,11 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Coupon, CouponFormData, CouponType } from "@/api/couponService";
+import { Coupon, CouponFormData, CouponTarget, CouponType } from "@/api/couponService";
+import { productService } from "@/api/productService";
+import { categoryService } from "@/api/categoryService";
+import { Product, Category } from "@/types/product";
+import { Search } from "lucide-react";
 
 type Props = {
   open: boolean;
@@ -21,14 +25,77 @@ const EMPTY: CouponFormData = {
   value: 0,
   maxDiscount: null,
   minOrderAmount: null,
+  target: "all",
+  targetIds: [],
   maxUses: null,
   maxUsesPerUser: 1,
   expiresAt: null,
   isActive: true,
 };
 
+type MultiSelectProps = {
+  items: { id: string; label: string }[];
+  selected: string[];
+  onChange: (selected: string[]) => void;
+  placeholder?: string;
+  isLoading?: boolean;
+};
+
+function MultiSelectBox({ items, selected, onChange, placeholder = "검색...", isLoading }: MultiSelectProps) {
+  const [search, setSearch] = useState("");
+  const filtered = items.filter((item) => item.label.toLowerCase().includes(search.toLowerCase()));
+
+  const toggle = (id: string) => {
+    onChange(selected.includes(id) ? selected.filter((s) => s !== id) : [...selected, id]);
+  };
+
+  return (
+    <div className="rounded-md border border-gray-200">
+      <div className="relative border-b border-gray-100 px-3 py-2">
+        <Search className="absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-gray-400" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={placeholder}
+          className="w-full bg-transparent pl-6 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none"
+        />
+      </div>
+      <div className="max-h-48 overflow-y-auto">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-6">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-200 border-t-brand-blue" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <p className="py-4 text-center text-xs text-gray-400">검색 결과가 없습니다.</p>
+        ) : (
+          filtered.map((item) => (
+            <label key={item.id} className="flex cursor-pointer items-center gap-2.5 px-3 py-2 text-sm hover:bg-gray-50">
+              <input
+                type="checkbox"
+                checked={selected.includes(item.id)}
+                onChange={() => toggle(item.id)}
+                className="h-4 w-4 rounded border-gray-300 accent-brand-blue"
+              />
+              <span className="text-gray-700">{item.label}</span>
+            </label>
+          ))
+        )}
+      </div>
+      {selected.length > 0 && (
+        <div className="border-t border-gray-100 px-3 py-2 text-xs text-gray-500">
+          {selected.length}개 선택됨
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function CouponFormDialog({ open, onClose, onSubmit, initial, isSubmitting }: Props) {
   const [form, setForm] = useState<CouponFormData>(EMPTY);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoadingOptions, setIsLoadingOptions] = useState(false);
 
   useEffect(() => {
     if (initial) {
@@ -39,6 +106,8 @@ export default function CouponFormDialog({ open, onClose, onSubmit, initial, isS
         value: initial.value,
         maxDiscount: initial.maxDiscount,
         minOrderAmount: initial.minOrderAmount,
+        target: initial.target ?? "all",
+        targetIds: initial.targetIds ?? [],
         maxUses: initial.maxUses,
         maxUsesPerUser: initial.maxUsesPerUser,
         expiresAt: initial.expiresAt ? initial.expiresAt.slice(0, 16) : null,
@@ -49,10 +118,26 @@ export default function CouponFormDialog({ open, onClose, onSubmit, initial, isS
     }
   }, [initial, open]);
 
+  useEffect(() => {
+    if (!open) return;
+    if (form.target === "product" && products.length === 0) {
+      setIsLoadingOptions(true);
+      productService.getProducts({}).then(setProducts).finally(() => setIsLoadingOptions(false));
+    }
+    if (form.target === "category" && categories.length === 0) {
+      setIsLoadingOptions(true);
+      categoryService.getCategories().then(setCategories).finally(() => setIsLoadingOptions(false));
+    }
+  }, [form.target, open]); // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!open) return null;
 
   const set = <K extends keyof CouponFormData>(key: K, value: CouponFormData[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
+
+  const handleTargetChange = (target: CouponTarget) => {
+    setForm((prev) => ({ ...prev, target, targetIds: [] }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,6 +145,8 @@ export default function CouponFormDialog({ open, onClose, onSubmit, initial, isS
   };
 
   const isEdit = !!initial;
+  const productItems = products.map((p) => ({ id: p._id, label: p.name }));
+  const categoryItems = categories.map((c) => ({ id: c.parent, label: c.parent }));
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -70,7 +157,7 @@ export default function CouponFormDialog({ open, onClose, onSubmit, initial, isS
           </h2>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 overflow-y-auto p-6" style={{ maxHeight: "70vh" }}>
+        <form onSubmit={handleSubmit} className="space-y-4 overflow-y-auto p-6" style={{ maxHeight: "75vh" }}>
           <div className="space-y-1.5">
             <Label className="text-sm font-medium text-gray-700">쿠폰 코드 *</Label>
             <Input
@@ -133,6 +220,46 @@ export default function CouponFormDialog({ open, onClose, onSubmit, initial, isS
             </div>
           )}
 
+          {/* 적용 대상 */}
+          <div className="space-y-1.5">
+            <Label className="text-sm font-medium text-gray-700">적용 대상</Label>
+            <select
+              value={form.target}
+              onChange={(e) => handleTargetChange(e.target.value as CouponTarget)}
+              className="h-9 w-full rounded-md border border-gray-200 px-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-blue"
+            >
+              <option value="all">전체 상품</option>
+              <option value="product">특정 상품 선택</option>
+              <option value="category">특정 카테고리 선택</option>
+            </select>
+          </div>
+
+          {form.target === "product" && (
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium text-gray-700">상품 선택</Label>
+              <MultiSelectBox
+                items={productItems}
+                selected={form.targetIds ?? []}
+                onChange={(ids) => set("targetIds", ids)}
+                placeholder="상품명 검색..."
+                isLoading={isLoadingOptions}
+              />
+            </div>
+          )}
+
+          {form.target === "category" && (
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium text-gray-700">카테고리 선택</Label>
+              <MultiSelectBox
+                items={categoryItems}
+                selected={form.targetIds ?? []}
+                onChange={(ids) => set("targetIds", ids)}
+                placeholder="카테고리명 검색..."
+                isLoading={isLoadingOptions}
+              />
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-sm font-medium text-gray-700">최소 주문금액 (원)</Label>
@@ -156,7 +283,7 @@ export default function CouponFormDialog({ open, onClose, onSubmit, initial, isS
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-sm font-medium text-gray-700">전체 발급 수량 (원)</Label>
+            <Label className="text-sm font-medium text-gray-700">전체 발급 수량</Label>
             <Input
               type="number"
               min={0}

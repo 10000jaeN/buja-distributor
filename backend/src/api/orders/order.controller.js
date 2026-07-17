@@ -122,19 +122,46 @@ function calcPromotionDiscount(promotion, items, products) {
 
 // =================================================================
 // 쿠폰 할인 계산
+// - target: all / product / category 에 따라 적용 대상 소계 계산
+// - minOrderAmount는 전체 주문 소계 기준으로 체크
 // =================================================================
-function calcCouponDiscount(coupon, subtotal) {
-  if (coupon.minOrderAmount && subtotal < coupon.minOrderAmount) {
+function calcCouponDiscount(coupon, itemSubtotal, items = [], products = []) {
+  if (coupon.minOrderAmount && itemSubtotal < coupon.minOrderAmount) {
     throw new CustomError(
       `쿠폰 최소 주문금액(${coupon.minOrderAmount.toLocaleString()}원)을 충족하지 못합니다.`,
       400
     );
   }
+
+  let applicableSubtotal = itemSubtotal;
+
+  if (coupon.target === "product" && coupon.targetIds?.length > 0) {
+    applicableSubtotal = items.reduce((sum, item) => {
+      const product = products.find((p) => p._id.toString() === item.productId.toString());
+      if (!product) return sum;
+      if (coupon.targetIds.includes(item.productId.toString())) {
+        return sum + product.price * item.quantity;
+      }
+      return sum;
+    }, 0);
+  } else if (coupon.target === "category" && coupon.targetIds?.length > 0) {
+    applicableSubtotal = items.reduce((sum, item) => {
+      const product = products.find((p) => p._id.toString() === item.productId.toString());
+      if (!product) return sum;
+      if (coupon.targetIds.includes(product.category?.parent)) {
+        return sum + product.price * item.quantity;
+      }
+      return sum;
+    }, 0);
+  }
+
+  if (applicableSubtotal === 0) return 0;
+
   if (coupon.type === "percentage") {
-    const discount = Math.floor(subtotal * (coupon.value / 100));
+    const discount = Math.floor(applicableSubtotal * (coupon.value / 100));
     return coupon.maxDiscount ? Math.min(discount, coupon.maxDiscount) : discount;
   }
-  return Math.min(coupon.value, subtotal);
+  return Math.min(coupon.value, applicableSubtotal);
 }
 
 // =================================================================
@@ -218,7 +245,7 @@ export const previewOrder = async (req, res) => {
     const coupon = userCoupon.coupon;
     if (!coupon.isActive) throw new CustomError("비활성화된 쿠폰입니다.", 400);
     if (coupon.expiresAt && coupon.expiresAt < new Date()) throw new CustomError("만료된 쿠폰입니다.", 400);
-    discountAmount = calcCouponDiscount(coupon, itemSubtotal);
+    discountAmount = calcCouponDiscount(coupon, itemSubtotal, items, products);
     couponSnapshot = { couponId: coupon._id, code: coupon.code, discountAmount };
   }
 
@@ -324,7 +351,7 @@ export const createOrder = async (req, res) => {
       const coupon = userCouponDoc.coupon;
       if (!coupon.isActive) throw new CustomError("비활성화된 쿠폰입니다.", 400);
       if (coupon.expiresAt && coupon.expiresAt < new Date()) throw new CustomError("만료된 쿠폰입니다.", 400);
-      discountAmount = calcCouponDiscount(coupon, itemSubtotal);
+      discountAmount = calcCouponDiscount(coupon, itemSubtotal, items, products);
       couponSnapshot = { couponId: coupon._id, code: coupon.code, discountAmount };
     }
 

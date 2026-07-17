@@ -10,6 +10,8 @@ export type Coupon = {
   value: number;
   maxDiscount: number | null;
   minOrderAmount: number | null;
+  target: CouponTarget;
+  targetIds: string[];
   maxUses: number | null;
   maxUsesPerUser: number;
   usedCount: number;
@@ -18,6 +20,8 @@ export type Coupon = {
   createdAt: string;
 };
 
+export type CouponTarget = "all" | "product" | "category";
+
 export type CouponFormData = {
   code: string;
   name: string;
@@ -25,6 +29,8 @@ export type CouponFormData = {
   value: number;
   maxDiscount?: number | null;
   minOrderAmount?: number | null;
+  target?: CouponTarget;
+  targetIds?: string[];
   maxUses?: number | null;
   maxUsesPerUser?: number;
   expiresAt?: string | null;
