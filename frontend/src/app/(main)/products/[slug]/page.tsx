@@ -4,6 +4,8 @@ import type { Metadata } from "next";
 
 import noImage from "@/public/images/no-image.png";
 import { productService } from "@/api/productService";
+import { promotionService } from "@/api/promotionService";
+import { calcProductDiscount } from "@/lib/promotionUtils";
 import { ProductActions } from "./_components/ProductActions";
 import { ProductInfoSection } from "./_components/ProductInfoSection";
 import { ProductTabs } from "./_components/ProductTabs";
@@ -56,6 +58,11 @@ const productsDetailPage = async ({ params }: Props) => {
     redirect("/error404");
   }
 
+  const promotions = await promotionService
+    .getActive([product._id], [product.category.parent])
+    .catch(() => []);
+  const discount = calcProductDiscount(product, promotions);
+
   const infoProps = {
     name: product?.name ?? "",
     price: product?.price ?? 0,
@@ -65,6 +72,7 @@ const productsDetailPage = async ({ params }: Props) => {
     reviewCount: product?.stats.reviewCount ?? 0,
     stock: product?.stock ?? null,
     isAvailable: product?.isAvailable ?? true,
+    discount,
   };
 
   const actionsProps = {
@@ -76,6 +84,7 @@ const productsDetailPage = async ({ params }: Props) => {
     name: product?.name ?? "",
     stock: product?.stock ?? null,
     isAvailable: product?.isAvailable ?? true,
+    discount,
   };
 
   return (

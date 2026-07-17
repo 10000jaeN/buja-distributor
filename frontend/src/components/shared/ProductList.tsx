@@ -5,13 +5,17 @@ import { useRef, useEffect, useMemo, useCallback } from "react";
 import { Product } from "@/types/product";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import ProductCard from "@/components/shared/ProductCard";
+import { Promotion } from "@/api/promotionService";
+import { calcProductDiscount } from "@/lib/promotionUtils";
 
 const ProductList = ({
   products,
   title,
+  promotions = [],
 }: {
   products: Product[];
   title: string;
+  promotions?: Promotion[];
 }) => {
   const scrollRef = useRef<HTMLUListElement>(null);
   const itemWidthRef = useRef<number>(0);
@@ -88,7 +92,12 @@ const ProductList = ({
               key={`${product._id}-${idx}`}
               className="mx-auto mb-4 w-[40vw] shrink-0 snap-start transition-normal md:w-[30vw] lg:w-55"
             >
-              <ProductCard product={product} size="sm" priority={idx < 3} />
+              <ProductCard
+                product={product}
+                size="sm"
+                priority={idx < 3}
+                discount={calcProductDiscount(product, promotions)}
+              />
             </li>
           ))}
         </ul>

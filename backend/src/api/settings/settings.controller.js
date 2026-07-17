@@ -12,10 +12,14 @@ export const getSettings = async (req, res) => {
 
 // PATCH /settings — 어드민 전용
 export const updateSettings = async (req, res) => {
-  const { bundleFreeThreshold, banners } = req.body;
+  const { bundleFreeThreshold, banners, pointRate } = req.body;
 
   if (bundleFreeThreshold !== undefined && (typeof bundleFreeThreshold !== "number" || bundleFreeThreshold < 0)) {
     return res.status(400).json({ message: "bundleFreeThreshold는 0 이상의 숫자여야 합니다." });
+  }
+
+  if (pointRate !== undefined && (typeof pointRate !== "number" || pointRate < 0 || pointRate > 100)) {
+    return res.status(400).json({ message: "pointRate는 0~100 사이의 숫자여야 합니다." });
   }
 
   if (banners !== undefined) {
@@ -45,6 +49,7 @@ export const updateSettings = async (req, res) => {
   const update = {};
   if (bundleFreeThreshold !== undefined) update.bundleFreeThreshold = bundleFreeThreshold;
   if (banners !== undefined) update.banners = banners;
+  if (pointRate !== undefined) update.pointRate = pointRate;
 
   const settings = await Settings.findOneAndUpdate(
     { key: "global" },

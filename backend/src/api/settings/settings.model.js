@@ -8,6 +8,13 @@ const SettingsSchema = new mongoose.Schema(
       default: "global",
       unique: true,
     },
+    // 포인트 적립률 (%)
+    pointRate: {
+      type: Number,
+      default: 3,
+      min: [0, "적립률은 0 이상이어야 합니다."],
+      max: [100, "적립률은 100 이하여야 합니다."],
+    },
     // 묶음배송 무료 기준금액
     bundleFreeThreshold: {
       type: Number,

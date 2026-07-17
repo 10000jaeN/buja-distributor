@@ -38,6 +38,8 @@ const OrderSchema = new mongoose.Schema(
         "주문 상품은 최소 하나 이상이어야 합니다.",
       ],
     },
+    // 상품 소계 (할인 전)
+    subtotal: { type: Number, required: true, min: 0, default: 0 },
     // 배송비 (주문 당시 스냅샷)
     shippingFee: {
       type: Number,
@@ -45,7 +47,22 @@ const OrderSchema = new mongoose.Schema(
       min: 0,
       default: 0,
     },
-    // 총 결제 금액 (상품 소계 + 배송비)
+    // 적용된 프로모션 스냅샷
+    appliedPromotion: {
+      promotionId: { type: mongoose.Schema.Types.ObjectId, ref: "Promotion", default: null },
+      name: { type: String, default: null },
+      discountAmount: { type: Number, default: 0 },
+    },
+    // 적용된 쿠폰 스냅샷
+    appliedCoupon: {
+      couponId: { type: mongoose.Schema.Types.ObjectId, ref: "Coupon", default: null },
+      code: { type: String, default: null },
+      discountAmount: { type: Number, default: 0 },
+    },
+    // 포인트 차감/적립
+    pointsUsed: { type: Number, default: 0, min: 0 },
+    pointsEarned: { type: Number, default: 0, min: 0 },
+    // 총 결제 금액 (소계 + 배송비 - 할인 - 포인트)
     totalAmount: {
       type: Number,
       required: true,
