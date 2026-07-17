@@ -112,7 +112,7 @@ export function ProductBottomSheet({
               <button
                 aria-label="수량 증가"
                 onClick={onIncrease}
-                disabled={stock !== null && quantity >= stock}
+                disabled={stock !== null && isAvailable && quantity >= stock}
                 className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 text-lg text-gray-600 hover:bg-gray-100 disabled:opacity-30"
               >
                 +
@@ -155,7 +155,7 @@ export function ProductBottomSheet({
           <div className="mt-4 flex gap-3">
             <button
               onClick={onAddToCart}
-              disabled={isCartLoading || !isAvailable}
+              disabled={isCartLoading}
               className="flex-1 rounded-xl border border-gray-300 bg-white py-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
             >
               장바구니

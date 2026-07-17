@@ -101,8 +101,8 @@ export function ProductActions({
             </span>
             <button
               aria-label="수량 증가"
-              onClick={() => setQuantity((q) => (stock !== null ? Math.min(stock, q + 1) : q + 1))}
-              disabled={stock !== null && quantity >= stock}
+              onClick={() => setQuantity((q) => (stock !== null && isAvailable ? Math.min(stock, q + 1) : q + 1))}
+              disabled={stock !== null && isAvailable && quantity >= stock}
               className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 text-lg text-gray-600 hover:bg-gray-100 disabled:opacity-30"
             >
               +
@@ -140,7 +140,7 @@ export function ProductActions({
         <div className="mt-4 flex gap-3">
           <button
             onClick={handleAddToCart}
-            disabled={isLoading || !isAvailable}
+            disabled={isLoading}
             className="flex-1 rounded-xl border border-gray-300 bg-white py-4 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
           >
             장바구니
@@ -161,11 +161,10 @@ export function ProductActions({
         className="fixed bottom-0 left-0 z-40 w-full border-t border-gray-200 bg-white px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-2px_8px_rgba(0,0,0,0.06)] lg:hidden"
       >
         <button
-          onClick={() => isAvailable && setIsSheetOpen(true)}
-          disabled={!isAvailable}
-          className="bg-brand-blue w-full rounded-xl py-4 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"
+          onClick={() => setIsSheetOpen(true)}
+          className="bg-brand-blue w-full rounded-xl py-4 text-sm font-semibold text-white transition-colors hover:opacity-90"
         >
-          {!isAvailable ? "품절" : "구매하기"}
+          구매하기
         </button>
       </nav>
 
