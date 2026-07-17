@@ -84,6 +84,7 @@ const productsDetailPage = async ({ params }: Props) => {
     name: product?.name ?? "",
     stock: product?.stock ?? null,
     isAvailable: product?.isAvailable ?? true,
+    discount,
   };
 
   return (
