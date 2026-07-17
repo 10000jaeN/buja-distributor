@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { href: "/admin/orders", label: "주문 관리" },
   { href: "/admin/promotions", label: "프로모션 관리" },
   { href: "/admin/coupons", label: "쿠폰 관리" },
+  { href: "/admin/popups", label: "팝업 관리" },
   { href: "/admin/qna", label: "Q&A 관리" },
   { href: "/admin/users", label: "회원 관리" },
   { href: "/admin/settings", label: "사이트 설정" },

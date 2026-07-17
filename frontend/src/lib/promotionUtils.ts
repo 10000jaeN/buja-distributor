@@ -13,10 +13,20 @@ export function calcProductDiscount(
   promotions: Promotion[]
 ): ProductDiscount | null {
   const applicable = promotions.filter((p) => {
-    if (p.target === "all") return true;
-    if (p.target === "product") return p.targetIds.includes(product._id);
-    if (p.target === "category") return p.targetIds.includes(product.category.parent);
-    return false;
+    // 대상 조건
+    const targetMatch =
+      p.target === "all" ||
+      (p.target === "product" && p.targetIds.includes(product._id)) ||
+      (p.target === "category" && p.targetIds.includes(product.category.parent));
+    if (!targetMatch) return false;
+
+    // 최소 주문금액 조건 — 단일 상품 1개 기준으로 판단
+    if (p.minOrderAmount !== null && product.price < p.minOrderAmount) return false;
+
+    // 최소 수량 조건 — 1개 구매 기준으로 판단
+    if (p.minQuantity !== null && p.minQuantity > 1) return false;
+
+    return true;
   });
 
   if (applicable.length === 0) return null;
