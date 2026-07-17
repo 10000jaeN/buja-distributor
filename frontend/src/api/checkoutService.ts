@@ -3,10 +3,16 @@ import { apiClient } from "@/lib/apiClient";
 export interface PreviewOrderPayload {
   items: { productId: string; quantity: number }[];
   mainAddress: string;
+  couponCode?: string;
+  pointsToUse?: number;
 }
 
 export interface PreviewOrderResult {
   itemSubtotal: number;
+  discountAmount: number;
+  promotion: { promotionId: string; name: string; discountAmount: number } | null;
+  coupon: { couponId: string; code: string; discountAmount: number } | null;
+  pointsToUse: number;
   baseShippingFee: number;
   extraShippingFee: number;
   shippingFee: number;
@@ -22,6 +28,8 @@ export interface CreateOrderPayload {
     mainAddress: string;
     detailAddress?: string;
   };
+  couponCode?: string;
+  pointsToUse?: number;
 }
 
 export interface ConfirmPaymentPayload {
@@ -37,6 +45,13 @@ export interface ConfirmPaymentResult {
   paymentProvider: string | null;
 }
 
+export interface ValidateCouponResult {
+  couponId: string;
+  code: string;
+  name: string;
+  discountAmount: number;
+}
+
 export const checkoutService = {
   previewOrder: async (data: PreviewOrderPayload): Promise<PreviewOrderResult> => {
     return apiClient.post<PreviewOrderResult>("/orders/preview", data);
@@ -48,5 +63,9 @@ export const checkoutService = {
 
   confirmPayment: async (data: ConfirmPaymentPayload): Promise<ConfirmPaymentResult> => {
     return apiClient.post<ConfirmPaymentResult>("/payments/confirm", data);
+  },
+
+  validateCoupon: async (code: string, subtotal: number): Promise<ValidateCouponResult> => {
+    return apiClient.post<ValidateCouponResult>("/coupons/validate", { code, subtotal });
   },
 };

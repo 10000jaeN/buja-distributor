@@ -10,10 +10,12 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import useCheckoutStore from "@/store/useCheckoutStore";
 import useAuthStore from "@/store/useAuthStore";
-import { checkoutService, type PreviewOrderResult } from "@/api/checkoutService";
+import { checkoutService, type PreviewOrderResult, type ValidateCouponResult } from "@/api/checkoutService";
 import { userService, type Address } from "@/api/userService";
+import { pointService } from "@/api/pointService";
 import { formatPhoneNumber } from "@/lib/utils";
 import { Spinner } from "@/components/shared/Spinner";
+import CheckoutDiscountSection from "./_components/CheckoutDiscountSection";
 
 declare global {
   interface Window {
@@ -61,41 +63,18 @@ export default function CheckoutPage() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
 
+  // 할인/포인트 상태
+  const [appliedCoupon, setAppliedCoupon] = useState<ValidateCouponResult | null>(null);
+  const [pointsToUse, setPointsToUse] = useState(0);
+  const [userPoints, setUserPoints] = useState(0);
+
   useEffect(() => {
     if (items.length === 0) {
       router.replace("/cart");
     }
   }, [items, router]);
 
-  // 주소 변경 시 금액 미리보기 (600ms 디바운스)
-  useEffect(() => {
-    if (!form.mainAddress || items.length === 0) {
-      setPreview(null);
-      return;
-    }
-    setPreviewLoading(true);
-    setPreviewError(null);
-    const timer = setTimeout(async () => {
-      try {
-        const result = await checkoutService.previewOrder({
-          items: items.map(({ productId, quantity }) => ({ productId, quantity })),
-          mainAddress: form.mainAddress,
-        });
-        setPreview(result);
-        setPreviewError(null);
-      } catch (err: unknown) {
-        const message = (err as { message?: string })?.message;
-        setPreview(null);
-        setPreviewError(message || "금액 계산에 실패했습니다.");
-        toast.error(message || "금액 계산에 실패했습니다.");
-      } finally {
-        setPreviewLoading(false);
-      }
-    }, 600);
-    return () => clearTimeout(timer);
-  }, [form.mainAddress, items]);
-
-  // 저장된 배송지 불러오기 + 기본 배송지 자동입력
+  // 저장된 배송지 + 포인트 잔액 로드
   useEffect(() => {
     if (!user) return;
     userService.getProfile().then((profile) => {
@@ -113,7 +92,39 @@ export default function CheckoutPage() {
         });
       }
     }).catch(() => {});
+
+    pointService.getHistory(1, 1).then((res) => setUserPoints(res.balance)).catch(() => {});
   }, [user]);
+
+  // 주소 / 쿠폰 / 포인트 변경 시 금액 미리보기 (600ms 디바운스)
+  useEffect(() => {
+    if (!form.mainAddress || items.length === 0) {
+      setPreview(null);
+      return;
+    }
+    setPreviewLoading(true);
+    setPreviewError(null);
+    const timer = setTimeout(async () => {
+      try {
+        const result = await checkoutService.previewOrder({
+          items: items.map(({ productId, quantity }) => ({ productId, quantity })),
+          mainAddress: form.mainAddress,
+          couponCode: appliedCoupon?.code,
+          pointsToUse: pointsToUse > 0 ? pointsToUse : undefined,
+        });
+        setPreview(result);
+        setPreviewError(null);
+      } catch (err: unknown) {
+        const message = (err as { message?: string })?.message;
+        setPreview(null);
+        setPreviewError(message || "금액 계산에 실패했습니다.");
+        toast.error(message || "금액 계산에 실패했습니다.");
+      } finally {
+        setPreviewLoading(false);
+      }
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [form.mainAddress, items, appliedCoupon, pointsToUse]);
 
   const handleAddressSelect = (id: string | "direct") => {
     setSelectedAddressId(id);
@@ -164,6 +175,8 @@ export default function CheckoutPage() {
       const { orderId, totalAmount: orderTotal } = await checkoutService.createOrder({
         items: items.map(({ productId, quantity }) => ({ productId, quantity })),
         shippingAddress: form,
+        couponCode: appliedCoupon?.code,
+        pointsToUse: pointsToUse > 0 ? pointsToUse : undefined,
       });
 
       const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY!;
@@ -241,7 +254,6 @@ export default function CheckoutPage() {
           <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="mb-4 text-base font-bold text-foreground">배송지</h2>
 
-            {/* 저장된 배송지 선택 */}
             {addresses.length > 0 && (
               <div className="mb-5 space-y-2">
                 {addresses.map((addr) => (
@@ -295,7 +307,6 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            {/* 폼 (선택된 배송지 수정 or 직접 입력) */}
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <Label>받는 분 이름 *</Label>
@@ -348,6 +359,17 @@ export default function CheckoutPage() {
             </div>
           </div>
 
+          {/* 쿠폰 / 포인트 */}
+          <CheckoutDiscountSection
+            userPoints={userPoints}
+            pointsToUse={pointsToUse}
+            onPointsChange={setPointsToUse}
+            appliedCoupon={appliedCoupon}
+            onCouponApply={setAppliedCoupon}
+            onCouponRemove={() => setAppliedCoupon(null)}
+            subtotal={subtotal}
+          />
+
           {/* 결제 수단 */}
           <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="mb-4 text-base font-bold text-foreground">결제 수단</h2>
@@ -378,6 +400,20 @@ export default function CheckoutPage() {
               <span>상품 금액</span>
               <span>{subtotal.toLocaleString()}원</span>
             </div>
+            {preview && preview.discountAmount > 0 && (
+              <div className="flex justify-between text-red-500">
+                <span>
+                  {preview.coupon ? `쿠폰 (${preview.coupon.code})` : "프로모션 할인"}
+                </span>
+                <span>-{preview.discountAmount.toLocaleString()}원</span>
+              </div>
+            )}
+            {preview && preview.pointsToUse > 0 && (
+              <div className="flex justify-between text-red-500">
+                <span>포인트 사용</span>
+                <span>-{preview.pointsToUse.toLocaleString()}원</span>
+              </div>
+            )}
             <div className="flex items-center justify-between text-gray-600">
               <span>기본 배송비</span>
               <span className="flex items-center">
