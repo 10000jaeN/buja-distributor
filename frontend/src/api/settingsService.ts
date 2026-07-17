@@ -8,6 +8,7 @@ export type Banner = {
 export type SiteSettings = {
   bundleFreeThreshold: number;
   banners: Banner[];
+  pointRate: number;
 };
 
 export const settingsService = {
