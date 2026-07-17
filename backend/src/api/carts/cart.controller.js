@@ -95,13 +95,10 @@ export const addItemToCart = async (req, res) => {
     );
   }
 
-  // 1. 상품 존재 및 재고 확인
+  // 1. 상품 존재 확인 (isAvailable 여부와 무관하게 장바구니 담기 허용)
   const product = await Product.findById(productId);
-  if (!product || !product.isAvailable) {
-    throw new CustomError(
-      "해당 상품을 찾을 수 없거나 현재 구매할 수 없습니다.",
-      404
-    );
+  if (!product) {
+    throw new CustomError("해당 상품을 찾을 수 없습니다.", 404);
   }
 
   const cart = await Cart.findOne({ user: userId });

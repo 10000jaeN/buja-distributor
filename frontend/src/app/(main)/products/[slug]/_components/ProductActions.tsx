@@ -4,10 +4,10 @@ import { cartService } from "@/api/cartService";
 import useAuthStore from "@/store/useAuthStore";
 import useCartStore from "@/store/useCartStore";
 import useCheckoutStore from "@/store/useCheckoutStore";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+import { ProductBottomSheet } from "./ProductBottomSheet";
 
 type Props = {
   productId: string;
@@ -17,6 +17,7 @@ type Props = {
   thumbnail: string;
   name: string;
   stock: number | null;
+  isAvailable: boolean;
 };
 
 export function ProductActions({
@@ -27,10 +28,12 @@ export function ProductActions({
   thumbnail,
   name,
   stock,
+  isAvailable,
 }: Props) {
   const [quantity, setQuantity] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [isBuying, setIsBuying] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const incrementCart = useCartStore((state) => state.increment);
   const setCheckout = useCheckoutStore((state) => state.setCheckout);
@@ -49,6 +52,7 @@ export function ProductActions({
     }
     if (isBuying) return;
     setIsBuying(true);
+    setIsSheetOpen(false);
     setCheckout(
       [{ productId, name, price, quantity, shippingFee: appliedShippingFee, bundleShipping: false, thumbnail }],
       appliedShippingFee,
@@ -66,6 +70,7 @@ export function ProductActions({
     try {
       await cartService.addToCart(productId, quantity);
       incrementCart(1);
+      setIsSheetOpen(false);
       toast.success("장바구니에 담았습니다.", {
         action: { label: "장바구니 보기", onClick: () => router.push("/cart") },
       });
@@ -96,8 +101,8 @@ export function ProductActions({
             </span>
             <button
               aria-label="수량 증가"
-              onClick={() => setQuantity((q) => (stock !== null ? Math.min(stock, q + 1) : q + 1))}
-              disabled={stock !== null && quantity >= stock}
+              onClick={() => setQuantity((q) => (stock !== null && isAvailable ? Math.min(stock, q + 1) : q + 1))}
+              disabled={stock !== null && isAvailable && quantity >= stock}
               className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 text-lg text-gray-600 hover:bg-gray-100 disabled:opacity-30"
             >
               +
@@ -142,10 +147,10 @@ export function ProductActions({
           </button>
           <button
             onClick={handleBuyNow}
-            disabled={isBuying}
+            disabled={isBuying || !isAvailable}
             className="bg-brand-blue flex-1 rounded-xl py-4 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"
           >
-            구매하기
+            {!isAvailable ? "품절" : "구매하기"}
           </button>
         </div>
       </div>
@@ -153,66 +158,38 @@ export function ProductActions({
       {/* 모바일 하단 고정 바 */}
       <nav
         aria-label="구매 바"
-        className="fixed bottom-0 left-0 z-50 flex h-auto w-full items-center justify-between gap-2 border-t border-gray-200 bg-white px-3 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-[0_-2px_8px_rgba(0,0,0,0.06)] lg:hidden"
+        className="fixed bottom-0 left-0 z-40 w-full border-t border-gray-200 bg-white px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-2px_8px_rgba(0,0,0,0.06)] lg:hidden"
       >
-        <div
-          aria-label="상품 정보"
-          className="flex min-w-0 flex-1 items-center gap-2"
+        <button
+          onClick={() => setIsSheetOpen(true)}
+          className="bg-brand-blue w-full rounded-xl py-4 text-sm font-semibold text-white transition-colors hover:opacity-90"
         >
-          <Image
-            src={thumbnail}
-            alt={name}
-            width={56}
-            height={56}
-            className="h-14 w-14 shrink-0 rounded-md object-cover"
-          />
-          <div className="flex min-w-0 flex-1 flex-col gap-1">
-            <p className="truncate text-sm font-medium text-gray-800">{name}</p>
-            <div className="flex items-center justify-between">
-              <p className="text-brand-blue text-sm font-bold">
-                {totalPrice.toLocaleString()}원
-              </p>
-              <div className="flex items-center gap-2">
-                <button
-                  aria-label="수량 감소"
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  disabled={quantity <= 1}
-                  className="flex h-10 w-10 items-center justify-center rounded-md border border-gray-300 text-base text-gray-600 hover:bg-gray-100 disabled:opacity-30"
-                >
-                  -
-                </button>
-                <span className="min-w-[20px] text-center text-sm font-medium text-gray-800">
-                  {quantity}
-                </span>
-                <button
-                  aria-label="수량 증가"
-                  onClick={() => setQuantity((q) => (stock !== null ? Math.min(stock, q + 1) : q + 1))}
-                  disabled={stock !== null && quantity >= stock}
-                  className="flex h-10 w-10 items-center justify-center rounded-md border border-gray-300 text-base text-gray-600 hover:bg-gray-100 disabled:opacity-30"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="flex shrink-0 flex-col gap-1.5">
-          <button
-            onClick={handleAddToCart}
-            disabled={isLoading}
-            className="rounded-xl border border-gray-300 bg-white px-4 py-2 text-xs font-semibold text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
-          >
-            장바구니
-          </button>
-          <button
-            onClick={handleBuyNow}
-            disabled={isBuying}
-            className="bg-brand-blue rounded-xl px-4 py-2 text-xs font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"
-          >
-            구매하기
-          </button>
-        </div>
+          구매하기
+        </button>
       </nav>
+
+      {/* 바텀시트 */}
+      <ProductBottomSheet
+        open={isSheetOpen}
+        onClose={() => setIsSheetOpen(false)}
+        thumbnail={thumbnail}
+        name={name}
+        stock={stock}
+        isAvailable={isAvailable}
+        quantity={quantity}
+        appliedShippingFee={appliedShippingFee}
+        freeShippingThreshold={freeShippingThreshold}
+        isFreeShipping={isFreeShipping}
+        totalPrice={totalPrice}
+        onDecrease={() => setQuantity((q) => Math.max(1, q - 1))}
+        onIncrease={() =>
+          setQuantity((q) => (stock !== null ? Math.min(stock, q + 1) : q + 1))
+        }
+        onAddToCart={handleAddToCart}
+        onBuyNow={handleBuyNow}
+        isCartLoading={isLoading}
+        isBuying={isBuying}
+      />
     </>
   );
 }
