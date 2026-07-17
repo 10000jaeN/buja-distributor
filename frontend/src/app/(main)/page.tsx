@@ -1,5 +1,6 @@
 import Carousel from "@/components/shared/Carousel";
 import ProductList from "@/components/shared/ProductList";
+import EventPopup from "@/components/shared/EventPopup";
 import { productService } from "@/api/productService";
 import { promotionService } from "@/api/promotionService";
 
@@ -20,6 +21,7 @@ export default async function Home() {
 
   return (
     <main className="mt-0">
+      <EventPopup />
       <Carousel />
 
       <div className="my-15 max-w-256 overflow-hidden md:mx-3 lg:mx-auto">
