@@ -72,8 +72,8 @@ export default function EventPopup() {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4">
-      <div className="relative w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-2xl">
+    <div className="fixed top-20 left-4 z-[100]">
+      <div className="relative w-full max-w-sm overflow-hidden bg-white shadow-2xl">
         {/* 닫기 버튼 */}
         <button
           onClick={handleClose}
