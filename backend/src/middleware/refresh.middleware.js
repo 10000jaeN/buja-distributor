@@ -9,7 +9,7 @@ export const refreshMiddleware = async (req, res, next) => {
   }
 
   const decoded = verifyRefreshToken(incomingRefreshToken);
-  if (!decoded)
+  if (!decoded || decoded.expired)
     return res.status(401).json({ message: "로그인이 필요합니다." });
 
   try {
