@@ -11,6 +11,8 @@ const ALLOWED_FRAME_ORIGINS = [
   "https://payment.tosspayments.com",
 ].join(" ");
 
+const isDev = process.env.NODE_ENV !== "production";
+
 // Next.js App Router는 inline script가 필요하므로 unsafe-inline 허용
 // 완전한 nonce 기반 CSP가 필요하다면 Next.js middleware에서 별도 구현 필요
 const ContentSecurityPolicy = [
@@ -19,7 +21,10 @@ const ContentSecurityPolicy = [
   `style-src 'self' 'unsafe-inline'`,
   `img-src 'self' data: blob: https:`,
   `font-src 'self' data:`,
-  `connect-src 'self' https: wss: ws:`,
+  // 개발 환경에서는 http://localhost:* 허용 (백엔드가 HTTP로 실행됨)
+  isDev
+    ? `connect-src 'self' http://localhost:* https: wss: ws:`
+    : `connect-src 'self' https: wss:`,
   `frame-src ${ALLOWED_FRAME_ORIGINS}`,
   `object-src 'none'`,
   `base-uri 'self'`,
