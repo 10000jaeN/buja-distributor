@@ -16,7 +16,7 @@ if (!JWT_REFRESH_SECRET) {
  * Access Token을 생성합니다. (만료 짧음)
  */
 export const generateAccessToken = (payload) => {
-  return jwt.sign(payload, JWT_ACCESS_SECRET, { expiresIn: "1h" }); // 1시간
+  return jwt.sign(payload, JWT_ACCESS_SECRET, { expiresIn: "15m" }); // 15분
 };
 
 /**

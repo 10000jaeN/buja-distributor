@@ -22,9 +22,46 @@ type FetchOptions = Omit<RequestInit, "body"> & {
   body?: unknown;
 };
 
+// 동시 다발적 401 시 refresh 호출을 한 번만 실행하기 위한 잠금
+let isRefreshing = false;
+const refreshQueue: Array<(token: string | null) => void> = [];
+
+async function refreshAccessToken(): Promise<string | null> {
+  try {
+    const r = await fetch(`${getBaseURL()}/auth/token/refresh`, {
+      method: "POST",
+      credentials: "include",
+    });
+    if (!r.ok) return null;
+    const data = await r.json();
+    const newToken: string = data.accessToken;
+    const isAutoLogin = localStorage.getItem("autoLogin") !== "false";
+    if (isAutoLogin) localStorage.setItem("accessToken", newToken);
+    else sessionStorage.setItem("accessToken", newToken);
+    return newToken;
+  } catch {
+    return null;
+  }
+}
+
+function redirectToLogin() {
+  useAuthStore.getState().clearSession();
+  const isAdmin =
+    window.location.pathname.startsWith("/admin/") ||
+    window.location.pathname === "/admin";
+  const loginPath = isAdmin ? "/admin/login" : "/login";
+  if (window.location.pathname !== loginPath) {
+    toast.warning("로그인이 만료되었습니다. 다시 로그인해 주세요.");
+    setTimeout(() => {
+      window.location.href = loginPath;
+    }, 1500);
+  }
+}
+
 async function apiFetch<T>(
   path: string,
   options: FetchOptions = {},
+  _isRetry = false,
 ): Promise<T> {
   const { params, body, ...init } = options;
 
@@ -75,14 +112,29 @@ async function apiFetch<T>(
     }
   }
 
+  // 401: refresh 토큰으로 재발급 후 원 요청 재시도 (최초 1회)
   if (res.status === 401 && !isServer) {
-    useAuthStore.getState().clearSession();
-    const isAdmin = window.location.pathname.startsWith("/admin/") || window.location.pathname === "/admin";
-    const loginPath = isAdmin ? "/admin/login" : "/login";
-    if (window.location.pathname !== loginPath) {
-      toast.warning("로그인이 만료되었습니다. 다시 로그인해 주세요.");
-      setTimeout(() => { window.location.href = loginPath; }, 1500);
+    if (!_isRetry) {
+      let newToken: string | null;
+
+      if (isRefreshing) {
+        // 이미 refresh 진행 중이면 완료를 기다렸다가 토큰 수신
+        newToken = await new Promise<string | null>((resolve) => {
+          refreshQueue.push(resolve);
+        });
+      } else {
+        isRefreshing = true;
+        newToken = await refreshAccessToken();
+        isRefreshing = false;
+        refreshQueue.splice(0).forEach((cb) => cb(newToken));
+      }
+
+      if (newToken) {
+        return apiFetch<T>(path, options, true);
+      }
     }
+
+    redirectToLogin();
     throw new Error("Unauthorized");
   }
 
