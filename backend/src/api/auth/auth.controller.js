@@ -160,7 +160,7 @@ export const refreshTokens = asyncHandler(async (req, res) => {
   // refreshMiddleware를 거쳐온 user 정보 사용
   const user = req.user;
 
-  const payload = { id: user._id, roles: user.roles };
+  const payload = { id: user._id, roles: user.roles, nickName: user.nickName };
   const newAccessToken = generateAccessToken(payload);
   const newRefreshToken = generateRefreshToken(payload);
 

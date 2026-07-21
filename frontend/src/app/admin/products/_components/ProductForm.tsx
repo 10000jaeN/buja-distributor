@@ -45,9 +45,15 @@ export const INITIAL_FORM: ProductFormData = {
 };
 
 export async function uploadToS3(file: File): Promise<string> {
+  const token =
+    localStorage.getItem("accessToken") ?? sessionStorage.getItem("accessToken");
   const formData = new FormData();
   formData.append("file", file);
-  const res = await fetch("/api/upload", { method: "POST", body: formData });
+  const res = await fetch("/api/upload", {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
   if (!res.ok) throw new Error("이미지 업로드에 실패했습니다.");
   const { url } = await res.json();
   return url;
