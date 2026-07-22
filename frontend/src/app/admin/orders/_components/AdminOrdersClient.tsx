@@ -36,8 +36,6 @@ export default function AdminOrdersClient() {
   const [editTarget, setEditTarget] = useState<Order | null>(null);
 
   const [bulkShipOpen, setBulkShipOpen] = useState(false);
-  const [bulkCourier, setBulkCourier] = useState("");
-  const [bulkTracking, setBulkTracking] = useState("");
   const [bulkCancelOpen, setBulkCancelOpen] = useState(false);
 
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -132,13 +130,24 @@ export default function AdminOrdersClient() {
     }
   };
 
-  const handleBulkShip = async () => {
-    if (!bulkCourier.trim() || !bulkTracking.trim()) {
-      toast.error("택배사와 운송장 번호를 입력해주세요.");
-      return;
+  const handleBulkShip = async (rows: { orderId: string; courier: string; tracking: string }[]) => {
+    setIsSubmitting(true);
+    try {
+      const results = await Promise.allSettled(
+        rows.map((r) => orderService.startShipping(r.orderId, r.courier, r.tracking))
+      );
+      const failed = results.filter((r) => r.status === "rejected").length;
+      const succeeded = results.length - failed;
+      if (failed === 0) {
+        toast.success(`${succeeded}건 배송 시작으로 변경했습니다.`);
+      } else {
+        toast.error(`${succeeded}건 성공, ${failed}건 실패`);
+      }
+      setBulkShipOpen(false);
+      await fetchOrders();
+    } finally {
+      setIsSubmitting(false);
     }
-    await runBulk((id) => orderService.startShipping(id, bulkCourier, bulkTracking), "배송 시작으로 변경했습니다");
-    setBulkShipOpen(false);
   };
 
   // ── 필터링 / 체크박스 ─────────────────────────────────────────
@@ -218,7 +227,7 @@ export default function AdminOrdersClient() {
           allCancellable={allCancellable}
           isSubmitting={isSubmitting}
           onPrepare={() => runBulk((id) => orderService.startPreparation(id), "상품 준비 시작으로 변경했습니다")}
-          onShipOpen={() => { setBulkCourier(""); setBulkTracking(""); setBulkShipOpen(true); }}
+          onShipOpen={() => setBulkShipOpen(true)}
           onComplete={() => runBulk((id) => orderService.completeDelivery(id), "배송 완료 처리했습니다")}
           onCancelOpen={() => setBulkCancelOpen(true)}
           onDeselect={() => setSelectedIds(new Set())}
@@ -273,12 +282,8 @@ export default function AdminOrdersClient() {
 
       <BulkShipDialog
         open={bulkShipOpen}
-        count={selectedIds.size}
-        courier={bulkCourier}
-        tracking={bulkTracking}
+        orders={selectedOrders.filter((o) => o.status === "processing")}
         isSubmitting={isSubmitting}
-        onCourierChange={setBulkCourier}
-        onTrackingChange={setBulkTracking}
         onConfirm={handleBulkShip}
         onClose={() => setBulkShipOpen(false)}
       />
