@@ -12,6 +12,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Category } from "@/types/product";
 import Image from "next/image";
+import { toast } from "sonner";
 import { ProductEditor } from "./ProductEditor";
 
 export type ShippingType = "free" | "bundle" | "paid";
@@ -44,17 +45,52 @@ export const INITIAL_FORM: ProductFormData = {
   content: "",
 };
 
-export async function uploadToS3(file: File): Promise<string> {
-  const token =
-    localStorage.getItem("accessToken") ?? sessionStorage.getItem("accessToken");
+async function fetchUpload(token: string | null, file: File): Promise<Response> {
   const formData = new FormData();
   formData.append("file", file);
-  const res = await fetch("/api/upload", {
+  return fetch("/api/upload", {
     method: "POST",
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: formData,
   });
-  if (!res.ok) throw new Error("이미지 업로드에 실패했습니다.");
+}
+
+async function refreshAccessToken(): Promise<string | null> {
+  try {
+    const baseURL =
+      process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
+    const r = await fetch(`${baseURL}/auth/token/refresh`, {
+      method: "POST",
+      credentials: "include",
+    });
+    if (!r.ok) return null;
+    const data = await r.json();
+    const newToken: string = data.accessToken;
+    const isAutoLogin = localStorage.getItem("autoLogin") !== "false";
+    if (isAutoLogin) localStorage.setItem("accessToken", newToken);
+    else sessionStorage.setItem("accessToken", newToken);
+    return newToken;
+  } catch {
+    return null;
+  }
+}
+
+export async function uploadToS3(file: File): Promise<string> {
+  let token =
+    localStorage.getItem("accessToken") ?? sessionStorage.getItem("accessToken");
+
+  let res = await fetchUpload(token, file);
+
+  if (res.status === 401) {
+    token = await refreshAccessToken();
+    if (!token) throw new Error("로그인이 만료되었습니다. 다시 로그인해 주세요.");
+    res = await fetchUpload(token, file);
+  }
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? "이미지 업로드에 실패했습니다.");
+  }
   const { url } = await res.json();
   return url;
 }
@@ -322,8 +358,12 @@ export function ProductForm({ form, onChange, categories }: Props) {
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (!file) return;
-                          const url = await uploadToS3(file);
-                          onChange("thumbnail", url);
+                          try {
+                            const url = await uploadToS3(file);
+                            onChange("thumbnail", url);
+                          } catch (err) {
+                            toast.error(err instanceof Error ? err.message : "이미지 업로드에 실패했습니다.");
+                          }
                         }}
                       />
                     </label>
@@ -379,8 +419,12 @@ export function ProductForm({ form, onChange, categories }: Props) {
                     onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
-                      const url = await uploadToS3(file);
-                      onChange("thumbnail", url);
+                      try {
+                        const url = await uploadToS3(file);
+                        onChange("thumbnail", url);
+                      } catch (err) {
+                        toast.error(err instanceof Error ? err.message : "이미지 업로드에 실패했습니다.");
+                      }
                     }}
                   />
                 </label>
